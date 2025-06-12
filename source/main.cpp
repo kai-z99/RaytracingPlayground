@@ -62,17 +62,89 @@ int main()
 
     HittableList world;
 
-    Material* mGround = new Lambertian(glm::dvec3(0.8, 0.8, 0.0));
-    Material* mCenter = new Lambertian(glm::dvec3(0.1, 0.2, 0.5));
-    Material* mLeft = new Metal(glm::dvec3(0.8, 0.8, 0.8), 0.8);
-    Material* mRight = new Metal(glm::dvec3(0.8, 0.6, 0.2), 0.0);
+    //
+    //Material* mGround = new Lambertian(glm::dvec3(0.8, 0.8, 0.0));
+    //Material* mCenter = new Lambertian(glm::dvec3(0.1, 0.2, 0.5));
+    //Material* mLeft = new Dialectric(1.5);
+    //Material* mBubble = new Dialectric(1/ 1.5);
+    //Material* mRight = new Metal(glm::dvec3(0.8, 0.6, 0.2), 0.0);
+    //
+    //
+    //world.Add(new Sphere(glm::dvec3(0, -100.5, -1.0), 100.0, mGround));
+    //world.Add(new Sphere(glm::dvec3(0, 0, -1.2), 0.5, mCenter));
+    //world.Add(new Sphere(glm::dvec3(-1.0, 0.0, -1.0), 0.5, mLeft));
+    //world.Add(new Sphere(glm::dvec3(-1.0, 0.0, -1.0), 0.4, mBubble));
+    //world.Add(new Sphere(glm::dvec3(1.0, 0.0, -1.0), 0.5, mRight));
+    //
 
+    
+    Material* mGround = new Lambertian(glm::dvec3(0.5, 0.5, 0.5));
+    world.Add(new Sphere(glm::dvec3(0, -1000, 0),
+        1000.0,
+        mGround));
+    
+    //
+    // 2) Add the random small spheres in a grid
+    //
+    for (int a = -3; a < 3; a++) {
+        for (int b = -3; b < 3; b++) {
+            double chooseMat = RandomDouble();
+            glm::dvec3 center(
+                a + 0.9 * RandomDouble(),
+                0.2,
+                b + 0.9 * RandomDouble()
+            );
 
-    world.Add(new Sphere(glm::dvec3(0, -100.5, -1.0), 100.0, mGround));
-    world.Add(new Sphere(glm::dvec3(0, 0, -1.2), 0.5, mCenter));
-    world.Add(new Sphere(glm::dvec3(-1.0, 0.0, -1.0), 0.5, mLeft));
-    world.Add(new Sphere(glm::dvec3(1.0, 0.0, -1.0), 0.5, mRight));
+            if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) {
+                Material* sphereMat;
 
+                if (chooseMat < 0.8) {
+                    // diffuse
+                    glm::dvec3 albedo = glm::dvec3(RandomDouble(), RandomDouble(), RandomDouble()) * glm::dvec3(RandomDouble(), RandomDouble(), RandomDouble());
+                    sphereMat = new Lambertian(albedo);
+                }
+                else if (chooseMat < 0.95) {
+                    // metal
+                    glm::dvec3 albedo(
+                        RandomDouble(0.5, 1.0),
+                        RandomDouble(0.5, 1.0),
+                        RandomDouble(0.5, 1.0)
+                    );
+                    double fuzz = RandomDouble(0.0, 0.5);
+                    sphereMat = new Metal(albedo, fuzz);
+                }
+                else {
+                    // glass
+                    sphereMat = new Dialectric(1.5);
+                }
+
+                world.Add(new Sphere(center,
+                    0.2,
+                    sphereMat));
+            }
+        }
+    }
+    
+    //
+    // 3) Add the three large spheres
+    //
+    Material* mCenter = new Dialectric(1.5);
+    world.Add(new Sphere(glm::dvec3(0, 1, 0),
+        1.0,
+        mCenter));
+
+    Material* mLeft = new Lambertian(glm::dvec3(0.4, 0.2, 0.1));
+    world.Add(new Sphere(glm::dvec3(-4, 1, 0),
+        1.0,
+        mLeft));
+
+    Material* mRight = new Metal(glm::dvec3(0.7, 0.6, 0.5),
+        0.0);
+    world.Add(new Sphere(glm::dvec3(4, 1, 0),
+        1.0,
+        mRight));
+
+        
     Camera cam;
 
     unsigned int resultTextureRGB = cam.Render(world);

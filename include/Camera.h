@@ -37,7 +37,7 @@ public:
 
             }
 
-            PrintProgressBar(j+1, SCREEN_HEIGHT);
+            PrintProgressBar(j+1, SCREEN_HEIGHT, start);
            
         }
             
@@ -54,22 +54,41 @@ public:
     }
 
 private:
+    double vfov;
+    double halfWidth, halfHeight;
     glm::dvec3 center;
+    glm::dvec3 lookAt;
+    glm::dvec3 up;
     unsigned char* pixels;
     float aspect;
     int samplesPerPixel;
     int maxRayDepth;
+
+    glm::dvec3 u, v, w;
+    double focalLength;
+
 
     //stats
     mutable int raysCalculated;
 
     void Init()
     {
-        this->center = glm::dvec3(0.0,0.0,0.0);
+        this->up = glm::dvec3(0,1,0);
+        this->center = glm::dvec3(13, 2, 3);
+        this->lookAt = glm::dvec3(0,0,0);
+        this->vfov = 20;
+        this->focalLength = glm::length(center - lookAt);
+        
+        this->w = glm::normalize(center - lookAt);
+        this->u = glm::normalize(glm::cross(up, w));
+        this->v = glm::cross(w, u);
+
         this->pixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
         this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
+        this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
+        this->halfWidth = this->aspect * this->halfHeight;
         this->samplesPerPixel = 10;
-        this->maxRayDepth = 50;
+        this->maxRayDepth = 12;
 
         this->raysCalculated = 0;
     }
@@ -78,13 +97,12 @@ private:
     {
         glm::dvec3 jitter = this->SampleSquare();
 
-        double u = (i + 0.5 + jitter.x) / SCREEN_WIDTH;
-        double v = (j + 0.5 + jitter.y) / SCREEN_HEIGHT;
-        double ndcX = 2.0 * u - 1.0;
-        double ndcY = 1.0 - 2.0 * v;
-        ndcX *= aspect;
+        double uS = (i + 0.5 + jitter.x) / SCREEN_WIDTH;
+        double vS = (j + 0.5 + jitter.y) / SCREEN_HEIGHT;
+        double ndcX = (2.0 * uS - 1.0) * this->halfWidth * this->focalLength;
+        double ndcY = (1.0 - 2.0 * vS) * this->halfHeight * this->focalLength;
 
-        glm::dvec3 dir = glm::normalize(glm::dvec3(ndcX, ndcY, -1.0f));
+        glm::dvec3 dir = glm::normalize(glm::dvec3(this->u * ndcX + this->v * ndcY - this->w * focalLength));
         
         return Ray(this->center, dir);
     }
@@ -160,20 +178,40 @@ private:
         return col;
     }
 
-    void PrintProgressBar(int current, int total) {
-        const int barWidth = 50;
-        double progress = (double)current / total;
+    void PrintProgressBar(int current,
+        int total,
+        const std::chrono::high_resolution_clock::time_point& start)
+    {
+        static const int barWidth = 50;
 
-        std::cout << "\r[";
+        double progress = static_cast<double>(current) / total;
+
+        using clock = std::chrono::high_resolution_clock;
+        auto   now = clock::now();
+        double elapsed_s = std::chrono::duration<double>(now - start).count();
+        double eta_s = (progress > 0.0) ? elapsed_s * (1.0 / progress - 1.0)
+            : std::numeric_limits<double>::infinity();
+
+        std::cout << '\r' << '[';
         int pos = static_cast<int>(barWidth * progress);
-
         for (int i = 0; i < barWidth; ++i)
-        {
-            if (i < pos) std::cout << "=";
-            else if (i == pos) std::cout << ">";
-            else std::cout << " ";
-        }
+            std::cout << (i < pos ? '=' : (i == pos ? '>' : ' '));
+        std::cout << "] ";
 
-        std::cout << "] " << std::fixed << std::setprecision(1) << (progress * 100.0) << " %" << std::flush;
+        std::cout << std::fixed << std::setprecision(1) << (progress * 100.0) << "% ";
+
+        auto pretty_time = [](double t) {
+            int h = static_cast<int>(t / 3600);   t -= h * 3600;
+            int m = static_cast<int>(t / 60);     t -= m * 60;
+            int s = static_cast<int>(t + 0.5);    // round to nearest second
+            std::ostringstream os;
+            os << std::setw(2) << std::setfill('0') << h << ':'
+                << std::setw(2) << std::setfill('0') << m << ':'
+                << std::setw(2) << std::setfill('0') << s;
+            return os.str();
+            };
+
+        std::cout << "ETA " << pretty_time(eta_s) << "   " << std::flush;
     }
+
 };

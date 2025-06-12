@@ -27,6 +27,7 @@ public:
         {
             root = (-b + sqrt) / (2.0 * a);
 
+            //can happen from refraction etc
             if (!ray_t.Surrounds(root))
             {
                 return false;
