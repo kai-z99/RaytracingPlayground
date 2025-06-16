@@ -23,6 +23,8 @@ public:
 	void Add(Hittable* object)
 	{
 		this->objects.push_back(object);
+		//expand bounding box to the new object
+		this->bbox = AABB(this->bbox, object->BoundingBox());
 	}
 
 	bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
@@ -44,4 +46,11 @@ public:
 		return hitAnything;
 	}
 
+	AABB BoundingBox() const override
+	{
+		return this->bbox;
+	}
+
+private:
+	AABB bbox;
 };

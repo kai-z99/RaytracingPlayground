@@ -6,6 +6,7 @@
 #include "../include/Hittable.h"
 #include "../include/HittableList.h"
 #include "../include/Sphere.h"
+#include "../include/BVH.h"
 
 glm::vec3 rayColor(const Ray& r, const Hittable& world)
 {
@@ -86,8 +87,8 @@ int main()
     //
     // 2) Add the random small spheres in a grid
     //
-    for (int a = -3; a < 3; a++) {
-        for (int b = -3; b < 3; b++) {
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
             double chooseMat = RandomDouble();
             glm::dvec3 center(
                 a + 0.9 * RandomDouble(),
@@ -145,8 +146,10 @@ int main()
         mRight));
 
         
-    Camera cam;
+    world = HittableList(new BVHNode(world));
 
+    Camera cam;
+    //1700s
     unsigned int resultTextureRGB = cam.Render(world);
 
 

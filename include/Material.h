@@ -115,3 +115,4 @@ private:
 		return r0 + (1 - r0) * std::pow((1 - cosTheta), 5);
 	}
 };
+

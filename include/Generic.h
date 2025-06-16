@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <cstdlib>
+#include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
 const double infinity = std::numeric_limits<double>::infinity();
@@ -13,6 +14,11 @@ const double pi = 3.1415926535897932385;
 inline double DegreesToRadians(double degrees)
 {
 	return degrees * pi / 180.0;
+}
+
+inline int RandomInt(int min, int max)
+{
+	return min + std::rand() % (max - min + 1);
 }
 
 inline double RandomDouble()

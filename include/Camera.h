@@ -12,6 +12,12 @@
 class Camera
 {
 public:
+    glm::dvec3 center;
+    glm::dvec3 lookAt;
+    double vfov;
+    int samplesPerPixel;
+    int maxRayDepth;
+
     unsigned int Render(const Hittable& world)
     {
         Init();
@@ -33,7 +39,7 @@ public:
 
                 pixelColor /= this->samplesPerPixel;
                 
-                this->WriteColor(pixels, i, j, pixelColor);
+                this->WriteColor(pixelBuffer, i, j, pixelColor);
 
             }
 
@@ -49,28 +55,22 @@ public:
         std::cout << "Total rays calculated: " << this->raysCalculated << '\n';
 
 
-        unsigned int resultTextureRGB = setupTexture(pixels);
+        unsigned int resultTextureRGB = setupTexture(pixelBuffer);
         return resultTextureRGB;
     }
 
 private:
-    double vfov;
+    unsigned char* pixelBuffer;
     double halfWidth, halfHeight;
-    glm::dvec3 center;
-    glm::dvec3 lookAt;
     glm::dvec3 up;
-    unsigned char* pixels;
+                    
     float aspect;
-    int samplesPerPixel;
-    int maxRayDepth;
-
     glm::dvec3 u, v, w;
     double focalLength;
-
-
+        
     //stats
     mutable int raysCalculated;
-
+    
     void Init()
     {
         this->up = glm::dvec3(0,1,0);
@@ -83,7 +83,7 @@ private:
         this->u = glm::normalize(glm::cross(up, w));
         this->v = glm::cross(w, u);
 
-        this->pixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
+        this->pixelBuffer = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
         this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
         this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
         this->halfWidth = this->aspect * this->halfHeight;

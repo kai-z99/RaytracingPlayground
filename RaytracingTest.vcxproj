@@ -27,6 +27,8 @@
     <None Include="shaders\screen.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\AABB.h" />
+    <ClInclude Include="include\BVH.h" />
     <ClInclude Include="include\Camera.h" />
     <ClInclude Include="include\Definitions.h" />
     <ClInclude Include="include\Generic.h" />

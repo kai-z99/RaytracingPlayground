@@ -5,7 +5,8 @@ class Sphere : public Hittable
 public:
     Sphere(const glm::dvec3& center, double radius, Material* mat) : center(center), radius(std::fmax(0, radius)), mat(mat)
     {
-
+        glm::dvec3 radiusVec = glm::dvec3(radius);
+        this->bbox = AABB(center - radiusVec, center + radiusVec);
     }
 
 	bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
@@ -42,8 +43,14 @@ public:
         return true;
 	}
 
+    AABB BoundingBox() const override
+    {
+        return this->bbox;
+    }
+
 private:
 	glm::dvec3 center;
 	double radius;
     Material* mat;
+    AABB bbox;
 };
