@@ -44,10 +44,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{1ce19d78-2b13-46d6-9a57-cd28916ed54a}</ProjectGuid>
-    <RootNamespace>RaytracingTest</RootNamespace>
+    <ProjectGuid>{6118d2a0-bb2e-4dac-b612-e630247c00e5}</ProjectGuid>
+    <RootNamespace>PathTracingCuda</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>PathTracing</ProjectName>
+    <ProjectName>PathTracingCuda</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -95,8 +95,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)extern\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\repos\C++\RaytracingTest\extern\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)extern\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)extern\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

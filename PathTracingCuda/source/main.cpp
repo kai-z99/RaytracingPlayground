@@ -8,40 +8,9 @@
 #include "../include/Sphere.h"
 #include "../include/BVH.h"
 
-glm::vec3 rayColor(const Ray& r, const Hittable& world)
-{
-    HitRecord rec;
-
-    if (world.Hit(r, Interval(0, infinity), rec))
-    {
-        return 0.5 * (rec.normal + glm::dvec3(1,1,1));
-    }
-
-    double a = 0.5 * (r.direction().y + 1.0);
-
-    glm::dvec3 white = glm::vec3(1.0, 1.0, 1.0);
-    glm::dvec3 sky = glm::vec3(0.5, 0.7, 1.0);
-    glm::dvec3 col = (1.0 - a) * white + a * sky;
-
-    return col;
-}
-
-void writeColor(unsigned char* pixelBuffer, int i, int j, glm::dvec3 color)
-{
-    //write color
-    unsigned char r = (unsigned char)(color.r * 255.0f);
-    unsigned char g = (unsigned char)(color.g * 255.0f);
-    unsigned char b = (unsigned char)(color.b * 255.0f);
-
-    int dst = (((SCREEN_HEIGHT - 1) - j) * SCREEN_WIDTH + i) * 3;
-
-    pixelBuffer[dst + 0] = r;
-    pixelBuffer[dst + 1] = g;
-    pixelBuffer[dst + 2] = b;
-}
-
 int main()
 {
+    std::cout << "CUDA VER" << '\n';
     //-------------------------------------------------------
     //OPENGL STUFF------------------------------------
     //-------------------------------------------------------
