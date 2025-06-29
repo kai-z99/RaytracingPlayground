@@ -18,19 +18,20 @@ public:
 		this->objects = new Hittable*[MAX_OBJECTS];
 	}
 
-	__device__ ~HittableList()
+	__device__ HittableList(Hittable* object) : count(0)
 	{
-		delete[] this->objects;
-	}
+		this->objects = new Hittable * [MAX_OBJECTS];
 
-
-	__device__ HittableList(Hittable* object)
-	{
-		if (count < MAX_OBJECTS) 
+		if (count < MAX_OBJECTS)
 		{
 			this->objects[count++] = object;
 			this->bbox = AABB(bbox, object->BoundingBox());
 		}
+	}
+
+	__device__ ~HittableList()
+	{
+		delete[] this->objects;
 	}
 
 	__device__ void Clear()

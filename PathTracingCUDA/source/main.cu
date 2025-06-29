@@ -11,6 +11,10 @@
 #include "../include/CudaHelper.h"
 #include "device_launch_parameters.h"
 
+//todo: implement rand
+//todo: implenent bvh
+
+
 
 __global__ void BuildWorldKernel(Hittable** outWorld)
 {
@@ -131,15 +135,17 @@ int main()
     //-------------------------------------------------------
     //RAY CASTING STUFF------------------------------------
     //-------------------------------------------------------
+    //create device and host texture
     unsigned char* hPixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
     unsigned char* dPixels;
     checkCudaErrors(cudaMalloc(&dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3));
 
+    //create world and camera on the device
     Camera** dCamera;
     Hittable** dWorld;
     checkCudaErrors(cudaMalloc(&dCamera, sizeof(Camera*)));
     checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
-    size_t heap = 64 * 1024 * 1024;          // 64 MiB is plenty for <2 000 objects
+    size_t heap = 64 * 1024 * 1024;   //64mb
     cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap);
     BuildWorldKernel<<<1,1>>>(dWorld);
     cudaDeviceSynchronize();
@@ -148,28 +154,26 @@ int main()
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
-
-    // Before launching RenderKernel, temporarily:
-
-
+    //launch render kernel
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
-    cudaDeviceSetLimit(cudaLimitStackSize, 16384);
+    cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
     RenderKernel<<<grid, block>>>(dCamera, dWorld);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
+    //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
 
+    //cleanup
     DestroyKernel<<<1,1>>>(dCamera, dWorld);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaFree(dPixels));
     checkCudaErrors(cudaFree(dCamera));
     checkCudaErrors(cudaFree(dWorld));
 
-    //1700s
+    //convert host pixel buffer to openGL texture
     unsigned int resultTextureRGB = setupTexture(hPixels);
-
 
     //-------------------------------------------------------
     //RENDER IMAGE------------------------------------

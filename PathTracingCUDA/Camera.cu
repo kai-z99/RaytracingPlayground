@@ -28,8 +28,6 @@ __device__ void Camera::RenderPixel(const Hittable& world, unsigned int i, unsig
     pixelColor /= this->samplesPerPixel;
 
     this->WriteColor(pixelBuffer, i, j, pixelColor);
-
-    //unsigned int resultTextureRGB = setupTexture(pixelBuffer);
 }
 
 __device__ void Camera::SetPixelBuffer(unsigned char* buffer)
@@ -53,7 +51,7 @@ __device__ void Camera::Init()
     this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
     this->samplesPerPixel = 1;
-    this->maxRayDepth = 5;
+    this->maxRayDepth = 15;
 
     this->raysCalculated = 0;
 }
