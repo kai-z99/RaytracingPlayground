@@ -4,38 +4,58 @@
 
 #include <vector>
 
+#ifndef MAX_OBJECTS
+#define MAX_OBJECTS 4096
+#endif
+
+
 class HittableList : public Hittable
 {
 public:
-	std::vector<Hittable*> objects;
 
-	HittableList() {}
-	HittableList(Hittable* object) 
+	__device__ HittableList() : count(0)
 	{
-		this->Add(object);
+		this->objects = new Hittable*[MAX_OBJECTS];
 	}
 
-	void Clear()
+	__device__ ~HittableList()
 	{
-		this->objects.clear();
+		delete[] this->objects;
 	}
 
-	void Add(Hittable* object)
+
+	__device__ HittableList(Hittable* object)
 	{
-		this->objects.push_back(object);
-		//expand bounding box to the new object
-		this->bbox = AABB(this->bbox, object->BoundingBox());
+		if (count < MAX_OBJECTS) 
+		{
+			this->objects[count++] = object;
+			this->bbox = AABB(bbox, object->BoundingBox());
+		}
 	}
 
-	bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
+	__device__ void Clear()
+	{
+		count = 0; bbox = AABB();
+	}
+
+	__device__ void Add(Hittable* object)
+	{
+		if (count < MAX_OBJECTS)
+		{
+			this->objects[count++] = object;
+			this->bbox = AABB(this->bbox, object->BoundingBox());
+		}
+	}
+
+	__device__ bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
 	{
 		HitRecord tempRec;
 		bool hitAnything = false;
 		double closestSoFar = ray_t.max;
 
-		for (Hittable* object : this->objects)
+		for (int i = 0; i < this->count; i++)
 		{
-			if (object->Hit(r, Interval(ray_t.min, closestSoFar), tempRec))
+			if (objects[i]->Hit(r, Interval(ray_t.min, closestSoFar), tempRec))
 			{
 				hitAnything = true;
 				closestSoFar = tempRec.t;
@@ -46,11 +66,13 @@ public:
 		return hitAnything;
 	}
 
-	AABB BoundingBox() const override
+	__device__ AABB BoundingBox() const override
 	{
 		return this->bbox;
 	}
 
 private:
+	Hittable** objects;
 	AABB bbox;
+	int count;
 };

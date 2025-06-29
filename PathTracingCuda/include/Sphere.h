@@ -3,13 +3,13 @@
 class Sphere : public Hittable
 {
 public:
-    Sphere(const glm::dvec3& center, double radius, Material* mat) : center(center), radius(std::fmax(0, radius)), mat(mat)
+    __device__ Sphere(const glm::dvec3& center, double radius, Material* mat) : center(center), radius(radius < 0.0 ? 0.0 : radius), mat(mat)
     {
         glm::dvec3 radiusVec = glm::dvec3(radius);
         this->bbox = AABB(center - radiusVec, center + radiusVec);
     }
 
-	bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
+    __device__ bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
 	{
         glm::dvec3 oc = center - r.origin();
         double a = glm::dot(r.direction(), r.direction());
@@ -43,7 +43,7 @@ public:
         return true;
 	}
 
-    AABB BoundingBox() const override
+    __device__ AABB BoundingBox() const override
     {
         return this->bbox;
     }

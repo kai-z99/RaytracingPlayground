@@ -4,11 +4,18 @@
 #include <iostream>
 #include <limits>
 #include <cstdlib>
+#include "CudaHelper.h"
+#define GLM_FORCE_CUDA
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
-const double infinity = std::numeric_limits<double>::infinity();
-const double pi = 3.1415926535897932385;
+__device__ constexpr double infinity = std::numeric_limits<double>::infinity();
+constexpr double pi = 3.1415926535897932385;
+
+inline int CeilDiv(int num, int denom)
+{
+	return (num + denom - 1) / denom;
+}
 
 
 inline double DegreesToRadians(double degrees)
@@ -44,7 +51,7 @@ inline glm::dvec3 RandomOnHemisphere(glm::dvec3 normal)
 	}
 }
 
-inline bool NearZero(glm::dvec3 v) 
+__device__ inline bool NearZero(glm::dvec3 v) 
 {
 	double e = 1e-8;
 

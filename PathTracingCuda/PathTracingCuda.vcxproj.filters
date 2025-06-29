@@ -18,9 +18,6 @@
     <ClCompile Include="source\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\screen.vert">
@@ -58,9 +55,6 @@
     <ClInclude Include="include\Interval.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -70,5 +64,25 @@
     <ClInclude Include="include\BVH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\CudaHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="source\main.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Camera.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="source\AABB.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="source\Interval.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

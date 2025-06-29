@@ -1,50 +1,25 @@
 #pragma once
 
 #include "Generic.h" //thank you pragma once
+#include "CudaHelper.h"
 
 class Interval
 {
 public:
 	double min, max;
 
-	Interval() : min(+infinity), max(-infinity) {}
-	Interval(double min, double max) : min(min), max(max) {}
-	Interval(const Interval& a, const Interval& b)
-	{
-		this->min = (a.min <= b.min) ? a.min : b.min;
-		this->max = (a.max >= b.max) ? a.max : b.max;
-	}
+	__device__ Interval();
+	__device__ Interval(double min, double max);
+	__device__ Interval(const Interval& a, const Interval& b);
 
-	double Size() const
-	{
-		return max - min;
-	}
+	__device__ double Size() const;
+	__device__ bool Contains(double x) const;
 
-	bool Contains(double x) const 
-	{
-		return min <= x && x <= max;
-	}
+	__device__ bool Surrounds(double x) const;
 
-	bool Surrounds(double x) const 
-	{
-		return min < x && x < max;
-	}
+	__device__ double Clamp(double x) const;
 
-	double Clamp(double x) const
-	{
-		if (x < min) return min;
-		if (x > max) return max;
-		return x;
-	}
-
-	Interval Expand(double delta) const
-	{
-		double padding = delta / 2.0;
-		return Interval(this->min - padding, this->max + padding);
-	}
+	__device__ Interval Expand(double delta) const;
 
 	static const Interval Empty, Universe;
 };
-
-const Interval Interval::Empty = Interval(+infinity, -infinity);
-const Interval Interval::Universe = Interval(-infinity, +infinity);

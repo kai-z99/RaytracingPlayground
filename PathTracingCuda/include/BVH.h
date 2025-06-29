@@ -10,12 +10,13 @@
 //Random: 137.1 seconds
 //Longest Axis: 62.3 seconds
 
+/*
 class BVHNode : public Hittable
 {
 public:
-	BVHNode(HittableList& list) : BVHNode(list.objects, 0, list.objects.size()) {}
+	__device__ BVHNode(HittableList& list) : BVHNode(list.objects, 0, list.objects.size()) {}
 
-	BVHNode(std::vector<Hittable*>& objects, size_t start, size_t end)
+	__device__ BVHNode(std::vector<Hittable*>& objects, size_t start, size_t end)
 	{
 		this->bbox = AABB::empty;
 		for (size_t idx = start; idx < end; idx++)
@@ -49,7 +50,7 @@ public:
 		}
 	}
 
-	bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
+	__device__ bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
 	{
 		if (!this->bbox.Hit(r, ray_t))
 		{
@@ -63,7 +64,7 @@ public:
 		return hitLeft || hitRight;
 	}
 
-	AABB BoundingBox() const override 
+	__device__ AABB BoundingBox() const override
 	{
 		return this->bbox;
 	}
@@ -73,7 +74,7 @@ private:
 	Hittable* right;
 	AABB bbox;
 
-	static bool boxCompare(const Hittable* a, const Hittable* b, int axisIndex)
+	__device__ static bool boxCompare(const Hittable* a, const Hittable* b, int axisIndex)
 	{
 		Interval aAxisInterval = a->BoundingBox().AxisInterval(axisIndex);
 		Interval bAxisInterval = b->BoundingBox().AxisInterval(axisIndex);
@@ -81,17 +82,17 @@ private:
 
 	}
 
-	static bool boxCompareX(const Hittable* a, const Hittable* b) 
+	__device__ static bool boxCompareX(const Hittable* a, const Hittable* b)
 	{
 		return boxCompare(a, b, 0);
 	}
 
-	static bool boxCompareY(const Hittable* a, const Hittable* b) 
+	__device__ static bool boxCompareY(const Hittable* a, const Hittable* b)
 	{
 		return boxCompare(a, b, 1);
 	}
 
-	static bool boxCompareZ(const Hittable* a, const Hittable* b) 
+	__device__ static bool boxCompareZ(const Hittable* a, const Hittable* b)
 	{
 		return boxCompare(a, b, 2);
 	}
@@ -99,3 +100,4 @@ private:
 
 };
 
+*/

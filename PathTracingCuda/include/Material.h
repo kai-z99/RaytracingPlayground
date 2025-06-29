@@ -5,9 +5,9 @@
 class Material
 {
 public:
-	virtual ~Material() = default;
+	__device__ virtual ~Material() = default;
 
-	virtual bool Scatter(
+	__device__ virtual bool Scatter(
 		const Ray& rayIn,
 		const HitRecord& rec, 
 		glm::dvec3& attenuation, //attenutation is the resulting rgb AFTER absorption
@@ -20,14 +20,14 @@ public:
 class Lambertian : public Material
 {
 public:
-	Lambertian(const glm::dvec3& albedo) : albedo(albedo) {}
+	__device__ Lambertian(const glm::dvec3& albedo) : albedo(albedo) {}
 
-	bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
 	{
-		glm::dvec3 scatterDirection = rec.normal + glm::sphericalRand(1.0);
+		glm::dvec3 scatterDirection = rec.normal + 0.5; //FIX ME SPEHRICAL RAND
 
 		if (NearZero(scatterDirection))
 		{
@@ -46,15 +46,15 @@ private:
 class Metal : public Material
 {
 public:
-	Metal(const glm::dvec3& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1? fuzz : 1.0) {}
+	__device__ Metal(const glm::dvec3& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1? fuzz : 1.0) {}
 
-	bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
 	{
 		glm::dvec3 reflectDirection = glm::reflect(rayIn.direction(), rec.normal);
-		reflectDirection += fuzz * glm::sphericalRand(1.0);
+		reflectDirection += fuzz * 0.5; //FIX ME SPEHRICAL RAND
 		reflectDirection = glm::normalize(reflectDirection);
 		scattered = Ray(rec.p, reflectDirection);
 		attenuation = albedo;
@@ -69,9 +69,9 @@ private:
 class Dialectric : public Material
 {
 public:
-	Dialectric(double refractionIndex) : refractionIndex(refractionIndex) {}
+	__device__ Dialectric(double refractionIndex) : refractionIndex(refractionIndex) {}
 
-	bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
@@ -88,7 +88,7 @@ public:
 
 		//must reflect
 		glm::dvec3 direction;
-		if (eta * sinTheta > 1.0 || this->FresnelSchlick(cosTheta, refractionIndex) > RandomDouble())
+		if (eta * sinTheta > 1.0 || this->FresnelSchlick(cosTheta, refractionIndex) > 0.5) //FIX ME
 		{
 			direction = glm::reflect(rayIn.direction(), N);
 		}
@@ -108,7 +108,7 @@ private:
 	double refractionIndex;
 
 	//Returns kS
-	static double FresnelSchlick(double cosTheta, double refractionIndex)
+	__device__ static double FresnelSchlick(double cosTheta, double refractionIndex)
 	{
 		double r0 = (1 - refractionIndex) / (1 + refractionIndex);
 		r0 = r0 * r0;

@@ -4,13 +4,13 @@
 #include <iostream>
 #include "Definitions.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+inline void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
 
-GLFWwindow* setupWindow()
+inline GLFWwindow* setupWindow()
 {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -45,7 +45,7 @@ GLFWwindow* setupWindow()
     return window;
 }
 
-unsigned int setupBuffer()
+inline unsigned int setupBuffer()
 {
     unsigned int quadVAO, quadVBO;
 
@@ -75,7 +75,7 @@ unsigned int setupBuffer()
     return quadVAO;
 }
 
-unsigned int setupTexture(unsigned char* pixelBuffer)
+inline unsigned int setupTexture(unsigned char* pixelBuffer)
 {
     unsigned int resultTextureRGB;
     glActiveTexture(GL_TEXTURE0);
@@ -88,7 +88,7 @@ unsigned int setupTexture(unsigned char* pixelBuffer)
     return resultTextureRGB;
 }
 
-void setupState()
+inline void setupState()
 {
     glDisable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);

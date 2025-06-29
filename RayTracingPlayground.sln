@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35219.272
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathTracing", "PathTracing\PathTracing.vcxproj", "{1CE19D78-2B13-46D6-9A57-CD28916ED54A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathTracingCuda", "PathTracingCuda\PathTracingCuda.vcxproj", "{6118D2A0-BB2E-4DAC-B612-E630247C00E5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathTracingCUDA", "PathTracingCUDA\PathTracingCuda.vcxproj", "{6118D2A0-BB2E-4DAC-B612-E630247C00E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
