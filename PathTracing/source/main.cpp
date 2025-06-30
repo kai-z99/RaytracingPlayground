@@ -56,26 +56,34 @@ int main()
     //
     // 2) Add the random small spheres in a grid
     //
-    for (int a = -11; a < 11; a++) {
-        for (int b = -11; b < 11; b++) {
+    for (int a = -11; a < 11; a++) 
+    {
+        for (int b = -11; b < 11; b++) 
+        {
             double chooseMat = RandomDouble();
-            glm::dvec3 center(
+
+            glm::dvec3 center
+            (
                 a + 0.9 * RandomDouble(),
                 0.2,
                 b + 0.9 * RandomDouble()
             );
 
-            if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) {
+            if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) 
+            {
                 Material* sphereMat;
 
-                if (chooseMat < 0.8) {
+                if (chooseMat < 0.8) 
+                {
                     // diffuse
                     glm::dvec3 albedo = glm::dvec3(RandomDouble(), RandomDouble(), RandomDouble()) * glm::dvec3(RandomDouble(), RandomDouble(), RandomDouble());
                     sphereMat = new Lambertian(albedo);
                 }
-                else if (chooseMat < 0.95) {
+                else if (chooseMat < 0.95) 
+                {
                     // metal
-                    glm::dvec3 albedo(
+                    glm::dvec3 albedo
+                    (
                         RandomDouble(0.5, 1.0),
                         RandomDouble(0.5, 1.0),
                         RandomDouble(0.5, 1.0)
@@ -83,14 +91,13 @@ int main()
                     double fuzz = RandomDouble(0.0, 0.5);
                     sphereMat = new Metal(albedo, fuzz);
                 }
-                else {
+                else 
+                {
                     // glass
                     sphereMat = new Dialectric(1.5);
                 }
 
-                world.Add(new Sphere(center,
-                    0.2,
-                    sphereMat));
+                world.Add(new Sphere(center, 0.2, sphereMat));
             }
         }
     }

@@ -21,6 +21,8 @@
 
 __global__ void BuildWorldKernel(Hittable** outWorld)
 {
+    if (*outWorld) return;
+
     if (threadIdx.x == 0 && threadIdx.y == 0)
     {
         //make a private rand state
@@ -34,29 +36,33 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
             1000.0,
             mGround));
 
-        //
-        // 2) Add the random small spheres in a grid
-        //
-        for (int a = -11; a < 11; a++) {
-            for (int b = -11; b < 11; b++) {
+        for (int a = -11; a < 11; a++) 
+        {
+            for (int b = -11; b < 11; b++) 
+            {
                 double chooseMat = RandomDouble(randState);
-                glm::dvec3 center(
+                glm::dvec3 center
+                (
                     a + 0.9 * RandomDouble(randState),
                     0.2,
                     b + 0.9 * RandomDouble(randState)
                 );
 
-                if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) {
+                if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) 
+                {
                     Material* sphereMat;
 
-                    if (chooseMat < 0.8) {
+                    if (chooseMat < 0.8) 
+                    {
                         // diffuse
                         glm::dvec3 albedo = RandomVec3Positive(randState) * RandomVec3Positive(randState);
                         sphereMat = new Lambertian(albedo);
                     }
-                    else if (chooseMat < 0.95) {
+                    else if (chooseMat < 0.95) 
+                    {
                         // metal
-                        glm::dvec3 albedo(
+                        glm::dvec3 albedo
+                        (
                             RandomDouble(randState, 0.5, 1.0),
                             RandomDouble(randState, 0.5, 1.0),
                             RandomDouble(randState, 0.5, 1.0)
@@ -64,14 +70,13 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
                         double fuzz = 0.5;
                         sphereMat = new Metal(albedo, fuzz);
                     }
-                    else {
+                    else 
+                    {
                         // glass
                         sphereMat = new Dialectric(1.5);
                     }
 
-                    world->Add(new Sphere(center,
-                        0.2,
-                        sphereMat));
+                    world->Add(new Sphere(center, 0.2, sphereMat));
                 }
             }
         }
@@ -122,6 +127,12 @@ __global__ void RenderKernel(Camera** camera, Hittable** world, curandState* pix
 
     //update the state after using it
     pixelRandStates[pixelIndex] = randState;
+
+    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0) 
+    {
+        float pct = 100.f * (blockIdx.y + 1) / gridDim.y;
+        printf("Progress: %.1f%% (row %d of %d)\n", pct, blockIdx.y + 1, gridDim.y);
+    }
 }
 
 __global__ void DestroyKernel(Camera** camera, Hittable** world)
@@ -200,7 +211,6 @@ int main()
 
     auto t1 = std::chrono::high_resolution_clock::now();
     double secs = std::chrono::duration<double>(t1 - t0).count();
-
     std::cout << "GPU render pass (host-timed): "
         << secs << " secs\n";
 
