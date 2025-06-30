@@ -22,7 +22,7 @@ __device__ void Camera::RenderPixel(curandState& randState, const Hittable& worl
     for (int sample = 0; sample < this->samplesPerPixel; sample++)
     {
         Ray ray = this->GetRay(randState, i, j);
-        pixelColor += this->RayColor(randState, ray, this->maxRayDepth, world);
+        pixelColor += this->RayColorIter(randState, ray, this->maxRayDepth, world);
     }
 
     pixelColor /= this->samplesPerPixel;
@@ -50,10 +50,8 @@ __device__ void Camera::Init()
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
     this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
-    this->samplesPerPixel = 1;
-    this->maxRayDepth = 4;
-
-    this->raysCalculated = 0;
+    this->samplesPerPixel = 10;
+    this->maxRayDepth = 20;
 }
 
 __device__ Ray Camera::GetRay(curandState& randState, int i, int j) const
@@ -107,12 +105,9 @@ __device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm
     pixelBuffer[dst + 2] = bOut;
 }
 
-
 __device__ glm::dvec3 Camera::RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const
 {
     if (depth <= 0) return glm::dvec3(0.0);
-
-    this->raysCalculated++;
 
     HitRecord rec;
 
@@ -138,5 +133,36 @@ __device__ glm::dvec3 Camera::RayColor(curandState& randState, const Ray& r, int
     glm::dvec3 sky = glm::vec3(0.5, 0.7, 1.0);
     glm::dvec3 col = (1.0 - a) * white + a * sky;
 
+    return col;
+}
+
+__device__ glm::dvec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
+{
+    glm::dvec3 col(0.0);      
+    glm::dvec3 totalAttenuation(1.0);          
+
+    for (int depth = 0; depth < maxDepth; ++depth)
+    {
+        HitRecord rec;
+        if (!world.Hit(r, Interval(0.001, infinity), rec)) //hit sky
+        {   
+            double a = 0.5 * (r.direction().y + 1.0);
+            glm::dvec3 sky = (1.0 - a) * glm::dvec3(1.0)
+                + a * glm::dvec3(0.5, 0.7, 1.0);
+            col += totalAttenuation * sky;
+            break;
+        }
+
+        Ray scattered;
+        glm::dvec3 attenuation;
+
+        if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
+        {  
+            break;
+        }
+
+        totalAttenuation *= attenuation;  
+        r = scattered;    
+    }
     return col;
 }

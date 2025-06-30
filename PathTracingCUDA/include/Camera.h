@@ -45,7 +45,5 @@ private:
 
     
     __device__ glm::dvec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
-
-    //stats
-    mutable int raysCalculated;
+    __device__ glm::dvec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const;
 };

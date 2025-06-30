@@ -14,10 +14,7 @@
 
 #include <chrono>
 
-//todo: implement rand
 //todo: implenent bvh
-//todo: implement printing
-
 
 __global__ void BuildWorldKernel(Hittable** outWorld)
 {
