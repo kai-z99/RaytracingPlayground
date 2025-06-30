@@ -19,7 +19,7 @@ public:
     int maxRayDepth;
 
     __device__ Camera();
-    __device__ void RenderPixel(const Hittable& world, unsigned int i, unsigned int j);
+    __device__ void RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j);
     __device__ void SetPixelBuffer(unsigned char* buffer);
 
 private:
@@ -33,9 +33,9 @@ private:
         
     __device__ void Init();
 
-    __device__ Ray GetRay(int i, int j) const;
+    __device__ Ray GetRay(curandState& randState, int i, int j) const;
 
-    __device__ glm::dvec3 SampleSquare() const;
+    __device__ glm::dvec3 SampleSquare(curandState& randState) const;
 
     //moniter undos this
     __device__ inline double LinearToGamma(double linear);
@@ -44,7 +44,7 @@ private:
     __device__ void WriteColor(unsigned char* pixelBuffer, int i, int j, glm::dvec3 color);
 
     
-    __device__ glm::dvec3 RayColor(const Ray& r, int depth, const Hittable& world) const;
+    __device__ glm::dvec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
 
     //stats
     mutable int raysCalculated;

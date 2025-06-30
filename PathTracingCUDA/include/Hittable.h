@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "Generic.h"
 #include "CudaHelper.h"
 #include "AABB.h"

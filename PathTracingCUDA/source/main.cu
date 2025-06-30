@@ -10,16 +10,23 @@
 
 #include "../include/CudaHelper.h"
 #include "device_launch_parameters.h"
+#include <curand_kernel.h>
+
+#include <chrono>
 
 //todo: implement rand
 //todo: implenent bvh
-
+//todo: implement printing
 
 
 __global__ void BuildWorldKernel(Hittable** outWorld)
 {
     if (threadIdx.x == 0 && threadIdx.y == 0)
     {
+        //make a private rand state
+        curandState randState;
+        curand_init(2025, 0, 0, &randState);
+
         HittableList* world = new HittableList();
 
         Material* mGround = new Lambertian(glm::dvec3(0.5, 0.5, 0.5));
@@ -32,11 +39,11 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
         //
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
-                double chooseMat = 0.5;
+                double chooseMat = RandomDouble(randState);
                 glm::dvec3 center(
-                    a + 0.9 * 0.5,
+                    a + 0.9 * RandomDouble(randState),
                     0.2,
-                    b + 0.9 * 0.5
+                    b + 0.9 * RandomDouble(randState)
                 );
 
                 if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) {
@@ -44,15 +51,15 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
 
                     if (chooseMat < 0.8) {
                         // diffuse
-                        glm::dvec3 albedo = glm::dvec3(0.5, 0.5, 0.5) * glm::dvec3(0.5, 0.5, 0.5);
+                        glm::dvec3 albedo = RandomVec3Positive(randState) * RandomVec3Positive(randState);
                         sphereMat = new Lambertian(albedo);
                     }
                     else if (chooseMat < 0.95) {
                         // metal
                         glm::dvec3 albedo(
-                            0.5,
-                            0.5,
-                            0.5
+                            RandomDouble(randState, 0.5, 1.0),
+                            RandomDouble(randState, 0.5, 1.0),
+                            RandomDouble(randState, 0.5, 1.0)
                         );
                         double fuzz = 0.5;
                         sphereMat = new Metal(albedo, fuzz);
@@ -101,13 +108,20 @@ __global__ void BuildCameraKernel(Camera** outCamera, unsigned char* pixels)
     }
 }
 
-__global__ void RenderKernel(Camera** camera, Hittable** world)
+__global__ void RenderKernel(Camera** camera, Hittable** world, curandState* pixelRandStates)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i >= SCREEN_WIDTH || j >= SCREEN_HEIGHT) return;
-    (*camera)->RenderPixel(**world, i, j);
+
+    int pixelIndex = j * SCREEN_WIDTH + i;
+    curandState randState = pixelRandStates[pixelIndex];
+
+    (*camera)->RenderPixel(randState, **world, i, j);
+
+    //update the state after using it
+    pixelRandStates[pixelIndex] = randState;
 }
 
 __global__ void DestroyKernel(Camera** camera, Hittable** world)
@@ -118,6 +132,16 @@ __global__ void DestroyKernel(Camera** camera, Hittable** world)
     }
 }
 
+__global__ void InitPixelRandStatesKernel(curandState* randStates)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    if (i >= SCREEN_WIDTH || j >= SCREEN_HEIGHT) return;
+
+    int idx = j * SCREEN_WIDTH + i;
+
+    curand_init(2025 + idx, 0, 0, &randStates[idx]);
+}
 
 int main()
 {
@@ -135,10 +159,22 @@ int main()
     //-------------------------------------------------------
     //RAY CASTING STUFF------------------------------------
     //-------------------------------------------------------
+    
+    // grid and block size of screen
+    dim3 block(16, 16);
+    dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
+    
     //create device and host texture
     unsigned char* hPixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
     unsigned char* dPixels;
     checkCudaErrors(cudaMalloc(&dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3));
+
+    //create random states
+    curandState* dPixelRandomStates;
+    cudaMalloc(&dPixelRandomStates, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(curandState)); //one for each pixel
+    InitPixelRandStatesKernel<<<grid, block>>>(dPixelRandomStates); 
+    cudaDeviceSynchronize();
+    checkCudaErrors(cudaGetLastError());
 
     //create world and camera on the device
     Camera** dCamera;
@@ -146,21 +182,27 @@ int main()
     checkCudaErrors(cudaMalloc(&dCamera, sizeof(Camera*)));
     checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
     size_t heap = 64 * 1024 * 1024;   //64mb
-    cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap);
+    cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
+
     BuildWorldKernel<<<1,1>>>(dWorld);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
+
     BuildCameraKernel<<<1,1>>>(dCamera, dPixels);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
-
+    auto t0 = std::chrono::high_resolution_clock::now();
     //launch render kernel
-    dim3 block(16, 16);
-    dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
     cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
-    RenderKernel<<<grid, block>>>(dCamera, dWorld);
+    RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double secs = std::chrono::duration<double>(t1 - t0).count();
+
+    std::cout << "GPU render pass (host-timed): "
+        << secs << " secs\n";
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));

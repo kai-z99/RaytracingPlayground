@@ -8,6 +8,7 @@ public:
 	__device__ virtual ~Material() = default;
 
 	__device__ virtual bool Scatter(
+		curandState& randState,
 		const Ray& rayIn,
 		const HitRecord& rec, 
 		glm::dvec3& attenuation, //attenutation is the resulting rgb AFTER absorption
@@ -22,12 +23,14 @@ class Lambertian : public Material
 public:
 	__device__ Lambertian(const glm::dvec3& albedo) : albedo(albedo) {}
 
-	__device__ bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(
+		curandState& randState,
+		const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
 	{
-		glm::dvec3 scatterDirection = rec.normal + 0.5; //FIX ME SPEHRICAL RAND
+		glm::dvec3 scatterDirection = rec.normal + RandomOnUnitSphere(randState); //FIX ME SPEHRICAL RAND
 
 		if (NearZero(scatterDirection))
 		{
@@ -48,13 +51,15 @@ class Metal : public Material
 public:
 	__device__ Metal(const glm::dvec3& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1? fuzz : 1.0) {}
 
-	__device__ bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(
+		curandState& randState,
+		const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
 	{
 		glm::dvec3 reflectDirection = glm::reflect(rayIn.direction(), rec.normal);
-		reflectDirection += fuzz * 0.5; //FIX ME SPEHRICAL RAND
+		reflectDirection += fuzz * RandomOnUnitSphere(randState); //FIX ME SPEHRICAL RAND
 		reflectDirection = glm::normalize(reflectDirection);
 		scattered = Ray(rec.p, reflectDirection);
 		attenuation = albedo;
@@ -71,7 +76,9 @@ class Dialectric : public Material
 public:
 	__device__ Dialectric(double refractionIndex) : refractionIndex(refractionIndex) {}
 
-	__device__ bool Scatter(const Ray& rayIn,
+	__device__ bool Scatter(
+		curandState& randState,
+		const Ray& rayIn,
 		const HitRecord& rec,
 		glm::dvec3& attenuation,
 		Ray& scattered) const override
@@ -88,7 +95,7 @@ public:
 
 		//must reflect
 		glm::dvec3 direction;
-		if (eta * sinTheta > 1.0 || this->FresnelSchlick(cosTheta, refractionIndex) > 0.5) //FIX ME
+		if (eta * sinTheta > 1.0 || this->FresnelSchlick(cosTheta, refractionIndex) > RandomDouble(randState)) //FIX ME
 		{
 			direction = glm::reflect(rayIn.direction(), N);
 		}

@@ -5,6 +5,7 @@
 #include <limits>
 #include <cstdlib>
 #include "CudaHelper.h"
+#include <curand_kernel.h>
 #define GLM_FORCE_CUDA
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
@@ -28,14 +29,36 @@ inline int RandomInt(int min, int max)
 	return min + std::rand() % (max - min + 1);
 }
 
-inline double RandomDouble()
+__device__ inline double RandomDouble(curandState& randState)
 {
-	return std::rand() / (RAND_MAX + 1.0);
+	return curand_uniform_double(&randState);
 }
 
-inline double RandomDouble(double min, double max)
+__device__ inline double RandomDouble(curandState& randState, double min, double max)
 {
-	return min + (max - min) * RandomDouble();
+	return min + (max - min) * RandomDouble(randState);
+}
+
+__device__ inline glm::dvec3 RandomOnUnitSphere(curandState& randState)
+{
+	double u = RandomDouble(randState);
+	double v = RandomDouble(randState);
+
+	double theta = 2.0 * pi * u;
+
+	double z = 2.0 * v - 1.0;
+
+	double r = sqrt(1.0 - z*z);
+
+	double x = r * cos(theta);
+	double y = r * sin(theta);
+	return glm::dvec3(x,y,z);
+
+}
+
+__device__ inline glm::dvec3 RandomVec3Positive(curandState& randState)
+{
+	return glm::dvec3(RandomDouble(randState), RandomDouble(randState), RandomDouble(randState));
 }
 
 inline glm::dvec3 RandomOnHemisphere(glm::dvec3 normal)

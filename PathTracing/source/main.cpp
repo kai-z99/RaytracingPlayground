@@ -115,7 +115,7 @@ int main()
         mRight));
 
         
-    world = HittableList(new BVHNode(world));
+    //world = HittableList(new BVHNode(world));
 
     Camera cam;
     //1700s

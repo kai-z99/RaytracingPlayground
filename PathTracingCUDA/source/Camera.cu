@@ -15,14 +15,14 @@ __device__ Camera::Camera()
     this->Init();
 }
 
-__device__ void Camera::RenderPixel(const Hittable& world, unsigned int i, unsigned int j)
+__device__ void Camera::RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j)
 {
     glm::dvec3 pixelColor = glm::dvec3(0.0);
 
     for (int sample = 0; sample < this->samplesPerPixel; sample++)
     {
-        Ray ray = this->GetRay(i, j);
-        pixelColor += this->RayColor(ray, this->maxRayDepth, world);
+        Ray ray = this->GetRay(randState, i, j);
+        pixelColor += this->RayColor(randState, ray, this->maxRayDepth, world);
     }
 
     pixelColor /= this->samplesPerPixel;
@@ -50,15 +50,15 @@ __device__ void Camera::Init()
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
     this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
-    this->samplesPerPixel = 1;
-    this->maxRayDepth = 15;
+    this->samplesPerPixel = 8;
+    this->maxRayDepth = 12;
 
     this->raysCalculated = 0;
 }
 
-__device__ Ray Camera::GetRay(int i, int j) const
+__device__ Ray Camera::GetRay(curandState& randState, int i, int j) const
 {
-    glm::dvec3 jitter = this->SampleSquare();
+    glm::dvec3 jitter = this->SampleSquare(randState);
 
     double uS = (i + 0.5 + jitter.x) / SCREEN_WIDTH;
     double vS = (j + 0.5 + jitter.y) / SCREEN_HEIGHT;
@@ -70,10 +70,9 @@ __device__ Ray Camera::GetRay(int i, int j) const
     return Ray(this->center, dir);
 }
 
-__device__ glm::dvec3 Camera::SampleSquare() const
+__device__ glm::dvec3 Camera::SampleSquare(curandState& randState) const
 {
-    //return glm::dvec3(RandomDouble() - 0.5, RandomDouble() - 0.5, 0
-    return glm::dvec3(0,0,0); //temp
+    return glm::dvec3(RandomDouble(randState) - 0.5, RandomDouble(randState) - 0.5, 0);
 }
 
 //moniter undos this
@@ -109,7 +108,7 @@ __device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm
 }
 
 
-__device__ glm::dvec3 Camera::RayColor(const Ray& r, int depth, const Hittable& world) const
+__device__ glm::dvec3 Camera::RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const
 {
     if (depth <= 0) return glm::dvec3(0.0);
 
@@ -122,9 +121,9 @@ __device__ glm::dvec3 Camera::RayColor(const Ray& r, int depth, const Hittable& 
         Ray scattered;
         glm::dvec3 attenuation;
 
-        if (rec.mat->Scatter(r, rec, attenuation, scattered))
+        if (rec.mat->Scatter(randState, r, rec, attenuation, scattered))
         {
-            return attenuation * RayColor(scattered, depth - 1, world);
+            return attenuation * RayColor(randState, scattered, depth - 1, world);
         }
         else //absorbed, etc
         {
