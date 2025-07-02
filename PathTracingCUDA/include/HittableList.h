@@ -8,10 +8,12 @@
 #define MAX_OBJECTS 4096
 #endif
 
-
+//eventually replace with flat array/bvh
 class HittableList : public Hittable
 {
 public:
+	Hittable** objects;
+	int count;
 
 	__device__ HittableList() : count(0)
 	{
@@ -52,7 +54,7 @@ public:
 	{
 		HitRecord tempRec;
 		bool hitAnything = false;
-		double closestSoFar = ray_t.max;
+		float closestSoFar = ray_t.max;
 
 		for (int i = 0; i < this->count; i++)
 		{
@@ -73,7 +75,6 @@ public:
 	}
 
 private:
-	Hittable** objects;
 	AABB bbox;
-	int count;
+	
 };

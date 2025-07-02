@@ -4,32 +4,27 @@
 #include "Hittable.h"
 #include "HittableList.h"
 
-#include <algorithm>
-
 //Naive: ~1700 seconds
 //Random: 137.1 seconds
 //Longest Axis: 62.3 seconds
 
-/*
+
 class BVHNode : public Hittable
 {
 public:
-	__device__ BVHNode(HittableList& list) : BVHNode(list.objects, 0, list.objects.size()) {}
+	__device__ BVHNode(HittableList& list) : BVHNode(list.objects, 0, list.count) {}
 
-	__device__ BVHNode(std::vector<Hittable*>& objects, size_t start, size_t end)
+	__device__ BVHNode(Hittable** objects, int start, int end)
 	{
-		this->bbox = AABB::empty;
-		for (size_t idx = start; idx < end; idx++)
+		//empty
+		this->bbox = AABB(Interval(+infinity,-infinity), Interval(+infinity, -infinity), Interval(+infinity, -infinity));
+		for (int idx = start; idx < end; idx++)
 		{
-			this->bbox = AABB(this->bbox, objects[idx]->BoundingBox());
+			this->bbox = AABB(this->bbox, objects[idx]->BoundingBox()); //expand
 		}
 
 		int axis = this->bbox.LongestAxis();
-
-		auto comparator = (axis == 0) ? boxCompareX
-			: (axis == 1) ? boxCompareY : boxCompareZ;
-
-		size_t objectSpan = end - start;
+		int objectSpan = end - start;
 
 		if (objectSpan == 1)
 		{
@@ -43,8 +38,8 @@ public:
 		}
 		else
 		{
-			std::sort(std::begin(objects) + start, std::begin(objects) + end, comparator);
-			size_t mid = start + (objectSpan / 2);
+			SortRange(objects, start, end, axis);
+			int mid = start + (objectSpan / 2);
 			left = new BVHNode(objects, start, mid);
 			right = new BVHNode(objects, mid, end);
 		}
@@ -74,30 +69,26 @@ private:
 	Hittable* right;
 	AABB bbox;
 
-	__device__ static bool boxCompare(const Hittable* a, const Hittable* b, int axisIndex)
+	__device__ static void SortRange(Hittable** objects, int start, int end, int axis)
 	{
-		Interval aAxisInterval = a->BoundingBox().AxisInterval(axisIndex);
-		Interval bAxisInterval = b->BoundingBox().AxisInterval(axisIndex);
-		return aAxisInterval.min < bAxisInterval.min;
+		for (int i = start; i < end - 1; ++i)
+		{
+			int    minIdx = i;
+			double minVal = objects[i]->BoundingBox().AxisInterval(axis).min;
 
+			for (int j = i + 1; j < end; ++j)
+			{
+				double val = objects[j]->BoundingBox().AxisInterval(axis).min;
+				if (val < minVal) { minVal = val; minIdx = j; }
+			}
+			if (minIdx != i)
+			{
+				Hittable* tmp = objects[i];
+				objects[i] = objects[minIdx];
+				objects[minIdx] = tmp;
+			}
+		}
 	}
-
-	__device__ static bool boxCompareX(const Hittable* a, const Hittable* b)
-	{
-		return boxCompare(a, b, 0);
-	}
-
-	__device__ static bool boxCompareY(const Hittable* a, const Hittable* b)
-	{
-		return boxCompare(a, b, 1);
-	}
-
-	__device__ static bool boxCompareZ(const Hittable* a, const Hittable* b)
-	{
-		return boxCompare(a, b, 2);
-	}
-
 
 };
 
-*/

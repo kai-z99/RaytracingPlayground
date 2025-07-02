@@ -28,52 +28,52 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
 
         HittableList* world = new HittableList();
 
-        Material* mGround = new Lambertian(glm::dvec3(0.5, 0.5, 0.5));
-        world->Add(new Sphere(glm::dvec3(0, -1000, 0),
-            1000.0,
+        Material* mGround = new Lambertian(glm::vec3(0.5f, 0.5f, 0.5f));
+        world->Add(new Sphere(glm::vec3(0.0f, -1000.0f, 0.0f),
+            1000.0f,
             mGround));
 
         for (int a = -11; a < 11; a++) 
         {
             for (int b = -11; b < 11; b++) 
             {
-                double chooseMat = RandomDouble(randState);
-                glm::dvec3 center
+                float chooseMat = RandomFloat(randState);
+                glm::vec3 center
                 (
-                    a + 0.9 * RandomDouble(randState),
-                    0.2,
-                    b + 0.9 * RandomDouble(randState)
+                    a + 0.9f * RandomFloat(randState),
+                    0.2f,
+                    b + 0.9f * RandomFloat(randState)
                 );
 
-                if (glm::length(center - glm::dvec3(4, 0.2, 0)) > 0.9) 
+                if (glm::length(center - glm::vec3(4.0f, 0.2f, 0.0f)) > 0.9f) 
                 {
                     Material* sphereMat;
 
-                    if (chooseMat < 0.8) 
+                    if (chooseMat < 0.8f) 
                     {
                         // diffuse
-                        glm::dvec3 albedo = RandomVec3Positive(randState) * RandomVec3Positive(randState);
+                        glm::vec3 albedo = RandomVec3Positive(randState) * RandomVec3Positive(randState);
                         sphereMat = new Lambertian(albedo);
                     }
-                    else if (chooseMat < 0.95) 
+                    else if (chooseMat < 0.95f) 
                     {
                         // metal
-                        glm::dvec3 albedo
+                        glm::vec3 albedo
                         (
-                            RandomDouble(randState, 0.5, 1.0),
-                            RandomDouble(randState, 0.5, 1.0),
-                            RandomDouble(randState, 0.5, 1.0)
+                            RandomFloat(randState, 0.5f, 1.0f),
+                            RandomFloat(randState, 0.5f, 1.0f),
+                            RandomFloat(randState, 0.5f, 1.0f)
                         );
-                        double fuzz = 0.5;
+                        float fuzz = 0.5f;
                         sphereMat = new Metal(albedo, fuzz);
                     }
                     else 
                     {
                         // glass
-                        sphereMat = new Dialectric(1.5);
+                        sphereMat = new Dialectric(1.5f);
                     }
 
-                    world->Add(new Sphere(center, 0.2, sphereMat));
+                    world->Add(new Sphere(center, 0.2f, sphereMat));
                 }
             }
         }
@@ -82,20 +82,22 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
         // 3) Add the three large spheres
         //
         Material* mCenter = new Dialectric(1.5);
-        world->Add(new Sphere(glm::dvec3(0, 1, 0),
+        world->Add(new Sphere(glm::vec3(0, 1, 0),
             1.0,
             mCenter));
 
-        Material* mLeft = new Lambertian(glm::dvec3(0.4, 0.2, 0.1));
-        world->Add(new Sphere(glm::dvec3(-4, 1, 0),
+        Material* mLeft = new Lambertian(glm::vec3(0.4, 0.2, 0.1));
+        world->Add(new Sphere(glm::vec3(-4, 1, 0),
             1.0,
             mLeft));
 
-        Material* mRight = new Metal(glm::dvec3(0.7, 0.6, 0.5),
+        Material* mRight = new Metal(glm::vec3(0.7, 0.6, 0.5),
             0.0);
-        world->Add(new Sphere(glm::dvec3(4, 1, 0),
+        world->Add(new Sphere(glm::vec3(4, 1, 0),
             1.0,
             mRight));
+
+        world = new HittableList(new BVHNode(*world));
 
         *outWorld = world;
     }
@@ -167,7 +169,7 @@ int main()
     //-------------------------------------------------------
     //RAY CASTING STUFF------------------------------------
     //-------------------------------------------------------
-    
+    cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
     // grid and block size of screen
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
@@ -201,13 +203,12 @@ int main()
     checkCudaErrors(cudaGetLastError());
     auto t0 = std::chrono::high_resolution_clock::now();
     //launch render kernel
-    cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
     RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    double secs = std::chrono::duration<double>(t1 - t0).count();
+    float secs = std::chrono::duration<float>(t1 - t0).count();
     std::cout << "GPU render pass (host-timed): "
         << secs << " secs\n";
 

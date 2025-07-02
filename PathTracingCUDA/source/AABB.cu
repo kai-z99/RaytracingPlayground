@@ -8,7 +8,7 @@ __device__ AABB::AABB() {}
 __device__ AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
 		: x(x), y(y), z(z) {}
 
-__device__ AABB::AABB(const glm::dvec3& a, const glm::dvec3& b)
+__device__ AABB::AABB(const glm::vec3& a, const glm::vec3& b)
 {
 	this->x = (a[0] <= b[0]) ? Interval(a[0], b[0]) : Interval(b[0], a[0]);
 	this->y = (a[1] <= b[1]) ? Interval(a[1], b[1]) : Interval(b[1], a[1]);
@@ -31,17 +31,17 @@ __device__ const Interval& AABB::AxisInterval(int n) const
 
 __device__ bool AABB::Hit(const Ray& r, Interval ray_t) const
 {
-	const glm::dvec3& rayOrigin = r.origin();
-	const glm::dvec3& rayDirection = r.direction();
+	const glm::vec3& rayOrigin = r.origin();
+	const glm::vec3& rayDirection = r.direction();
 
 	for (int axis = 0; axis < 3; axis++)
 	{
 		const Interval& ax = AxisInterval(axis); //x,y,z
 
 		//solve t0 = (x_0 - Q_x) / d_x (for x,y,z)
-		const double adInverse = 1.0 / rayDirection[axis];
-		double t0 = (ax.min - rayOrigin[axis]) * adInverse;
-		double t1 = (ax.max - rayOrigin[axis]) * adInverse;
+		const float adInverse = 1.0 / rayDirection[axis];
+		float t0 = (ax.min - rayOrigin[axis]) * adInverse;
+		float t1 = (ax.max - rayOrigin[axis]) * adInverse;
 
 		//shrink ray interval to just the box axis
 		if (t0 < t1)
@@ -75,8 +75,6 @@ __device__ int AABB::LongestAxis() const
 		return y.Size() > z.Size() ? 1 : 2;
 	}
 }
-
-static const AABB empty, universe;
 
 const AABB AABB::empty = AABB(Interval::Empty, Interval::Empty, Interval::Empty);
 const AABB AABB::universe = AABB(Interval::Universe, Interval::Universe, Interval::Universe);

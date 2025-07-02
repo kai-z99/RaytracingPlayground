@@ -12,9 +12,9 @@
 class Camera
 {
 public:
-    glm::dvec3 center;
-    glm::dvec3 lookAt;
-    double vfov;
+    glm::vec3 center;
+    glm::vec3 lookAt;
+    float vfov;
     int samplesPerPixel;
     int maxRayDepth;
 
@@ -24,26 +24,26 @@ public:
 
 private:
     unsigned char* pixelBuffer;
-    double halfWidth, halfHeight;
-    glm::dvec3 up;
+    float halfWidth, halfHeight;
+    glm::vec3 up;
                     
     float aspect;
-    glm::dvec3 u, v, w;
-    double focalLength;
+    glm::vec3 u, v, w;
+    float focalLength;
         
     __device__ void Init();
 
     __device__ Ray GetRay(curandState& randState, int i, int j) const;
 
-    __device__ glm::dvec3 SampleSquare(curandState& randState) const;
+    __device__ glm::vec3 SampleSquare(curandState& randState) const;
 
     //moniter undos this
-    __device__ inline double LinearToGamma(double linear);
+    __device__ inline float LinearToGamma(float linear);
     
 
-    __device__ void WriteColor(unsigned char* pixelBuffer, int i, int j, glm::dvec3 color);
+    __device__ void WriteColor(unsigned char* pixelBuffer, int i, int j, glm::vec3 color);
 
     
-    __device__ glm::dvec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
-    __device__ glm::dvec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const;
+    __device__ glm::vec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
+    __device__ glm::vec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const;
 };

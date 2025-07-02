@@ -3,26 +3,26 @@
 class Sphere : public Hittable
 {
 public:
-    __device__ Sphere(const glm::dvec3& center, double radius, Material* mat) : center(center), radius(radius < 0.0 ? 0.0 : radius), mat(mat)
+    __device__ Sphere(const glm::vec3& center, float radius, Material* mat) : center(center), radius(radius < 0.0f ? 0.0f : radius), mat(mat)
     {
-        glm::dvec3 radiusVec = glm::dvec3(radius);
+        glm::vec3 radiusVec = glm::vec3(radius);
         this->bbox = AABB(center - radiusVec, center + radiusVec);
     }
 
     __device__ bool Hit(const Ray& r, Interval ray_t, HitRecord& rec) const override
 	{
-        glm::dvec3 oc = center - r.origin();
-        double a = glm::dot(r.direction(), r.direction());
-        double b = -2.0 * glm::dot(r.direction(), oc);
-        double c = glm::dot(oc, oc) - radius * radius;
-        double discriminant = (b * b) - (4 * a * c);
+        glm::vec3 oc = center - r.origin();
+        float a = glm::dot(r.direction(), r.direction());
+        float b = -2.0 * glm::dot(r.direction(), oc);
+        float c = glm::dot(oc, oc) - radius * radius;
+        float discriminant = (b * b) - (4 * a * c);
         if (discriminant < 0) //no solution
         {
             return false;
         }
 
-        double sqrt = std::sqrt(discriminant);
-        double root = (-b - sqrt) / (2.0 * a);
+        float sqrt = std::sqrt(discriminant);
+        float root = (-b - sqrt) / (2.0 * a);
         
         if (!ray_t.Surrounds(root))
         {
@@ -49,8 +49,8 @@ public:
     }
 
 private:
-	glm::dvec3 center;
-	double radius;
+	glm::vec3 center;
+	float radius;
     Material* mat;
     AABB bbox;
 };

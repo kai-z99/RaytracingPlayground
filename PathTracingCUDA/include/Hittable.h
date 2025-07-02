@@ -9,9 +9,9 @@ class Material;
 class HitRecord
 {
 public:
-	glm::dvec3 p;
-	glm::dvec3 normal;
-	double t;
+	glm::vec3 p;
+	glm::vec3 normal;
+	float t;
 	Material* mat;
 };
 

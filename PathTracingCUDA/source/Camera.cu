@@ -9,6 +9,9 @@
 #include <iomanip>
 #include <chrono>
 
+//10:12 TESTING
+//NAIVE: ~12.74
+//BVH: ~3.45s
 
 __device__ Camera::Camera()
 {
@@ -17,7 +20,7 @@ __device__ Camera::Camera()
 
 __device__ void Camera::RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j)
 {
-    glm::dvec3 pixelColor = glm::dvec3(0.0);
+    glm::vec3 pixelColor = glm::vec3(0.0f);
 
     for (int sample = 0; sample < this->samplesPerPixel; sample++)
     {
@@ -37,10 +40,11 @@ __device__ void Camera::SetPixelBuffer(unsigned char* buffer)
 
 __device__ void Camera::Init()
 {
-    this->up = glm::dvec3(0, 1, 0);
-    this->center = glm::dvec3(13, 2, 3);
-    this->lookAt = glm::dvec3(0, 0, 0);
+    this->up = glm::vec3(0, 1, 0);
+    this->center = glm::vec3(13, 2, 3);
+    this->lookAt = glm::vec3(0, 0, 0);
     this->vfov = 20;
+
     this->focalLength = glm::length(center - lookAt);
 
     this->w = glm::normalize(center - lookAt);
@@ -48,35 +52,36 @@ __device__ void Camera::Init()
     this->v = glm::cross(w, u);
 
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
-    this->halfHeight = std::tan(glm::radians(this->vfov) * 0.5);
+    this->halfHeight = tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
     this->samplesPerPixel = 10;
-    this->maxRayDepth = 20;
+    this->maxRayDepth = 12;
 }
 
 __device__ Ray Camera::GetRay(curandState& randState, int i, int j) const
 {
-    glm::dvec3 jitter = this->SampleSquare(randState);
+    glm::vec3 jitter = this->SampleSquare(randState);
 
-    double uS = (i + 0.5 + jitter.x) / SCREEN_WIDTH;
-    double vS = (j + 0.5 + jitter.y) / SCREEN_HEIGHT;
-    double ndcX = (2.0 * uS - 1.0) * this->halfWidth * this->focalLength;
-    double ndcY = (1.0 - 2.0 * vS) * this->halfHeight * this->focalLength;
+    float uS = (i + 0.5 + jitter.x) / SCREEN_WIDTH;
+    float vS = (j + 0.5 + jitter.y) / SCREEN_HEIGHT;
+    float ndcX = (2.0 * uS - 1.0) * this->halfWidth * this->focalLength;
+    float ndcY = (1.0 - 2.0 * vS) * this->halfHeight * this->focalLength;
 
-    glm::dvec3 dir = glm::normalize(glm::dvec3(this->u * ndcX + this->v * ndcY - this->w * focalLength));
+    glm::vec3 dir = glm::normalize(glm::vec3(this->u * ndcX + this->v * ndcY - this->w * focalLength));
 
     return Ray(this->center, dir);
 }
 
-__device__ glm::dvec3 Camera::SampleSquare(curandState& randState) const
+__device__ glm::vec3 Camera::SampleSquare(curandState& randState) const
 {
-    return glm::dvec3(RandomDouble(randState) - 0.5, RandomDouble(randState) - 0.5, 0);
+
+    return glm::vec3(RandomFloat(randState) - 0.5, RandomFloat(randState) - 0.5, 0);
 }
 
 //moniter undos this
-__device__ inline double Camera::LinearToGamma(double linear)
+__device__ inline float Camera::LinearToGamma(float linear)
 {
-    const double gamma = 2.2;
+    const float gamma = 2.2;
 
     if (linear > 0)
     {
@@ -86,11 +91,11 @@ __device__ inline double Camera::LinearToGamma(double linear)
     return 0;
 }
 
-__device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm::dvec3 color)
+__device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm::vec3 color)
 {
-    double r = LinearToGamma(color.r);
-    double g = LinearToGamma(color.g);
-    double b = LinearToGamma(color.b);
+    float r = LinearToGamma(color.r);
+    float g = LinearToGamma(color.g);
+    float b = LinearToGamma(color.b);
 
     //write color
     Interval intensity(0.000, 0.999);
@@ -105,16 +110,16 @@ __device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm
     pixelBuffer[dst + 2] = bOut;
 }
 
-__device__ glm::dvec3 Camera::RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const
+__device__ glm::vec3 Camera::RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const
 {
-    if (depth <= 0) return glm::dvec3(0.0);
+    if (depth <= 0) return glm::vec3(0.0);
 
     HitRecord rec;
 
     if (world.Hit(r, Interval(0.001, infinity), rec))
     {
         Ray scattered;
-        glm::dvec3 attenuation;
+        glm::vec3 attenuation;
 
         if (rec.mat->Scatter(randState, r, rec, attenuation, scattered))
         {
@@ -122,39 +127,39 @@ __device__ glm::dvec3 Camera::RayColor(curandState& randState, const Ray& r, int
         }
         else //absorbed, etc
         {
-            return glm::dvec3(0.0);
+            return glm::vec3(0.0f);
         }
 
     }
 
-    double a = 0.5 * (r.direction().y + 1.0);
+    float a = 0.5f * (r.direction().y + 1.0f);
 
-    glm::dvec3 white = glm::vec3(1.0, 1.0, 1.0);
-    glm::dvec3 sky = glm::vec3(0.5, 0.7, 1.0);
-    glm::dvec3 col = (1.0 - a) * white + a * sky;
+    glm::vec3 white = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 sky = glm::vec3(0.5f, 0.7f, 1.0f);
+    glm::vec3 col = (1.0f - a) * white + a * sky;
 
     return col;
 }
 
-__device__ glm::dvec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
+__device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
 {
-    glm::dvec3 col(0.0);      
-    glm::dvec3 totalAttenuation(1.0);          
+    glm::vec3 col(0.0f);      
+    glm::vec3 totalAttenuation(1.0f);          
 
     for (int depth = 0; depth < maxDepth; ++depth)
     {
         HitRecord rec;
-        if (!world.Hit(r, Interval(0.001, infinity), rec)) //hit sky
+        if (!world.Hit(r, Interval(0.001f, infinity), rec)) //hit sky
         {   
-            double a = 0.5 * (r.direction().y + 1.0);
-            glm::dvec3 sky = (1.0 - a) * glm::dvec3(1.0)
-                + a * glm::dvec3(0.5, 0.7, 1.0);
+            float a = 0.5f * (r.direction().y + 1.0f);
+            glm::vec3 sky = (1.0f - a) * glm::vec3(1.0f)
+                + a * glm::vec3(0.5f, 0.7f, 1.0f);
             col += totalAttenuation * sky;
             break;
         }
 
         Ray scattered;
-        glm::dvec3 attenuation;
+        glm::vec3 attenuation;
 
         if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
         {  

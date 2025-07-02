@@ -11,7 +11,7 @@ public:
 
 	__device__ AABB(const Interval& x, const Interval& y, const Interval& z);
 
-	__device__ AABB(const glm::dvec3& a, const glm::dvec3& b);
+	__device__ AABB(const glm::vec3& a, const glm::vec3& b);
 
 	__device__ AABB(const AABB& box0, const AABB& box1);
 
