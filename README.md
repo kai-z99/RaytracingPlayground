@@ -17,4 +17,6 @@
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
 - GPU implementation leverages CUDA for parallelism
-- Scene only uses spheres with wither diffuse, metallic, or dialectric material.
+- Scene is same from final output of "Ray Tracing in One Weekend" by Peter Shirley and more. https://raytracing.github.io/books/RayTracingInOneWeekend.html
+
+![Render Output](Images/rayShowCUDA1.png)
