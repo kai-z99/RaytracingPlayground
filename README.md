@@ -17,4 +17,4 @@
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
 - GPU implementation leverages CUDA for parallelism
-- Scene only uses spheres with wither diffuse, metallic, or dialectric material.
+- Scene only uses spheres with either diffuse, metallic, or dialectric material.
