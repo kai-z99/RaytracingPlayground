@@ -9,9 +9,9 @@
 
 | Platform     | Acceleration | Time         |
 |--------------|--------------|--------------|
-| CPU          | No BVH       | ~30 minutes  |
+| CPU          | N/A          | ~1800 seconds|
 | CPU          | BVH          | ~142 seconds |
-| GPU (CUDA)   | No BVH       | ~12.4 seconds|
+| GPU (CUDA)   | N/A          | ~12.4 seconds|
 | GPU (CUDA)   | BVH          | ~3.45 seconds|
 
 ## Notes
