@@ -103,11 +103,13 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
     }
 }
 
-__global__ void BuildCameraKernel(Camera** outCamera, unsigned char* pixels)
+__global__ void BuildCameraKernel(Camera** outCamera, unsigned char* pixels, int samplesPerPixel, int maxDepth)
 {
     if (threadIdx.x == 0 && threadIdx.y == 0)
     {
         *outCamera = new Camera();
+        (*outCamera)->samplesPerPixel = samplesPerPixel;
+        (*outCamera)->maxRayDepth = maxDepth;
         (*outCamera)->SetPixelBuffer(pixels);
     }
 }
@@ -155,7 +157,14 @@ __global__ void InitPixelRandStatesKernel(curandState* randStates)
 
 int main()
 {
+    //CONFIG (TEMP)
+    int samplesPerPixel = 100;
+    int maxBounceDepth = 30;
+
     std::cout << "CUDA VERSION" << '\n';
+    std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << " px\n";
+    std::cout << "SAMPLES PER PIXEL: " << samplesPerPixel << '\n';
+    std::cout << "MAX BOUNCE DEPTH: " << maxBounceDepth << '\n';
     //-------------------------------------------------------
     //OPENGL STUFF------------------------------------
     //-------------------------------------------------------
@@ -170,6 +179,8 @@ int main()
     //RAY CASTING STUFF------------------------------------
     //-------------------------------------------------------
     cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
+    size_t heap = 64 * 1024 * 1024;   //64mb fir device news
+    cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
     // grid and block size of screen
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
@@ -191,17 +202,18 @@ int main()
     Hittable** dWorld;
     checkCudaErrors(cudaMalloc(&dCamera, sizeof(Camera*)));
     checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
-    size_t heap = 64 * 1024 * 1024;   //64mb
-    cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
-
+    
+    //build world
     BuildWorldKernel<<<1,1>>>(dWorld);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
-    BuildCameraKernel<<<1,1>>>(dCamera, dPixels);
+    //build camera
+    BuildCameraKernel<<<1,1>>>(dCamera, dPixels, samplesPerPixel, maxBounceDepth);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
     auto t0 = std::chrono::high_resolution_clock::now();
+    
     //launch render kernel
     RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
     cudaDeviceSynchronize();

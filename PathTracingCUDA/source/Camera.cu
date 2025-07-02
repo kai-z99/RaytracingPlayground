@@ -54,7 +54,7 @@ __device__ void Camera::Init()
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
     this->halfHeight = tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
-    this->samplesPerPixel = 10;
+    this->samplesPerPixel = 100;
     this->maxRayDepth = 12;
 }
 
