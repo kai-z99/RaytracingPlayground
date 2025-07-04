@@ -4,7 +4,7 @@
 #include "CudaHelper.h"
 #include "AABB.h"
 
-class Material;
+class MaterialData;
 
 class HitRecord
 {
@@ -12,7 +12,7 @@ public:
 	glm::vec3 p;
 	glm::vec3 normal;
 	float t;
-	Material* mat;
+	MaterialData* matData;
 };
 
 class Hittable

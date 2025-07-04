@@ -16,7 +16,7 @@
 
 //todo: implenent bvh
 
-__global__ void BuildWorldKernel(Hittable** outWorld)
+__global__ void BuildWorldKernel(Hittable** outWorld, int seed)
 {
     if (*outWorld) return;
 
@@ -24,11 +24,12 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
     {
         //make a private rand state
         curandState randState;
-        curand_init(2025, 0, 0, &randState);
+       
+        curand_init(seed, 0, 0, &randState);
 
         HittableList* world = new HittableList();
+        MaterialData* mGround = MakeLambertian(glm::vec3(0.5f, 0.5f, 0.5f));
 
-        Material* mGround = new Lambertian(glm::vec3(0.5f, 0.5f, 0.5f));
         world->Add(new Sphere(glm::vec3(0.0f, -1000.0f, 0.0f),
             1000.0f,
             mGround));
@@ -38,6 +39,7 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
             for (int b = -11; b < 11; b++) 
             {
                 float chooseMat = RandomFloat(randState);
+
                 glm::vec3 center
                 (
                     a + 0.9f * RandomFloat(randState),
@@ -47,13 +49,13 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
 
                 if (glm::length(center - glm::vec3(4.0f, 0.2f, 0.0f)) > 0.9f) 
                 {
-                    Material* sphereMat;
+                    MaterialData* sphereMat;
 
                     if (chooseMat < 0.8f) 
                     {
                         // diffuse
                         glm::vec3 albedo = RandomVec3Positive(randState) * RandomVec3Positive(randState);
-                        sphereMat = new Lambertian(albedo);
+                        sphereMat = MakeLambertian(albedo);
                     }
                     else if (chooseMat < 0.95f) 
                     {
@@ -64,13 +66,13 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
                             RandomFloat(randState, 0.5f, 1.0f),
                             RandomFloat(randState, 0.5f, 1.0f)
                         );
-                        float fuzz = 0.5f;
-                        sphereMat = new Metal(albedo, fuzz);
+                        float fuzz = RandomFloat(randState);
+                        sphereMat = MakeMetal(albedo, fuzz);
                     }
                     else 
                     {
                         // glass
-                        sphereMat = new Dialectric(1.5f);
+                        sphereMat = MakeDialectric(1.5f);
                     }
 
                     world->Add(new Sphere(center, 0.2f, sphereMat));
@@ -81,17 +83,17 @@ __global__ void BuildWorldKernel(Hittable** outWorld)
         //
         // 3) Add the three large spheres
         //
-        Material* mCenter = new Dialectric(1.5);
+        MaterialData* mCenter = MakeDialectric(1.5f);
         world->Add(new Sphere(glm::vec3(0, 1, 0),
             1.0,
             mCenter));
 
-        Material* mLeft = new Lambertian(glm::vec3(0.4, 0.2, 0.1));
+        MaterialData* mLeft = MakeLambertian(glm::vec3(0.4, 0.2, 0.1));
         world->Add(new Sphere(glm::vec3(-4, 1, 0),
             1.0,
             mLeft));
 
-        Material* mRight = new Metal(glm::vec3(0.7, 0.6, 0.5),
+        MaterialData* mRight = MakeMetal(glm::vec3(0.7, 0.6, 0.5),
             0.0);
         world->Add(new Sphere(glm::vec3(4, 1, 0),
             1.0,
@@ -144,7 +146,7 @@ __global__ void DestroyKernel(Camera** camera, Hittable** world)
     }
 }
 
-__global__ void InitPixelRandStatesKernel(curandState* randStates)
+__global__ void InitPixelRandStatesKernel(curandState* randStates, int seed)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -152,39 +154,47 @@ __global__ void InitPixelRandStatesKernel(curandState* randStates)
 
     int idx = j * SCREEN_WIDTH + i;
 
-    curand_init(2025 + idx, 0, 0, &randStates[idx]);
+    curand_init(seed + idx, 0, 0, &randStates[idx]);
 }
 
 int main()
 {
     //CONFIG (TEMP)
-    int samplesPerPixel = 100;
-    int maxBounceDepth = 30;
+    int samplesPerPixel = 1;
+    int maxBounceDepth = 6;
 
     std::cout << "CUDA VERSION" << '\n';
-    std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << " px\n";
+    std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
     std::cout << "SAMPLES PER PIXEL: " << samplesPerPixel << '\n';
     std::cout << "MAX BOUNCE DEPTH: " << maxBounceDepth << '\n';
+
     //-------------------------------------------------------
     //OPENGL STUFF------------------------------------
     //-------------------------------------------------------
+
     GLFWwindow* window = setupWindow();
     unsigned int quadVAO = setupBuffer();
     setupState();
     Shader screenShader = Shader("shaders/screen.vert","shaders/screen.frag");
     screenShader.use();
     screenShader.setInt("sceneTexture", 0);
-    
+
     //-------------------------------------------------------
     //RAY CASTING STUFF------------------------------------
     //-------------------------------------------------------
+
+    //device setup
     cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
     size_t heap = 64 * 1024 * 1024;   //64mb fir device news
     cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
+
     // grid and block size of screen
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
-    
+
+    //random seed
+    int seed = (int)std::chrono::high_resolution_clock::now().time_since_epoch().count();
+
     //create device and host texture
     unsigned char* hPixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
     unsigned char* dPixels;
@@ -193,7 +203,7 @@ int main()
     //create random states
     curandState* dPixelRandomStates;
     cudaMalloc(&dPixelRandomStates, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(curandState)); //one for each pixel
-    InitPixelRandStatesKernel<<<grid, block>>>(dPixelRandomStates); 
+    InitPixelRandStatesKernel<<<grid, block>>>(dPixelRandomStates, seed); 
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
@@ -203,22 +213,28 @@ int main()
     checkCudaErrors(cudaMalloc(&dCamera, sizeof(Camera*)));
     checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
     
-    //build world
-    BuildWorldKernel<<<1,1>>>(dWorld);
+    //build camera
+    BuildCameraKernel << <1, 1 >> > (dCamera, dPixels, samplesPerPixel, maxBounceDepth);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
-    //build camera
-    BuildCameraKernel<<<1,1>>>(dCamera, dPixels, samplesPerPixel, maxBounceDepth);
+    //build world
+    std::cout << "BUILDING WORLD...\n";
+    BuildWorldKernel<<<1,1>>>(dWorld, seed);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
+    std::cout << "WORLD BUILT\n";
+
+    //start timer
     auto t0 = std::chrono::high_resolution_clock::now();
     
     //launch render kernel
+    std::cout << "STARTING RENDERING...\n";
     RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
+    //end timer
     auto t1 = std::chrono::high_resolution_clock::now();
     float secs = std::chrono::duration<float>(t1 - t0).count();
     std::cout << "GPU render pass (host-timed): "

@@ -3,7 +3,7 @@
 class Sphere : public Hittable
 {
 public:
-    __device__ Sphere(const glm::vec3& center, float radius, Material* mat) : center(center), radius(radius < 0.0f ? 0.0f : radius), mat(mat)
+    __device__ Sphere(const glm::vec3& center, float radius, MaterialData* mat) : center(center), radius(radius < 0.0f ? 0.0f : radius), matData(mat)
     {
         glm::vec3 radiusVec = glm::vec3(radius);
         this->bbox = AABB(center - radiusVec, center + radiusVec);
@@ -38,7 +38,7 @@ public:
         rec.t = root;
         rec.p = r.at(rec.t);
         rec.normal = (rec.p - center) / radius; //normalized
-        rec.mat = mat;
+        rec.matData = matData;
 
         return true;
 	}
@@ -51,6 +51,19 @@ public:
 private:
 	glm::vec3 center;
 	float radius;
-    Material* mat;
+    MaterialData* matData;
     AABB bbox;
+};
+
+struct SpheresPacked
+{
+    glm::vec4* centerRadius;
+    int* materialID;
+    uint32_t n;
+};
+
+struct Scene
+{
+    SpheresPacked* spheres;
+    //other packed
 };

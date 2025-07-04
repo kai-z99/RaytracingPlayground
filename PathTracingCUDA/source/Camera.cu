@@ -110,6 +110,7 @@ __device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm
     pixelBuffer[dst + 2] = bOut;
 }
 
+/*
 __device__ glm::vec3 Camera::RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const
 {
     if (depth <= 0) return glm::vec3(0.0);
@@ -140,6 +141,7 @@ __device__ glm::vec3 Camera::RayColor(curandState& randState, const Ray& r, int 
 
     return col;
 }
+*/
 
 __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
 {
@@ -161,8 +163,15 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         Ray scattered;
         glm::vec3 attenuation;
 
+        /*
         if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
         {  
+            break;
+        }
+        */
+
+        if (!Scatter(*rec.matData, randState, r, rec, attenuation, scattered))
+        {
             break;
         }
 
