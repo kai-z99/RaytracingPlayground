@@ -16,7 +16,7 @@ int main()
     //-------------------------------------------------------
     GLFWwindow* window = setupWindow();
     unsigned int quadVAO = setupBuffer();
-    setupState();
+    SetUpOpenGLState();
     Shader screenShader = Shader("shaders/screen.vert","shaders/screen.frag");
     screenShader.use();
     screenShader.setInt("sceneTexture", 0);
@@ -127,6 +127,8 @@ int main()
     Camera cam;
     //1700s
     unsigned int resultTextureRGB = cam.Render(world);
+
+
 
 
     //-------------------------------------------------------

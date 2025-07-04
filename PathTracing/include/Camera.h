@@ -55,7 +55,7 @@ public:
         std::cout << "Total rays calculated: " << this->raysCalculated << '\n';
 
 
-        unsigned int resultTextureRGB = setupTexture(pixelBuffer);
+        unsigned int resultTextureRGB = GetOGLTextureFromPixelBuffer(pixelBuffer);
         return resultTextureRGB;
     }
 

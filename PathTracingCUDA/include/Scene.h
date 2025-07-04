@@ -13,13 +13,20 @@ struct Scene
 
  __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
 {
-     bool hit = false;
+     bool hitAny = false;
+     float closestSoFar = ray_t.max;
+     HitRecord tempRec;
 
      for (int i = 0; i < scene.spheres->n; i++)
      {
-         hit |= HitSphere(*scene.spheres, i, r, ray_t, rec);
+         if (HitSphere(*scene.spheres, i, r, Interval(ray_t.min, closestSoFar), tempRec))
+         {
+             hitAny = true;
+             closestSoFar = tempRec.t;
+             rec = tempRec;
+         }
      }
 
-     return hit;
+     return hitAny;
 
 }

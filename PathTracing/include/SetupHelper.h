@@ -75,7 +75,7 @@ unsigned int setupBuffer()
     return quadVAO;
 }
 
-unsigned int setupTexture(unsigned char* pixelBuffer)
+unsigned int GetOGLTextureFromPixelBuffer(unsigned char* pixelBuffer)
 {
     unsigned int resultTextureRGB;
     glActiveTexture(GL_TEXTURE0);
@@ -88,7 +88,7 @@ unsigned int setupTexture(unsigned char* pixelBuffer)
     return resultTextureRGB;
 }
 
-void setupState()
+void SetUpOpenGLState()
 {
     glDisable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
