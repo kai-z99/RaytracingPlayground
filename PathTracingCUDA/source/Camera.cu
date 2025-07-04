@@ -1,6 +1,5 @@
 #include "../include/Camera.h"
 
-#include "../include/Hittable.h"
 #include "../include/Material.h"
 #include "../include/SetupHelper.h"
 #include "../include/Generic.h"
@@ -18,14 +17,29 @@ __device__ Camera::Camera()
     this->Init();
 }
 
-__device__ void Camera::RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j)
+//__device__ void Camera::RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j)
+//{
+//    glm::vec3 pixelColor = glm::vec3(0.0f);
+//
+//    for (int sample = 0; sample < this->samplesPerPixel; sample++)
+//    {
+//        Ray ray = this->GetRay(randState, i, j);
+//        pixelColor += this->RayColorIter(randState, ray, this->maxRayDepth, world);
+//    }
+//
+//    pixelColor /= this->samplesPerPixel;
+//
+//    this->WriteColor(pixelBuffer, i, j, pixelColor);
+//}
+
+__device__ void Camera::RenderPixel(curandState& randState, const Scene& scene, unsigned int i, unsigned int j)
 {
     glm::vec3 pixelColor = glm::vec3(0.0f);
 
     for (int sample = 0; sample < this->samplesPerPixel; sample++)
     {
         Ray ray = this->GetRay(randState, i, j);
-        pixelColor += this->RayColorIter(randState, ray, this->maxRayDepth, world);
+        pixelColor += this->RayColorIter(randState, ray, this->maxRayDepth, scene);
     }
 
     pixelColor /= this->samplesPerPixel;
@@ -143,16 +157,55 @@ __device__ glm::vec3 Camera::RayColor(curandState& randState, const Ray& r, int 
 }
 */
 
-__device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
+
+//__device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const
+//{
+//    glm::vec3 col(0.0f);      
+//    glm::vec3 totalAttenuation(1.0f);          
+//
+//    for (int depth = 0; depth < maxDepth; ++depth)
+//    {
+//        HitRecord rec;
+//        if (!world.Hit(r, Interval(0.001f, infinity), rec)) //hit sky
+//        {   
+//            float a = 0.5f * (r.direction().y + 1.0f);
+//            glm::vec3 sky = (1.0f - a) * glm::vec3(1.0f)
+//                + a * glm::vec3(0.5f, 0.7f, 1.0f);
+//            col += totalAttenuation * sky;
+//            break;
+//        }
+//
+//        Ray scattered;
+//        glm::vec3 attenuation;
+//
+//        /*
+//        if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
+//        {  
+//            break;
+//        }
+//        */
+//
+//        if (!Scatter(*rec.matData, randState, r, rec, attenuation, scattered))
+//        {
+//            break;
+//        }
+//
+//        totalAttenuation *= attenuation;  
+//        r = scattered;    
+//    }
+//    return col;
+//}
+
+__device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Scene& scene) const
 {
-    glm::vec3 col(0.0f);      
-    glm::vec3 totalAttenuation(1.0f);          
+    glm::vec3 col(0.0f);
+    glm::vec3 totalAttenuation(1.0f);
 
     for (int depth = 0; depth < maxDepth; ++depth)
     {
         HitRecord rec;
-        if (!world.Hit(r, Interval(0.001f, infinity), rec)) //hit sky
-        {   
+        if (!HitScene(scene, r, Interval(0.001f, infinity), rec)) //hit sky
+        {
             float a = 0.5f * (r.direction().y + 1.0f);
             glm::vec3 sky = (1.0f - a) * glm::vec3(1.0f)
                 + a * glm::vec3(0.5f, 0.7f, 1.0f);
@@ -165,18 +218,19 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         /*
         if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
-        {  
+        {
             break;
         }
         */
 
-        if (!Scatter(*rec.matData, randState, r, rec, attenuation, scattered))
+        MaterialData& materialData = scene.materials[rec.matDataID];
+        if (!Scatter(materialData, randState, r, rec, attenuation, scattered))
         {
             break;
         }
 
-        totalAttenuation *= attenuation;  
-        r = scattered;    
+        totalAttenuation *= attenuation;
+        r = scattered;
     }
     return col;
 }

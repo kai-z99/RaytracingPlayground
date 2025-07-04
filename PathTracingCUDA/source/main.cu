@@ -13,6 +13,7 @@
 #include <curand_kernel.h>
 
 #include <chrono>
+#include <random>
 
 //todo: implenent bvh
 
@@ -116,7 +117,29 @@ __global__ void BuildCameraKernel(Camera** outCamera, unsigned char* pixels, int
     }
 }
 
-__global__ void RenderKernel(Camera** camera, Hittable** world, curandState* pixelRandStates)
+//__global__ void RenderKernel(Camera** camera, Hittable** world, curandState* pixelRandStates)
+//{
+//    int i = blockIdx.x * blockDim.x + threadIdx.x;
+//    int j = blockIdx.y * blockDim.y + threadIdx.y;
+//
+//    if (i >= SCREEN_WIDTH || j >= SCREEN_HEIGHT) return;
+//
+//    int pixelIndex = j * SCREEN_WIDTH + i;
+//    curandState randState = pixelRandStates[pixelIndex];
+//
+//    (*camera)->RenderPixel(randState, **world, i, j);
+//
+//    //update the state after using it
+//    pixelRandStates[pixelIndex] = randState;
+//
+//    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0) 
+//    {
+//        float pct = 100.f * (blockIdx.y + 1) / gridDim.y;
+//        printf("Progress: %.1f%% (row %d of %d)\n", pct, blockIdx.y + 1, gridDim.y);
+//    }
+//}
+
+__global__ void RenderKernel(Camera** camera, Scene scene, curandState* pixelRandStates)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -126,17 +149,18 @@ __global__ void RenderKernel(Camera** camera, Hittable** world, curandState* pix
     int pixelIndex = j * SCREEN_WIDTH + i;
     curandState randState = pixelRandStates[pixelIndex];
 
-    (*camera)->RenderPixel(randState, **world, i, j);
+    (*camera)->RenderPixel(randState, scene, i, j);
 
     //update the state after using it
     pixelRandStates[pixelIndex] = randState;
 
-    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0) 
+    if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0)
     {
         float pct = 100.f * (blockIdx.y + 1) / gridDim.y;
         printf("Progress: %.1f%% (row %d of %d)\n", pct, blockIdx.y + 1, gridDim.y);
     }
 }
+
 
 __global__ void DestroyKernel(Camera** camera, Hittable** world)
 {
@@ -157,11 +181,96 @@ __global__ void InitPixelRandStatesKernel(curandState* randStates, int seed)
     curand_init(seed + idx, 0, 0, &randStates[idx]);
 }
 
+
+void BuildSceneCPU(int seed, Scene*& uScene)
+{
+    std::vector<MaterialData> hMats;
+    std::vector<glm::vec4> hcenterRadii;
+    std::vector<int> hMatIDs;
+
+
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+
+    auto pushMat = [&](const MaterialData& m)->int 
+    {
+    hMats.push_back(m);
+    return int(hMats.size()) - 1;
+    };
+
+    int groundID = pushMat({glm::vec3(0.5f, 0.5f, 0.5f), 0, 1, MAT_LAMBERTIAN});
+    hcenterRadii.push_back(glm::vec4(0, -1000.0f, 0.0f, 1000.0f));
+    hMatIDs.push_back(groundID);
+
+
+    //random balls
+    for (int a = -11; a < 11; ++a)
+    {
+        for (int b = -11; b < 11; ++b)
+        {
+            float choose = U(rng);
+            glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
+            if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
+
+            MaterialData m{};
+            if (choose < .8f) 
+            {                      // diffuse
+                m = { glm::vec3(U(rng) * U(rng),
+                                 U(rng) * U(rng),
+                                 U(rng) * U(rng)),0,1,MAT_LAMBERTIAN };
+            }
+            else if (choose < .95f)
+            {                // metal
+                m = { glm::vec3(.5f + .5f * U(rng),
+                                 .5f + .5f * U(rng),
+                                 .5f + .5f * U(rng)),
+                     .5f * U(rng),1,MAT_METAL };
+            }
+            else 
+            {                                // glass
+                m = { glm::vec3(1,1,1),0,1.5f, MAT_DIALECTRIC };
+            }
+            int mid = pushMat(m);
+            hcenterRadii.push_back(glm::vec4(center, 0.2f));
+            hMatIDs.push_back(mid);
+        }
+    }
+
+    //3 large spheres
+    int glassId = pushMat({ glm::vec4(1,1,1,0),0,1.5f,MAT_DIALECTRIC });
+    hcenterRadii.push_back(glm::vec4(0, 1, 0, 1));
+    hMatIDs.push_back(glassId);
+
+    int lamId = pushMat({ glm::vec4(.4f,.2f,.1f,0),0,1,MAT_LAMBERTIAN });
+    hcenterRadii.push_back(glm::vec4(-4, 1, 0, 1));
+    hMatIDs.push_back(lamId);
+
+    int metalId = pushMat({ glm::vec4(.7f,.6f,.5f,0),0,1,MAT_METAL });
+    hcenterRadii.push_back(glm::vec4(4, 1, 0, 1));
+    hMatIDs.push_back(metalId);
+
+    //malloc scene
+    cudaMallocManaged(&uScene, sizeof(Scene));
+
+    //malloc materials
+    uScene->materialCount = (int)hMats.size();
+    cudaMallocManaged(&uScene->materials, hMats.size() * sizeof(MaterialData));
+    memcpy(uScene->materials, hMats.data(), hMats.size() * sizeof(MaterialData));
+
+    //malloc geometry
+    cudaMallocManaged(&uScene->spheres, sizeof(SpheresPacked));
+    cudaMallocManaged(&uScene->spheres->centerRadius, hcenterRadii.size() * sizeof(glm::vec4));
+    cudaMallocManaged(&uScene->spheres->materialID, hMatIDs.size() * sizeof(int));
+    memcpy(uScene->spheres->centerRadius, hcenterRadii.data(), hcenterRadii.size() * sizeof(glm::vec4));
+    memcpy(uScene->spheres->materialID, hMatIDs.data(), hMatIDs.size() * sizeof(int));
+    uScene->spheres->n = (int)hcenterRadii.size();
+}
+
 int main()
 {
     //CONFIG (TEMP)
-    int samplesPerPixel = 1;
-    int maxBounceDepth = 6;
+    int samplesPerPixel = 10;
+    int maxBounceDepth = 12;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -209,20 +318,20 @@ int main()
 
     //create world and camera on the device
     Camera** dCamera;
-    Hittable** dWorld;
+    //Hittable** dWorld;
     checkCudaErrors(cudaMalloc(&dCamera, sizeof(Camera*)));
-    checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
+    //checkCudaErrors(cudaMalloc(&dWorld, sizeof(Hittable*)));
     
     //build camera
     BuildCameraKernel << <1, 1 >> > (dCamera, dPixels, samplesPerPixel, maxBounceDepth);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
+
     //build world
     std::cout << "BUILDING WORLD...\n";
-    BuildWorldKernel<<<1,1>>>(dWorld, seed);
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
+    Scene* uScene;
+    BuildSceneCPU(seed, uScene);
     std::cout << "WORLD BUILT\n";
 
     //start timer
@@ -230,7 +339,8 @@ int main()
     
     //launch render kernel
     std::cout << "STARTING RENDERING...\n";
-    RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
+    //RenderKernel<<<grid, block>>>(dCamera, dWorld, dPixelRandomStates);
+    RenderKernel << <grid, block >> > (dCamera, *uScene, dPixelRandomStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
@@ -244,11 +354,13 @@ int main()
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
 
     //cleanup
-    DestroyKernel<<<1,1>>>(dCamera, dWorld);
+    //DestroyKernel<<<1,1>>>(dCamera, dWorld);
+
     cudaDeviceSynchronize();
     checkCudaErrors(cudaFree(dPixels));
     checkCudaErrors(cudaFree(dCamera));
-    checkCudaErrors(cudaFree(dWorld));
+    //checkCudaErrors(cudaFree(dWorld));
+    checkCudaErrors(cudaFree(uScene));
 
     //convert host pixel buffer to openGL texture
     unsigned int resultTextureRGB = setupTexture(hPixels);

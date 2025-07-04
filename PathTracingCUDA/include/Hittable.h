@@ -12,7 +12,7 @@ public:
 	glm::vec3 p;
 	glm::vec3 normal;
 	float t;
-	MaterialData* matData;
+	int matDataID;
 };
 
 class Hittable

@@ -43,6 +43,7 @@
     <ClInclude Include="include\Interval.h" />
     <ClInclude Include="include\Material.h" />
     <ClInclude Include="include\Ray.h" />
+    <ClInclude Include="include\Scene.h" />
     <ClInclude Include="include\SetupHelper.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Sphere.h" />

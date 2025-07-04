@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Hittable.h"
+#include "Scene.h"
 #include "Material.h"
 #include "SetupHelper.h"
 #include "Generic.h"
@@ -19,7 +20,7 @@ public:
     int maxRayDepth;
 
     __device__ Camera();
-    __device__ void RenderPixel(curandState& randState, const Hittable& world, unsigned int i, unsigned int j);
+    __device__ void RenderPixel(curandState& randState, const Scene& scene, unsigned int i, unsigned int j);
     __device__ void SetPixelBuffer(unsigned char* buffer);
 
 private:
@@ -44,6 +45,6 @@ private:
     __device__ void WriteColor(unsigned char* pixelBuffer, int i, int j, glm::vec3 color);
 
     
-    __device__ glm::vec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
-    __device__ glm::vec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Hittable& world) const;
+    //__device__ glm::vec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
+    __device__ glm::vec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Scene& scene) const;
 };
