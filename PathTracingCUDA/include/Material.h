@@ -96,12 +96,12 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		//n1/n2 where n1 = refractive index of air = 1.0
 		//ff: air into dialectric, 1/n2
 		//bf: dialectric into air, n2/1
-		bool frontFace = glm::dot(ray.direction(), rec.normal) < 0;
+		bool frontFace = glm::dot(ray.direction(), rec.normal) < 0.0f;
 		glm::vec3 N = frontFace ? rec.normal : -rec.normal;
 
-		float eta = frontFace ? (1.0 / materialData.refractionIndex) : materialData.refractionIndex;
+		float eta = frontFace ? (1.0f / materialData.refractionIndex) : materialData.refractionIndex;
 		float cosTheta = std::fmin(glm::dot(-ray.direction(), N), 1.0f);
-		float sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
+		float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
 
 		//must reflect
 		glm::vec3 direction;

@@ -77,7 +77,7 @@ inline glm::vec3 RandomOnHemisphere(glm::vec3 normal)
 
 __device__ inline bool NearZero(glm::vec3 v) 
 {
-	float e = 1e-8;
+	float e = 1e-8f;
 
 	return std::abs(v.x) < e &&
 		   std::abs(v.y) < e &&

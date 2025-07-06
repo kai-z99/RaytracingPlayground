@@ -15,20 +15,20 @@ __device__ inline bool HitSphere(const SpheresPacked& s, int i, const Ray& r, In
 
     glm::vec3 oc = center - r.origin();
     float a = glm::dot(r.direction(), r.direction());
-    float b = -2.0 * glm::dot(r.direction(), oc);
+    float b = -2.0f * glm::dot(r.direction(), oc);
     float c = glm::dot(oc, oc) - radius * radius;
-    float discriminant = (b * b) - (4 * a * c);
-    if (discriminant < 0) //no solution
+    float discriminant = (b * b) - (4.0f * a * c);
+    if (discriminant < 0.0f) //no solution
     {
         return false;
     }
 
     float sqrt = std::sqrt(discriminant);
-    float root = (-b - sqrt) / (2.0 * a);
+    float root = (-b - sqrt) / (2.0f * a);
 
     if (!ray_t.Surrounds(root))
     {
-        root = (-b + sqrt) / (2.0 * a);
+        root = (-b + sqrt) / (2.0f * a);
 
         //can happen from refraction etc
         if (!ray_t.Surrounds(root))

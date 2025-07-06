@@ -129,13 +129,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         Ray scattered;
         glm::vec3 attenuation;
 
-        /*
-        if (!rec.mat->Scatter(randState, r, rec, attenuation, scattered)) //absorbed
-        {
-            break;
-        }
-        */
-
         MaterialData& materialData = scene.materials[rec.matDataID];
         if (!Scatter(materialData, randState, r, rec, attenuation, scattered))
         {
