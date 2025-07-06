@@ -26,21 +26,29 @@ struct MetalMaterial : public Material
 	MetalMaterial()
 	{
 		this->tag = MAT_METAL;
+		this->fuzz = 0.0f;
 	}
+
 	float fuzz;
 };
 
 struct DialectricMaterial : public Material
 {
+	DialectricMaterial()
+	{
+		this->tag = MAT_DIALECTRIC;
+		this->eta = 1.5f;
+	}
+
 	float eta;
 };
-
 
 class WorldBuilder
 {
 public:
 	WorldBuilder() = default;
 
+	//Returns a fully unified memory allocated scene object.
 	Scene* Build(int seed);
 
 	void AddSphere(glm::vec3 position, float radius, Material material);

@@ -4,8 +4,6 @@
 #include "CudaHelper.h"
 #include "AABB.h"
 
-class MaterialData;
-
 class HitRecord
 {
 public:

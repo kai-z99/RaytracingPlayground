@@ -39,7 +39,7 @@ __device__ inline bool HitSphere(const SpheresPacked& s, int i, const Ray& r, In
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.normal = (rec.p - center) / radius; //normalized
+    rec.normal = (rec.p - center) / radius; //normalized, always outwards
     rec.matDataID = s.materialID[i];
 
     return true;
