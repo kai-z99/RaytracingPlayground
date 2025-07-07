@@ -79,26 +79,29 @@ struct DialectricMaterial : public Material
 	
 };
 
-class WorldBuilder
+class SceneBuilder
 {
 public:
-	WorldBuilder() = default;
+	SceneBuilder() = default;
 
 	//Returns a fully unified memory allocated scene object.
-	Scene* Build(int seed);
+	Scene* Build();
 
 	void AddSphere(glm::vec3 position, float radius, const Material& material);
 	void AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const Material& material);
 
 private:
+	void UploadMaterialDataToScene(Scene*& scene);
 	std::vector<MaterialData> materials;
 	int PushMaterialAndGetID(MaterialData m);
 
 	//sphere
+	void UploadSphereDataToScene(Scene*& scene);
 	std::vector<glm::vec4> spherePositionRadii;
 	std::vector<int> sphereMaterialIDs;
 
 	//quads
+	void UploadQuadDataToScene(Scene*& scene);
 	std::vector<glm::vec3> quadQs;
 	std::vector<glm::vec3> quadUs;
 	std::vector<glm::vec3> quadVs;

@@ -34,6 +34,7 @@ __device__ void Camera::Init()
 {
     this->up = glm::vec3(0, 1, 0);
     this->center = glm::vec3(13, 2, 3);
+    //this->center = glm::vec3(0, 5, 0);
     this->lookAt = glm::vec3(0, 0, 0);
     this->vfov = 20;
 

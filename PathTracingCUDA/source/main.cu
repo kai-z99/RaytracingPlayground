@@ -3,13 +3,12 @@
 #include "../include/Generic.h"
 #include "../include/Camera.h"
 #include "../include/Scene.h"
-#include "../include/WorldBuilder.h"
+#include "../include/ScenePresets.h"
 
 #include <chrono>
 #include <random>
 
 
-// todo: make world builder
 // todo: implement bvh
 // todo: camera POD
 // todo: make screen w/h a part of config
@@ -23,8 +22,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 5;
-    c.maxBounceDepth = 10;
+    c.samplesPerPixel = 10;
+    c.maxBounceDepth = 12;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -115,123 +114,6 @@ void BuildCamera(Camera**& camera, unsigned char* pixelBuffer, const Config& con
 }
 
 
-void BuildSceneCPU(int seed, Scene*& uScene)
-{
-    std::cout << "BUILDING WORLD...\n";
-
-    //sphere
-    std::vector<glm::vec4> hcenterRadii;
-    std::vector<int> hSphereMatIDs; 
-
-    //quad
-    std::vector<glm::vec3> hQ;
-    std::vector<glm::vec3> hU;
-    std::vector<glm::vec3> hV;
-    std::vector<int> hQuadMatIDs;
-    
-    //materials
-    std::vector<MaterialData> hMats;
-
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> U(0.0f, 1.0f);
-
-    auto pushMat = [&](const MaterialData& m)->int 
-    {
-    hMats.push_back(m);
-    return int(hMats.size()) - 1;
-    };
-
-    //int groundID = pushMat({glm::vec3(0.5f, 0.5f, 0.5f), 0, 1, MAT_LAMBERTIAN});
-    //hcenterRadii.push_back(glm::vec4(0, -1000.0f, 0.0f, 1000.0f));
-    //hSphereMatIDs.push_back(groundID);
-
-    //random balls
-    for (int a = -11; a < 11; ++a)
-    {
-        for (int b = -11; b < 11; ++b)
-        {
-            float choose = U(rng);
-            glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
-            if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
-
-            MaterialData m{};
-            if (choose < .8f) 
-            {                      // diffuse
-                m = { glm::vec3(U(rng) * U(rng),
-                                 U(rng) * U(rng),
-                                 U(rng) * U(rng)),0,1,MAT_LAMBERTIAN };
-            }
-            else if (choose < .95f)
-            {                // metal
-                m = { glm::vec3(.5f + .5f * U(rng),
-                                 .5f + .5f * U(rng),
-                                 .5f + .5f * U(rng)),
-                     .5f * U(rng),1,MAT_METAL };
-            }
-            else 
-            {                                // glass
-                m = { glm::vec3(1,1,1),0,1.5f, MAT_DIALECTRIC };
-            }
-            int mid = pushMat(m);
-            hcenterRadii.push_back(glm::vec4(center, 0.2f));
-            hSphereMatIDs.push_back(mid);
-        }
-    }
-
-    //3 large spheres
-    int glassId = pushMat({ glm::vec4(1,1,1,0),0,1.5f,MAT_DIALECTRIC });
-    hcenterRadii.push_back(glm::vec4(0, 1, 0, 1));
-    hSphereMatIDs.push_back(glassId);
-
-    int lamId = pushMat({ glm::vec4(.4f,.2f,.1f,0),0,1,MAT_LAMBERTIAN });
-    hcenterRadii.push_back(glm::vec4(-4, 1, 0, 1));
-    hSphereMatIDs.push_back(lamId);
-
-    int metalId = pushMat({ glm::vec4(.7f,.6f,.5f,0),0,1,MAT_METAL });
-    hcenterRadii.push_back(glm::vec4(4, 1, 0, 1));
-    hSphereMatIDs.push_back(metalId);
-
-    //a plane
-    int groundMaterial = pushMat({ glm::vec4(1.0f, 1.0f, 1.0f, 0), 0, 1, MAT_LAMBERTIAN });
-    int groundMaterial2 = pushMat({ glm::vec3(1.0f, 1.0f, 1.0f), 0.01f, 1, MAT_METAL });
-    hQuadMatIDs.push_back(groundMaterial);
-    hQ.push_back(glm::vec3(-150.0f, 0.0f, -150.0f));
-    hU.push_back(glm::vec3(0.0f, 0.0f, 300.0f));
-    hV.push_back(glm::vec3(300.0f, 0.0f, 0.0f));
-
-    //malloc scene
-    cudaMallocManaged(&uScene, sizeof(Scene));
-
-    //malloc materials
-    uScene->materialCount = (int)hMats.size();
-    cudaMallocManaged(&uScene->materials, hMats.size() * sizeof(MaterialData));
-    memcpy(uScene->materials, hMats.data(), hMats.size() * sizeof(MaterialData));
-
-    //malloc geometry
-    //spheres
-    cudaMallocManaged(&uScene->spheres, sizeof(SpheresPacked));
-    cudaMallocManaged(&uScene->spheres->centerRadius, hcenterRadii.size() * sizeof(glm::vec4));
-    cudaMallocManaged(&uScene->spheres->materialID, hSphereMatIDs.size() * sizeof(int));
-    memcpy(uScene->spheres->centerRadius, hcenterRadii.data(), hcenterRadii.size() * sizeof(glm::vec4));
-    memcpy(uScene->spheres->materialID, hSphereMatIDs.data(), hSphereMatIDs.size() * sizeof(int));
-    uScene->spheres->n = (int)hcenterRadii.size();
-    //planes
-    cudaMallocManaged(&uScene->quads, sizeof(QuadsPacked));
-    cudaMallocManaged(&uScene->quads->Q, hQ.size() * sizeof(glm::vec3));
-    cudaMallocManaged(&uScene->quads->u, hU.size() * sizeof(glm::vec3));
-    cudaMallocManaged(&uScene->quads->v, hV.size() * sizeof(glm::vec3));
-    cudaMallocManaged(&uScene->quads->materialID, hQuadMatIDs.size() * sizeof(int));
-    memcpy(uScene->quads->Q, hQ.data(), hQ.size() * sizeof(glm::vec3));
-    memcpy(uScene->quads->u, hU.data(), hU.size() * sizeof(glm::vec3));
-    memcpy(uScene->quads->v, hV.data(), hV.size() * sizeof(glm::vec3));
-    memcpy(uScene->quads->materialID, hQuadMatIDs.data(), hQuadMatIDs.size() * sizeof(int));
-    uScene->quads->n = (int)hQ.size();
-    
-
-    checkCudaErrors(cudaGetLastError());
-    std::cout << "WORLD BUILT\n";
-}
-
 void DestroySceneCPU(Scene*& uScene)
 {
     checkCudaErrors(cudaFree(uScene->spheres->centerRadius));
@@ -305,67 +187,6 @@ void DisplayResult(unsigned char* hPixels)
     glfwTerminate();
 }
 
-Scene* BuildScene(int seed)
-{
-    WorldBuilder wb;
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> U(0.0f, 1.0f);
-
-    //floor
-    LambertianMaterial groundMat(glm::vec3(1.0f));
-    wb.AddQuad(
-        glm::vec3(-150.0f, 0.0f, -150.0f),
-        glm::vec3(0.0f, 0.0f, 300.0f),
-        glm::vec3(300.0f, 0.0f, 0.0f),
-        groundMat);
-
-    //random balls
-    for (int a = -11; a < 11; ++a)
-    {
-        for (int b = -11; b < 11; ++b)
-        {
-            float choose = U(rng);
-            glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
-            if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
-
-            if (choose < .8f)
-            {          
-                // diffuse
-                LambertianMaterial m(glm::vec3(U(rng) * U(rng), U(rng) * U(rng), U(rng) * U(rng)));
-                wb.AddSphere(center, 0.2f, m);
-            }
-            else if (choose < .95f)
-            {                // metal
-                MetalMaterial m(
-                    glm::vec3(.5f + .5f * U(rng), .5f + .5f * U(rng), .5f + .5f * U(rng)), 
-                    .5f * U(rng));
-
-                wb.AddSphere(center, 0.2f, m);
-            }
-            else
-            {                                // glass
-                DialectricMaterial m(1.5f);
-                wb.AddSphere(center, 0.2f, m);
-            }
-        }
-    }
-
-    //3 large spheres
-    DialectricMaterial glass(1.5f);
-    wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
-
-    LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
-    wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
-    
-    MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f));
-    wb.AddSphere(glm::vec3(4,1,0), 1.0f, metal);
-
-    //a plane
-    
-    return wb.Build(seed);
-
-}
-
 int main()
 {
     //CONFIG
@@ -389,7 +210,7 @@ int main()
     Camera** dCamera;
     BuildCamera(dCamera, dPixels, config);
 
-    Scene* uScene = BuildScene(seed);
+    Scene* uScene = Scenes::RayTracingInOneWeekend(seed);
 
     //render
     RenderScene(*uScene, dCamera, dRandomPixelStates);

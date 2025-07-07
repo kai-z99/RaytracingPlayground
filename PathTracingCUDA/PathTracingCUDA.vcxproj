@@ -20,7 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\glad.c" />
-    <ClCompile Include="source\WorldBuilder.cpp" />
+    <ClCompile Include="source\ScenePresets.cpp" />
+    <ClCompile Include="source\SceneBuilder.cpp" />
     <CudaCompile Include="source\AABB.cu" />
     <CudaCompile Include="source\Camera.cu" />
     <CudaCompile Include="source\Interval.cu" />
@@ -46,10 +47,11 @@
     <ClInclude Include="include\Quad.h" />
     <ClInclude Include="include\Ray.h" />
     <ClInclude Include="include\Scene.h" />
+    <ClInclude Include="include\ScenePresets.h" />
     <ClInclude Include="include\SetupHelper.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Sphere.h" />
-    <ClInclude Include="include\WorldBuilder.h" />
+    <ClInclude Include="include\SceneBuilder.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
