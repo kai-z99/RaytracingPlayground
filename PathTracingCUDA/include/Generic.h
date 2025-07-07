@@ -5,20 +5,17 @@
 #include <limits>
 #include <cstdlib>
 #include "CudaHelper.h"
-#include <curand_kernel.h>
 #define GLM_FORCE_CUDA
 #include <glm/glm.hpp>
 #include <glm/gtc/random.hpp>
 
-__device__ constexpr float infinity = std::numeric_limits<float>::infinity();
-
+constexpr float infinity = std::numeric_limits<float>::infinity();
 constexpr float pi = 3.1415926535897932385f;
 
 inline int CeilDiv(int num, int denom)
 {
 	return (num + denom - 1) / denom;
 }
-
 
 inline float DegreesToRadians(float degrees)
 {
@@ -75,7 +72,7 @@ inline glm::vec3 RandomOnHemisphere(glm::vec3 normal)
 	}
 }
 
-__device__ inline bool NearZero(glm::vec3 v) 
+__host__ __device__ inline bool NearZero(glm::vec3 v) 
 {
 	float e = 1e-8f;
 
@@ -83,8 +80,6 @@ __device__ inline bool NearZero(glm::vec3 v)
 		   std::abs(v.y) < e &&
 		   std::abs(v.z) < e;
 }
-
-
 
 #include "Ray.h"
 #include "Interval.h"

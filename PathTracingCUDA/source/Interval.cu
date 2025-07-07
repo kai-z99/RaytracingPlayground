@@ -34,7 +34,7 @@ __device__ float Interval::Clamp(float x) const
 
 __device__ Interval Interval::Expand(float delta) const
 {
-	float padding = delta / 2.0;
+	float padding = delta / 2.0f;
 	return Interval(this->min - padding, this->max + padding);
 }
 

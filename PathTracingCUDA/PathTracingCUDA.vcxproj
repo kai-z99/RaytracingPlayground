@@ -40,9 +40,9 @@
     <ClInclude Include="include\Definitions.h" />
     <ClInclude Include="include\Generic.h" />
     <ClInclude Include="include\Hittable.h" />
-    <ClInclude Include="include\HittableList.h" />
     <ClInclude Include="include\Interval.h" />
     <ClInclude Include="include\Material.h" />
+    <ClInclude Include="include\Primitives.h" />
     <ClInclude Include="include\Quad.h" />
     <ClInclude Include="include\Ray.h" />
     <ClInclude Include="include\Scene.h" />

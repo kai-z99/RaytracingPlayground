@@ -1,12 +1,5 @@
 #include "../include/Camera.h"
-
 #include "../include/Material.h"
-#include "../include/SetupHelper.h"
-#include "../include/Generic.h"
-#include "../include/CudaHelper.h"
-
-#include <iomanip>
-#include <chrono>
 
 //10:12 TESTING
 //NAIVE: ~12.74

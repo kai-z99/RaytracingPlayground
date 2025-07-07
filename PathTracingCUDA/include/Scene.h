@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Generic.h"
 #include "Material.h"
-#include "Sphere.h"
-#include "Quad.h"
+#include "Primitives.h"
 #include "BVH.h"
 
 //device only

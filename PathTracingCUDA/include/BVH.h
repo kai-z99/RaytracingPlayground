@@ -1,8 +1,6 @@
 #pragma once
 
-#include "AABB.h"
-#include "Hittable.h"
-#include "HittableList.h"
+#include "Primitives.h"
 
 //Naive: ~1700 seconds
 //Random: 137.1 seconds
@@ -96,12 +94,6 @@
 
 
 //REFACTOR
-
-enum PrimType
-{
-	PRIM_SPHERE = 0,
-	PRIM_QUAD = 1,
-};
 
 struct BVHNode
 {

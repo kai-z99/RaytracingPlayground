@@ -1,22 +1,18 @@
 #include "../include/SetupHelper.h"
 #include "../include/Shader.h"
-
 #include "../include/Generic.h"
 #include "../include/Camera.h"
-#include "../include/Hittable.h"
-#include "../include/HittableList.h"
-#include "../include/Sphere.h"
-#include "../include/BVH.h"
-
-#include "../include/CudaHelper.h"
-#include "device_launch_parameters.h"
-#include <curand_kernel.h>
+#include "../include/Scene.h"
+#include "../include/WorldBuilder.h"
 
 #include <chrono>
 #include <random>
 
-//todo: camera POD
-//todo: make screen w/h a part of config
+
+// todo: make world builder
+// todo: implement bvh
+// todo: camera POD
+// todo: make screen w/h a part of config
 
 struct Config
 {
@@ -27,8 +23,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 15;
-    c.maxBounceDepth = 15;
+    c.samplesPerPixel = 5;
+    c.maxBounceDepth = 10;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -92,9 +88,9 @@ __global__ void InitPixelRandStatesKernel(curandState* randStates, int seed)
 
 void InitCUDA()
 {
-    cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
-    size_t heap = 64 * 1024 * 1024;   //64mb fir device news
-    cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
+    //cudaDeviceSetLimit(cudaLimitStackSize, 16384); //for recursion...
+    //size_t heap = 64 * 1024 * 1024;   //64mb fir device news
+    //cudaDeviceSetLimit(cudaLimitMallocHeapSize, heap); //for device new in BuildWorldKernel
 }
 
 void SetupRandomPixelStates(curandState*& dPixelRandomStates, int seed)
@@ -309,6 +305,67 @@ void DisplayResult(unsigned char* hPixels)
     glfwTerminate();
 }
 
+Scene* BuildScene(int seed)
+{
+    WorldBuilder wb;
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+
+    //floor
+    LambertianMaterial groundMat(glm::vec3(1.0f));
+    wb.AddQuad(
+        glm::vec3(-150.0f, 0.0f, -150.0f),
+        glm::vec3(0.0f, 0.0f, 300.0f),
+        glm::vec3(300.0f, 0.0f, 0.0f),
+        groundMat);
+
+    //random balls
+    for (int a = -11; a < 11; ++a)
+    {
+        for (int b = -11; b < 11; ++b)
+        {
+            float choose = U(rng);
+            glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
+            if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
+
+            if (choose < .8f)
+            {          
+                // diffuse
+                LambertianMaterial m(glm::vec3(U(rng) * U(rng), U(rng) * U(rng), U(rng) * U(rng)));
+                wb.AddSphere(center, 0.2f, m);
+            }
+            else if (choose < .95f)
+            {                // metal
+                MetalMaterial m(
+                    glm::vec3(.5f + .5f * U(rng), .5f + .5f * U(rng), .5f + .5f * U(rng)), 
+                    .5f * U(rng));
+
+                wb.AddSphere(center, 0.2f, m);
+            }
+            else
+            {                                // glass
+                DialectricMaterial m(1.5f);
+                wb.AddSphere(center, 0.2f, m);
+            }
+        }
+    }
+
+    //3 large spheres
+    DialectricMaterial glass(1.5f);
+    wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
+
+    LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
+    wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
+    
+    MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f));
+    wb.AddSphere(glm::vec3(4,1,0), 1.0f, metal);
+
+    //a plane
+    
+    return wb.Build(seed);
+
+}
+
 int main()
 {
     //CONFIG
@@ -332,9 +389,7 @@ int main()
     Camera** dCamera;
     BuildCamera(dCamera, dPixels, config);
 
-    //build world
-    Scene* uScene;
-    BuildSceneCPU(seed, uScene);
+    Scene* uScene = BuildScene(seed);
 
     //render
     RenderScene(*uScene, dCamera, dRandomPixelStates);

@@ -8,6 +8,9 @@
 struct Material
 {
 	glm::vec3 color;
+	
+	virtual ~Material() = default;
+	virtual MaterialData ToMaterialData() const = 0;
 
 protected:
 	MaterialType tag;
@@ -15,32 +18,65 @@ protected:
 
 struct LambertianMaterial : public Material
 {
-	LambertianMaterial() 
+	LambertianMaterial(glm::vec3 color = glm::vec3(1.0f)) 
 	{
 		this->tag = MAT_LAMBERTIAN;
+		this->color = color;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.color = this->color;
+		m.type = this->tag;
+		return m;
 	}
 };
 
 struct MetalMaterial : public Material
 {
-	MetalMaterial()
+	float fuzz;
+
+	MetalMaterial(glm::vec3 color = glm::vec3(1.0f), float fuzz = 0.0f)
 	{
 		this->tag = MAT_METAL;
-		this->fuzz = 0.0f;
+		this->color = color;
+		this->fuzz = fuzz;
+	}
+	
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.color = this->color;
+		m.fuzz = this->fuzz;
+		m.type = this->tag;
+		return m;
 	}
 
-	float fuzz;
 };
 
 struct DialectricMaterial : public Material
 {
-	DialectricMaterial()
+	float eta;
+
+	DialectricMaterial(float eta = 1.5f)
 	{
 		this->tag = MAT_DIALECTRIC;
-		this->eta = 1.5f;
+		this->color = glm::vec3(1.0f);
+		this->eta = eta;
+		
 	}
 
-	float eta;
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.color = this->color;
+		m.refractionIndex = this->eta;
+		m.type = this->tag;
+		return m;
+	}
+
+	
 };
 
 class WorldBuilder
@@ -51,12 +87,12 @@ public:
 	//Returns a fully unified memory allocated scene object.
 	Scene* Build(int seed);
 
-	void AddSphere(glm::vec3 position, float radius, Material material);
-	void AddQuad(glm::vec3 position, glm::vec2 size, Material material);
+	void AddSphere(glm::vec3 position, float radius, const Material& material);
+	void AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const Material& material);
 
 private:
 	std::vector<MaterialData> materials;
-	int CreateMaterialAndGetID(MaterialData& m);
+	int PushMaterialAndGetID(MaterialData m);
 
 	//sphere
 	std::vector<glm::vec4> spherePositionRadii;

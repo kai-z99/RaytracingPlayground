@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../include/AABB.h"
-#include "../include/Interval.h"
 
 __device__ AABB::AABB() {}
 

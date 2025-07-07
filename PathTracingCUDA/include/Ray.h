@@ -1,6 +1,4 @@
-#define GLM_FORCE_CUDA
-#include <glm/glm.hpp>
-#include "CudaHelper.h"
+#include "Generic.h"
 
 class Ray
 {

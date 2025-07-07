@@ -1,14 +1,8 @@
 #pragma once
 
-#include "Hittable.h"
-#include "Scene.h"
-#include "Material.h"
-#include "SetupHelper.h"
 #include "Generic.h"
+#include "Scene.h"
 
-#include <iomanip>
-#include <chrono>
-#include "CudaHelper.h"
 
 class Camera
 {

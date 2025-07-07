@@ -1,4 +1,6 @@
 #pragma once
+
+#include "Generic.h"
 #include "Hittable.h"
 
 struct SpheresPacked

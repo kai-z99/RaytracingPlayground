@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Generic.h" //thank you pragma once
-#include "CudaHelper.h"
+#include "../include/Generic.h"
 
 class Interval
 {
