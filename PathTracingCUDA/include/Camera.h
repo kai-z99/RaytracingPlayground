@@ -42,3 +42,12 @@ private:
     //__device__ glm::vec3 RayColor(curandState& randState, const Ray& r, int depth, const Hittable& world) const;
     __device__ glm::vec3 RayColorIter(curandState& randState, Ray r, int maxDepth, const Scene& scene) const;
 };
+
+struct CameraPOD
+{
+    glm::vec3 origin;
+    glm::vec3 u, v, w;
+    float halfWidth;
+    float halfHeight;
+};
+    

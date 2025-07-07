@@ -120,6 +120,9 @@ void DestroySceneCPU(Scene*& uScene)
     checkCudaErrors(cudaFree(uScene->spheres->materialID));
     checkCudaErrors(cudaFree(uScene->spheres));
     checkCudaErrors(cudaFree(uScene->materials));
+    checkCudaErrors(cudaFree(uScene->BVHNodes));
+    checkCudaErrors(cudaFree(uScene->primTypes));
+    checkCudaErrors(cudaFree(uScene->primIndices));
     checkCudaErrors(cudaFree(uScene));
 }
 
