@@ -3,28 +3,6 @@
 #include "Generic.h"
 #include "Interval.h"
 
-class AABB
-{
-public:
-	Interval x, y, z;
-
-	__device__ AABB();
-
-	__device__ AABB(const Interval& x, const Interval& y, const Interval& z);
-
-	__device__ AABB(const glm::vec3& a, const glm::vec3& b);
-
-	__device__ AABB(const AABB& box0, const AABB& box1);
-
-	__device__ const Interval& AxisInterval(int n) const;
-
-	__device__ bool Hit(const Ray& r, Interval ray_t) const;
-
-	__device__ int LongestAxis() const;
-
-	static const AABB empty, universe;
-};
-
 __device__ inline float IntersectAABB(const Ray& r, const glm::vec3& bmin, const glm::vec3& bmax, float tMax, float tMin = 0.0f)
 {
 	const glm::vec3& rayOrigin = r.origin();
@@ -53,7 +31,16 @@ __device__ inline float IntersectAABB(const Ray& r, const glm::vec3& bmin, const
 		t1 = (tFar < t1) ? tFar : t1;   //if the new far is les than the current, tighten.
 
 		//if the interval is empty, we did not hit the AABB.
-		if (t1 <= t0) return -1.0f;
+		if (t1 < t0) return -1.0f;
+
+		if (fabs(rayDirection[axis]) < 1e-8f) 
+		{
+			// Ray is parallel.  If origin is outside the slab, no hit.
+			if (rayOrigin[axis] < bmin[axis] || rayOrigin[axis] > bmax[axis])
+				return -1.0f;
+			// otherwise continue with other slabs
+			continue;
+		}
 	}
 
 	return t0;

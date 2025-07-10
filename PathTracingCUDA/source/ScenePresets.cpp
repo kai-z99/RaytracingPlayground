@@ -1,6 +1,8 @@
 #include "../include/ScenePresets.h"
 #include "../include/SceneBuilder.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 #include <random>
 
 Scene* Scenes::RayTracingInOneWeekend(int seed)
@@ -81,4 +83,81 @@ Scene* Scenes::KaisScene(int seed)
         glm::vec3(-300.0f, 0.0f, -300.0f), glm::vec3(0.0f, 0.0f, 600.0f), glm::vec3(600.0f, 0.0f, 0.0f), LambertianMaterial());
 
     return sb.Build();
+}
+
+Scene* Scenes::TriangleTestScene(int seed)
+{
+    SceneBuilder sb;
+
+    // -------------------------------------------------------------------------
+    // Random-number helpers
+    // -------------------------------------------------------------------------
+    std::mt19937 rng(seed);
+
+    std::uniform_real_distribution<float> distPos(-80.0f, 80.0f);   // X, Y, Z range
+    std::uniform_real_distribution<float> distSize(2.4f, 4.5f);     // side length
+    std::uniform_real_distribution<float> distColor(0.2f, 1.0f);    // albedo tint
+    std::uniform_real_distribution<float> distAngle(0.0f, glm::pi<float>()); // rotation
+    std::uniform_real_distribution<float> distAxis(-1.0f, 1.0f);    // rotation axis
+    std::uniform_real_distribution<float> choose(0.0f, 1.0f);  
+
+    const int tetraCount = 10'000;  
+    const float h = glm::sqrt(2.0f) / 2.0f;       // height of equilateral tri
+    const float H = glm::sqrt(6.0f) / 3.0f;       // apex height
+
+    const glm::vec3 v0(0.0f, 0.0f, 0.0f);
+    const glm::vec3 v1(1.0f, 0.0f, 0.0f);
+    const glm::vec3 v2(0.5f, 0.0f, h);
+    const glm::vec3 v3(0.5f, H, h / 3);
+    LambertianMaterial groundMat(glm::vec3(1.0f));
+    sb.AddQuad(
+        glm::vec3(-150.0f, -10.5f, -150.0f),
+        glm::vec3(0.0f, -10.5f, 300.0f),
+        glm::vec3(300.0f, -10.5f, 0.0f),
+        groundMat);
+
+    // -------------------------------------------------------------------------
+    for (int i = 0; i < tetraCount; ++i)
+    {
+        // --- random transform -------------------------------------------------
+        glm::vec3 center(distPos(rng), distPos(rng), distPos(rng));
+        float      s = distSize(rng);          // side length scale
+
+        // random rotation (quaternion)
+        glm::vec3 axis(distAxis(rng), distAxis(rng), distAxis(rng));
+        axis = glm::normalize(axis);
+        float  angle = distAngle(rng);
+        glm::mat3 R = glm::mat3_cast(glm::angleAxis(angle, axis));
+
+        auto W = [&](const glm::vec3& p) -> glm::vec3
+            {
+                return R * (p * s) + center;
+            };
+
+        // --- random material --------------------------------------------------
+        Material* mat;
+        glm::vec3 tint(distColor(rng), distColor(rng), distColor(rng));
+
+        if (choose(rng) < 0.3f)
+        {
+            mat = new MetalMaterial(glm::vec3(tint), 0.00f);
+        }
+        else if (choose(rng) < 0.6f)
+        {
+            mat = new DialectricMaterial();
+        }
+        else
+        {
+            mat = new LambertianMaterial(tint);
+        }
+        
+        // --- four triangular faces -------------------------------------------
+        sb.AddTriangle(W(v0), W(v1), W(v2), *mat); // base
+        sb.AddTriangle(W(v0), W(v1), W(v3), *mat); // side 1
+        sb.AddTriangle(W(v1), W(v2), W(v3), *mat); // side 2
+        sb.AddTriangle(W(v2), W(v0), W(v3), *mat); // side 3
+    }
+
+    return sb.Build();
+
 }

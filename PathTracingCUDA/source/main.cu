@@ -9,9 +9,11 @@
 #include <random>
 
 
-// todo: implement bvh
-// todo: camera POD
+// todo: Add obj loading
+// todo: Make camera part of scene
 // todo: make screen w/h a part of config
+// todo: emissive
+// todo: russion roullette? Check out saved article.
 
 struct Config
 {
@@ -22,7 +24,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10;
+    c.samplesPerPixel = 40;
     c.maxBounceDepth = 12;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -101,7 +103,7 @@ void SetupRandomPixelStates(curandState*& dPixelRandomStates, int seed)
     InitPixelRandStatesKernel<<<grid, block>>>(dPixelRandomStates, seed);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
-    std::cout << "CREATED RANDOM STATES\n";
+    std::cout << "CREATED RANDOM STATES!\n";
 
 }
 
@@ -213,7 +215,7 @@ int main()
     Camera** dCamera;
     BuildCamera(dCamera, dPixels, config);
 
-    Scene* uScene = Scenes::RayTracingInOneWeekend(seed);
+    Scene* uScene = Scenes::TriangleTestScene(seed);
 
     //render
     RenderScene(*uScene, dCamera, dRandomPixelStates);

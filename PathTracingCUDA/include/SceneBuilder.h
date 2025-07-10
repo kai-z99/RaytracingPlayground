@@ -75,8 +75,6 @@ struct DialectricMaterial : public Material
 		m.type = this->tag;
 		return m;
 	}
-
-	
 };
 
 class SceneBuilder
@@ -89,6 +87,7 @@ public:
 
 	void AddSphere(glm::vec3 position, float radius, const Material& material);
 	void AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const Material& material);
+	void AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material);
 
 private:
 	void UploadMaterialDataToScene(Scene*& scene);
@@ -106,5 +105,13 @@ private:
 	std::vector<glm::vec3> quadUs;
 	std::vector<glm::vec3> quadVs;
 	std::vector<int> quadMaterialsIDs;
+
+	//tris
+	void UploadTriangleDataToScene(Scene*& scene);
+	std::vector<glm::vec3> triP0s;
+	std::vector<glm::vec3> triP1s;
+	std::vector<glm::vec3> triP2s;
+	std::vector<int> triMaterialsIDs;
+
 
 };

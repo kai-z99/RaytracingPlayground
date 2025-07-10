@@ -33,9 +33,11 @@ __device__ void Camera::SetPixelBuffer(unsigned char* buffer)
 __device__ void Camera::Init()
 {
     this->up = glm::vec3(0, 1, 0);
-    this->center = glm::vec3(13, 2, 3);
+    //this->center = glm::vec3(13, 2, 3);
+    this->center = glm::vec3(0.0f, 0.0f, 2.0f);
+
     this->lookAt = glm::vec3(0, 0, 0);
-    this->vfov = 20;
+    this->vfov = 90;
 
     this->focalLength = glm::length(center - lookAt);
 

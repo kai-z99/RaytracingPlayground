@@ -22,7 +22,6 @@
     <ClCompile Include="source\glad.c" />
     <ClCompile Include="source\ScenePresets.cpp" />
     <ClCompile Include="source\SceneBuilder.cpp" />
-    <CudaCompile Include="source\AABB.cu" />
     <CudaCompile Include="source\Camera.cu" />
     <CudaCompile Include="source\Interval.cu" />
     <CudaCompile Include="source\main.cu">
@@ -52,6 +51,7 @@
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Sphere.h" />
     <ClInclude Include="include\SceneBuilder.h" />
+    <ClInclude Include="include\Triangle.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -28,7 +28,7 @@ struct BVHNode
 //first implement longest axis bvh build
 //then implement binned SAH
 
-
+//helper struct for build bvh
 struct PrimRef
 {
 	glm::vec3 bboxMin, bboxMax;
@@ -50,13 +50,14 @@ inline uint32_t BuildNode(std::vector<PrimRef>& prims,
 inline void BuildBVH(
 	const SpheresPacked& spheres,
 	const QuadsPacked& quads,
+	const TrianglesPacked tris,
 	BVHNode*& outNodes,
 	uint32_t& outNodeCount,
 	PrimType*& outPrimTypes,
 	uint32_t*& outPrimIndices)
 {
 	std::vector<PrimRef> prims;
-	prims.reserve(spheres.n + quads.n);
+	prims.reserve(spheres.n + quads.n + tris.n);
 
 	//fill spheres
 	for (uint32_t i = 0; i < spheres.n; i++)
@@ -92,6 +93,23 @@ inline void BuildBVH(
 		p.index = i;
 		prims.push_back(p);
 
+	}
+
+	//fill tris
+	for (uint32_t i = 0; i < tris.n; i++)
+	{
+		glm::vec3 p0 = tris.p0[i];
+		glm::vec3 p1 = tris.p1[i];
+		glm::vec3 p2 = tris.p2[i];
+
+
+		PrimRef p;
+		p.bboxMin = glm::min(glm::min(p0,p1), p2);
+		p.bboxMax = glm::max(glm::max(p0, p1), p2);
+		p.centroid = (p0 + p1 + p2) / 3.0f;
+		p.type = PRIM_TRIANGLE;
+		p.index = i;
+		prims.push_back(p);
 	}
 
 	//create storage
@@ -136,8 +154,7 @@ inline uint32_t BuildNode(std::vector<PrimRef>& prims,
 	if (first == last) return UINT32_MAX; //no good
 
 	uint32_t nodeIdx = static_cast<uint32_t>(nodes.size());
-	nodes.emplace_back();
-
+	nodes.emplace_back(); //push a default BVHNode
 	BVHNode& node = nodes.back();
 
 	glm::vec3 bbMin(+FLT_MAX), bbMax(-FLT_MAX);
@@ -193,7 +210,10 @@ inline uint32_t BuildNode(std::vector<PrimRef>& prims,
 		return nodeIdx;
 	}
 
-	//partially sort 
+	//partially sort. this guarentees:
+	//1.) all elements [first, mid) have centroid[axis] <= element at mid
+	//2.) all elements [mid + 1, last) have centroid[axis] >= element at mid
+	//we can techincally still use std::sort normally for the range, but its not neccessary, and is slower.
 	uint32_t mid = (first + last) >> 1;
 	std::nth_element(
 		prims.begin() + first,

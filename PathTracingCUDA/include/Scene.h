@@ -11,6 +11,7 @@ struct Scene
 {
     SpheresPacked* spheres;
     QuadsPacked* quads;
+    TrianglesPacked* tris;
 
     BVHNode* BVHNodes;
     uint32_t BVHCount;
@@ -22,45 +23,11 @@ struct Scene
     uint32_t materialCount;
 };
 
-//outdated: traverse the bvh instead of linearly scanning
+//traverse the bvh instead of linearly scanning
  __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
 {
-     /*
-     bool hitAny = false;
-     float closestSoFar = ray_t.max;
-     HitRecord tempRec;
-
-     if (scene.spheres)
-     {
-         for (uint32_t i = 0; i < scene.spheres->n; i++)
-         {
-             if (HitSphere(*scene.spheres, i, r, Interval(ray_t.min, closestSoFar), tempRec))
-             {
-                 hitAny = true;
-                 closestSoFar = tempRec.t;
-                 rec = tempRec;
-             }
-         }
-     }
-
-     if (scene.quads)
-     {
-         for (uint32_t i = 0; i < scene.quads->n; i++)
-         {
-             if (HitQuad(*scene.quads, i, r, Interval(ray_t.min, closestSoFar), tempRec))
-             {
-                 hitAny = true;
-                 closestSoFar = tempRec.t;
-                 rec = tempRec;
-             }
-         }
-     }
-     
-     return hitAny;
-     */
-       
      constexpr int MAX_STACK = 64;
-     uint32_t stack[MAX_STACK];
+     uint32_t stack[MAX_STACK]; //each element represents the index in BVHNodes*
      int stackPtr = 0;
      bool hitAny = false;
      float closestSoFar = ray_t.max;
@@ -68,15 +35,18 @@ struct Scene
      //start with the root of BVH
      stack[stackPtr++] = 0;
 
-     while (stackPtr)
+     while (stackPtr) //while stack ptr is not at 0. (0 is bottom of stack)
      {
-         uint32_t nodeIdx = stack[--stackPtr];
+         uint32_t nodeIdx = stack[--stackPtr]; //pop the top of stack
          const BVHNode& node = scene.BVHNodes[nodeIdx];
 
+         //if that bvh node's AABB doesnt intersect with ray, just conitnue and pop the next element.
          if (IntersectAABB(r, node.bboxMin, node.bboxMax, closestSoFar) < 0.0f) //miss?
          {
              continue;
          }
+
+         //The ray has intersected the AABB.
 
          //is it a leaf?
          if (node.primCount)
@@ -104,6 +74,11 @@ struct Scene
                      hit = HitQuad(*scene.quads, indexInAoS, r, Interval(ray_t.min, closestSoFar), tempRec);
                      break;
                  }
+                 case PRIM_TRIANGLE:
+                 {
+                     hit = HitTriangle(*scene.tris, indexInAoS, r, Interval(ray_t.min, closestSoFar), tempRec);
+                     break;
+                 }
                  default:
                  {
                      hit = false;
@@ -121,14 +96,14 @@ struct Scene
              }
              continue;
          }
-         else //push children, near one last so it is popped first
+         else //if its not a leaf node, push children, near one last so it is popped first
          {
              const BVHNode& left = scene.BVHNodes[node.leftFirst];
              const BVHNode& right = scene.BVHNodes[node.rightFirst];
 
+             //check if the ray hit any of the children.
              float tLeft = IntersectAABB(r, left.bboxMin, left.bboxMax, closestSoFar);
              float tRight = IntersectAABB(r, right.bboxMin, right.bboxMax, closestSoFar);
-             
              bool hitLeft = tLeft >= 0.0f;
              bool hitRight = tRight >= 0.0f;
 

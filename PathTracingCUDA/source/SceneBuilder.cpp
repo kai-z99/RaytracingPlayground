@@ -1,9 +1,13 @@
 #include "../include/SceneBuilder.h"
 #include "../include/Primitives.h"
 
+#include <iostream>
+
 
 Scene* SceneBuilder::Build()
 {
+	std::cout << "BUILDING WORLD...\n";
+
 	Scene* scene;
 
 	//malloc scene
@@ -17,15 +21,23 @@ Scene* SceneBuilder::Build()
 
 	//quad data
 	this->UploadQuadDataToScene(scene);
-	
 
+	//tri data
+	this->UploadTriangleDataToScene(scene);
+	
+	std::cout << "WORLD BUILT!\n";
+
+	std::cout << "CONSTRUCTING BVH...\n";
 	BuildBVH(
 		*scene->spheres,
 		*scene->quads,
+		*scene->tris,
 		scene->BVHNodes,
 		scene->BVHCount,
 		scene->primTypes,
 		scene->primIndices);
+
+	std::cout << "CONSTRUCTED BVH!\n";
 
 	return scene;
 }
@@ -58,6 +70,25 @@ void SceneBuilder::UploadQuadDataToScene(Scene*& scene)
 	memcpy(scene->quads->v, this->quadVs.data(), this->quadVs.size() * sizeof(glm::vec3));
 	memcpy(scene->quads->materialID, this->quadMaterialsIDs.data(), this->quadMaterialsIDs.size() * sizeof(int));
 	scene->quads->n = (int)this->quadQs.size();
+
+	
+}
+
+void SceneBuilder::UploadTriangleDataToScene(Scene*& scene)
+{
+	//malloc managed all tri fields
+	cudaMallocManaged(&scene->tris, sizeof(TrianglesPacked));
+	cudaMallocManaged(&scene->tris->p0, this->triP0s.size() * sizeof(glm::vec3));
+	cudaMallocManaged(&scene->tris->p1, this->triP1s.size() * sizeof(glm::vec3));
+	cudaMallocManaged(&scene->tris->p2, this->triP2s.size() * sizeof(glm::vec3));
+	cudaMallocManaged(&scene->tris->materialID, this->triMaterialsIDs.size() * sizeof(int));
+
+	//copy our vector data into the gpu memory
+	memcpy(scene->tris->p0, this->triP0s.data(), this->triP0s.size() * sizeof(glm::vec3));
+	memcpy(scene->tris->p1, this->triP1s.data(), this->triP1s.size() * sizeof(glm::vec3));
+	memcpy(scene->tris->p2, this->triP2s.data(), this->triP2s.size() * sizeof(glm::vec3));
+	memcpy(scene->tris->materialID, this->triMaterialsIDs.data(), this->triMaterialsIDs.size() * sizeof(int));
+	scene->tris->n = (int)this->triP0s.size();
 }
 
 void SceneBuilder::UploadMaterialDataToScene(Scene*& scene)
@@ -87,6 +118,16 @@ void SceneBuilder::AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const M
 	int matID = PushMaterialAndGetID(material.ToMaterialData());
 	this->quadMaterialsIDs.push_back(matID);
 
+}
+
+void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material)
+{
+	this->triP0s.push_back(p0);
+	this->triP1s.push_back(p1);
+	this->triP2s.push_back(p2);
+
+	int matID = PushMaterialAndGetID(material.ToMaterialData());
+	this->triMaterialsIDs.push_back(matID);
 }
 
 int SceneBuilder::PushMaterialAndGetID(MaterialData m)

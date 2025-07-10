@@ -88,12 +88,12 @@
     <ClInclude Include="include\ScenePresets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="source\main.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
-    <CudaCompile Include="source\AABB.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="source\Interval.cu">
