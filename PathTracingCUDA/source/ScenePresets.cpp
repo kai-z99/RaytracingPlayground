@@ -68,7 +68,6 @@ Scene* Scenes::KaisScene(int seed)
     SceneBuilder sb;
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
-    std::normal_distribution<float> N();
 
     for (int i = 0; i < 30; i++)
     {
@@ -142,7 +141,7 @@ Scene* Scenes::TriangleTestScene(int seed)
         {
             mat = new MetalMaterial(glm::vec3(tint), 0.00f);
         }
-        else if (choose(rng) < 0.6f)
+        else if (choose(rng) < 0.5f)
         {
             mat = new DialectricMaterial();
         }

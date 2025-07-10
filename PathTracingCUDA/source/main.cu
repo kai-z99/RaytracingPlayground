@@ -8,7 +8,7 @@
 #include <chrono>
 #include <random>
 
-
+// todo: implement transformations in scene builder. Everntually itll move to instances.
 // todo: Add obj loading
 // todo: Make camera part of scene
 // todo: make screen w/h a part of config
@@ -24,8 +24,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 40;
-    c.maxBounceDepth = 12;
+    c.samplesPerPixel = 1;
+    c.maxBounceDepth = 4;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -138,7 +138,7 @@ void RenderScene(Scene uScene, Camera** dCamera, curandState* dRandomPixelStates
 
     //launch render kernel
     std::cout << "STARTING RENDERING...\n";
-    RenderKernel << <grid, block >> > (dCamera, uScene, dRandomPixelStates);
+    RenderKernel<<<grid, block>>>(dCamera, uScene, dRandomPixelStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
@@ -215,7 +215,7 @@ int main()
     Camera** dCamera;
     BuildCamera(dCamera, dPixels, config);
 
-    Scene* uScene = Scenes::TriangleTestScene(seed);
+    Scene* uScene = Scenes::RayTracingInOneWeekend(seed);
 
     //render
     RenderScene(*uScene, dCamera, dRandomPixelStates);
