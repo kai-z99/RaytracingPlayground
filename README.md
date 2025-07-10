@@ -12,7 +12,8 @@
 | CPU          | N/A          | ~1800 seconds|
 | CPU          | BVH          | ~142 seconds |
 | GPU (CUDA)   | N/A          | ~12.4 seconds|
-| GPU (CUDA)   | BVH          | ~3.45 seconds|
+| GPU (CUDA)   | BVH, Recursive Traversal | ~3.45 seconds|
+| GPU (CUDA)   | BVH, Flat Traversal | ~1.65 seconds|
 
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
