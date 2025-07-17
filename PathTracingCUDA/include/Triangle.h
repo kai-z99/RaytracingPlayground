@@ -17,7 +17,7 @@ __device__ inline bool HitTriangle(const TrianglesPacked& tris, int i, const Ray
 {
 	//printf("Test\n");
 	glm::vec3 p0 = tris.p0[i];
-	glm::vec3 edge1 = tris.p1[i]; - p0;
+	glm::vec3 edge1 = tris.p1[i] - p0;
 	glm::vec3 edge2 = tris.p2[i] - p0;
 	
 	/*

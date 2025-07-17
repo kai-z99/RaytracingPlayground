@@ -1,6 +1,8 @@
 #include "../include/SceneBuilder.h"
 #include "../include/Primitives.h"
 
+#include <glm/gtc/quaternion.hpp>
+
 #include <iostream>
 
 
@@ -118,6 +120,20 @@ void SceneBuilder::AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const M
 	int matID = PushMaterialAndGetID(material.ToMaterialData());
 	this->quadMaterialsIDs.push_back(matID);
 
+}
+
+void SceneBuilder::AddQuad(glm::vec3 position, glm::vec2 size, glm::vec4 rotation, const Material& material)
+{
+	glm::vec3 axis = glm::normalize(glm::vec3(rotation));
+	float angleRad = glm::radians(rotation.w);
+	glm::quat q = glm::angleAxis(angleRad, axis);
+
+	glm::vec3 u = q * glm::vec3(size.x, 0.0f, 0.0f);
+	glm::vec3 v = q * glm::vec3(0.0f, 0.0f, size.y);
+
+	glm::vec3 origin = position - (0.5f * u) - (0.5f * v);
+
+	AddQuad(origin, u, v, material);
 }
 
 void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material)

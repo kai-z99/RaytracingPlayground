@@ -86,7 +86,11 @@ public:
 	Scene* Build();
 
 	void AddSphere(glm::vec3 position, float radius, const Material& material);
+	//u-v quad
 	void AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const Material& material);
+	//centered quad
+	void AddQuad(glm::vec3 position, glm::vec2 size, glm::vec4 rotation, const Material& material);
+
 	void AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material);
 
 private:

@@ -50,7 +50,6 @@ __device__ inline MaterialData* MakeDialectric(float refractionIndex)
 	return m;
 }
 
-
 __device__ inline float FresnelSchlick(float cosT, float eta)
 {
 	float r0 = (1 - eta) / (1 + eta);

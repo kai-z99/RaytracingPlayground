@@ -5,7 +5,7 @@
 //NAIVE: ~12.74
 //BVH: ~3.45s
 
-__device__ Camera::Camera()
+__host__ Camera::Camera()
 {
     this->Init();
 }
@@ -25,19 +25,19 @@ __device__ void Camera::RenderPixel(curandState& randState, const Scene& scene, 
     this->WriteColor(pixelBuffer, i, j, pixelColor);
 }
 
-__device__ void Camera::SetPixelBuffer(unsigned char* buffer)
+__host__ void Camera::SetPixelBuffer(unsigned char* buffer)
 {
     this->pixelBuffer = buffer;
 }
 
-__device__ void Camera::Init()
+__host__ void Camera::Init()
 {
     this->up = glm::vec3(0, 1, 0);
-    this->center = glm::vec3(13, 2, 3);
+    this->center = glm::vec3(-2, 0.5, 2);
     //this->center = glm::vec3(0.0f, 0.0f, 2.0f);
 
-    this->lookAt = glm::vec3(0, 0, 0);
-    this->vfov = 20;
+    this->lookAt = glm::vec3(0, .5, 0);
+    this->vfov = 30;
 
     this->focalLength = glm::length(center - lookAt);
 

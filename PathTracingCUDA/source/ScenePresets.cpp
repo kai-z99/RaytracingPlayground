@@ -137,7 +137,7 @@ Scene* Scenes::TriangleTestScene(int seed)
         Material* mat;
         glm::vec3 tint(distColor(rng), distColor(rng), distColor(rng));
 
-        if (choose(rng) < 0.3f)
+        if (choose(rng) < 1.3f)
         {
             mat = new MetalMaterial(glm::vec3(tint), 0.00f);
         }
@@ -149,6 +149,8 @@ Scene* Scenes::TriangleTestScene(int seed)
         {
             mat = new LambertianMaterial(tint);
         }
+
+        mat = new LambertianMaterial(tint);
         
         // --- four triangular faces -------------------------------------------
         sb.AddTriangle(W(v0), W(v1), W(v2), *mat); // base
@@ -159,4 +161,37 @@ Scene* Scenes::TriangleTestScene(int seed)
 
     return sb.Build();
 
+}
+
+Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
+{
+    SceneBuilder sb;
+
+    float gap = 0.2f;
+
+    (cam)->lookAt = glm::vec3(0, .5, 0);
+    (cam)->center = glm::vec3(-2, 0.5, 2);
+
+    //floor
+    sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1,0,0,0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+
+    //roof
+    sb.AddQuad(glm::vec3(-2.5f - gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(2.5f + gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    
+    //x walls (red)
+    sb.AddQuad(glm::vec3(.0f, 0.5f, 5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), LambertianMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(.0f, 0.5f, -5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), LambertianMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
+
+    //z walls (green)
+    sb.AddQuad(glm::vec3(-5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), LambertianMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
+    sb.AddQuad(glm::vec3(5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), LambertianMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
+
+    //spheres
+    sb.AddSphere(glm::vec3(0.0f, 0.3f, 0.0f), 0.3f, MetalMaterial(glm::vec3(0.3f, 0.3f, 0.3f), 0.05f));
+    sb.AddSphere(glm::vec3(0.0f, 0.6f + 0.15f, 0.0f), 0.15f, LambertianMaterial(glm::vec3(0.3f, 0.3f, 0.3f)));
+    sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial());
+
+
+    return sb.Build();
 }

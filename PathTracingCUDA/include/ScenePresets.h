@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Scene.h"
+#include "Camera.h"
 
 namespace Scenes
 {
@@ -9,4 +10,6 @@ namespace Scenes
 	Scene* KaisScene(int seed);
 
 	Scene* TriangleTestScene(int seed);
+
+	Scene* PlaneTestScene(int seed, Camera*& cam);
 }

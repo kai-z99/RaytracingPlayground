@@ -36,7 +36,7 @@ __device__ inline bool HitQuad(const QuadsPacked& quads, int i, const Ray& r, In
 	float alpha = glm::dot(w, glm::cross(p, v));
 	float beta = glm::dot(w, glm::cross(u, p));
 
-	if ((0 <= alpha && alpha <= 1) && (0 <= beta && beta <= 1))
+	if ((-1e-8 <= alpha && alpha <= 1 + 1e-8) && (-1e-8 <= beta && beta <= 1 + 1e-8))
 	{
 		rec.t = t;
 		rec.p = intersection;

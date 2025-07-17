@@ -24,8 +24,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 1;
-    c.maxBounceDepth = 4;
+    c.samplesPerPixel = 10;
+    c.maxBounceDepth = 12;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -35,26 +35,7 @@ Config MakeConfig()
     return c;
 }
 
-__global__ void BuildCameraKernel(Camera** outCamera, unsigned char* pixels, int samplesPerPixel, int maxDepth)
-{
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
-        *outCamera = new Camera();
-        (*outCamera)->samplesPerPixel = samplesPerPixel;
-        (*outCamera)->maxRayDepth = maxDepth;
-        (*outCamera)->SetPixelBuffer(pixels);
-    }
-}
-
-__global__ void DestroyCameraKernel(Camera** camera)
-{
-    if (threadIdx.x == 0 && blockIdx.x == 0)
-    {
-        delete* camera;
-    }
-}
-
-__global__ void RenderKernel(Camera** camera, Scene scene, curandState* pixelRandStates)
+__global__ void RenderKernel(Camera camera, Scene scene, curandState* pixelRandStates)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
@@ -64,7 +45,7 @@ __global__ void RenderKernel(Camera** camera, Scene scene, curandState* pixelRan
     int pixelIndex = j * SCREEN_WIDTH + i;
     curandState randState = pixelRandStates[pixelIndex];
 
-    (*camera)->RenderPixel(randState, scene, i, j);
+    (camera).RenderPixel(randState, scene, i, j);
 
     //update the state after using it
     pixelRandStates[pixelIndex] = randState;
@@ -107,12 +88,13 @@ void SetupRandomPixelStates(curandState*& dPixelRandomStates, int seed)
 
 }
 
-void BuildCamera(Camera**& camera, unsigned char* pixelBuffer, const Config& config)
+void BuildCamera(Camera*& uCamera, unsigned char* pixelBuffer, const Config& config)
 {
-    checkCudaErrors(cudaMalloc(&camera, sizeof(Camera*)));
-    BuildCameraKernel<<<1, 1>>>(camera, pixelBuffer, config.samplesPerPixel, config.maxBounceDepth);
-    cudaDeviceSynchronize();
-    checkCudaErrors(cudaGetLastError());
+    cudaMallocManaged(&uCamera, sizeof(Camera));
+    new (uCamera) Camera();                                  
+    uCamera->samplesPerPixel = config.samplesPerPixel;
+    uCamera->maxRayDepth = config.maxBounceDepth;
+    uCamera->SetPixelBuffer(pixelBuffer);                           // still device mem
 }
 
 
@@ -128,7 +110,7 @@ void DestroySceneCPU(Scene*& uScene)
     checkCudaErrors(cudaFree(uScene));
 }
 
-void RenderScene(Scene uScene, Camera** dCamera, curandState* dRandomPixelStates)
+void RenderScene(Scene uScene, Camera uCamera, curandState* dRandomPixelStates)
 {
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
@@ -138,7 +120,7 @@ void RenderScene(Scene uScene, Camera** dCamera, curandState* dRandomPixelStates
 
     //launch render kernel
     std::cout << "STARTING RENDERING...\n";
-    RenderKernel<<<grid, block>>>(dCamera, uScene, dRandomPixelStates);
+    RenderKernel<<<grid, block>>>(uCamera, uScene, dRandomPixelStates);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
@@ -149,16 +131,14 @@ void RenderScene(Scene uScene, Camera** dCamera, curandState* dRandomPixelStates
         << secs << " secs\n";
 }
 
-void CleanUp(Scene* uScene, Camera** dCamera, unsigned char* dPixels, unsigned char* hPixels)
+void CleanUp(Scene* uScene, Camera* uCamera, unsigned char* dPixels, unsigned char* hPixels)
 {
     DestroySceneCPU(uScene);
-
-    DestroyCameraKernel << <1, 1 >> > (dCamera);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
 
     checkCudaErrors(cudaFree(dPixels));
-    checkCudaErrors(cudaFree(dCamera));
+    checkCudaErrors(cudaFree(uCamera));
     delete[] hPixels;
 }
 
@@ -212,13 +192,13 @@ int main()
     SetupRandomPixelStates(dRandomPixelStates, seed);
 
     //create world on cpu and camera on the device
-    Camera** dCamera;
-    BuildCamera(dCamera, dPixels, config);
+    Camera* uCamera;
+    BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::RayTracingInOneWeekend(seed);
+    Scene* uScene = Scenes::PlaneTestScene(seed, uCamera);
 
     //render
-    RenderScene(*uScene, dCamera, dRandomPixelStates);
+    RenderScene(*uScene, *uCamera, dRandomPixelStates);
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
@@ -227,7 +207,7 @@ int main()
     DisplayResult(hPixels);
 
     //free allocated  memory
-    CleanUp(uScene, dCamera, dPixels, hPixels);
+    CleanUp(uScene, uCamera, dPixels, hPixels);
 
     return 0;
 }
