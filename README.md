@@ -21,3 +21,4 @@
 - Scene is same from final output of "Ray Tracing in One Weekend" by Peter Shirley and more. https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
 ![Render Output](Images/rayShowCUDA1.png)
+![Render Output](Images/rayShowCUDA5.png)
