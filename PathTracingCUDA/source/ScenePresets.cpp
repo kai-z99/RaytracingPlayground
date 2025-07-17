@@ -17,7 +17,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
 
     //floor
-    LambertianMaterial groundMat(glm::vec3(1.0f));
+    LambertianMaterial groundMat(glm::vec3(0.8f, 0.8f, 0.8f));
     wb.AddQuad(
         glm::vec3(-150.0f, 0.0f, -150.0f),
         glm::vec3(0.0f, 0.0f, 300.0f),
@@ -172,7 +172,7 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 {
     SceneBuilder sb;
 
-    float gap = 0.2f;
+    float gap = 0.0f;
 
     (cam)->lookAt = glm::vec3(0, .5, 0);
     (cam)->center = glm::vec3(-2, 0.5, 2);
@@ -196,9 +196,109 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 
     //spheres
     sb.AddSphere(glm::vec3(0.0f, 0.3f, 0.0f), 0.3f, MetalMaterial(glm::vec3(0.3f, 0.3f, 0.3f), 0.05f));
-    sb.AddSphere(glm::vec3(0.0f, 0.6f + 0.15f, 0.0f), 0.15f, LambertianMaterial(glm::vec3(0.3f, 0.3f, 0.3f)));
     sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial());
+    sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DialectricMaterial());
 
+    //lights
+
+    for (int i = -5; i <= 5; i++)
+    {
+        for (int j = -5; j <= 5; j++)
+        {
+            //sb.AddQuad(glm::vec3((float)i, 1.0f - 0.001f, (float)j), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
+        }
+    }
+
+    sb.AddQuad(glm::vec3(0.0f, 1.0f - 0.001f, 0.0f), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
+    
+
+    return sb.Build();
+}
+
+Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
+{
+    // --- Camera setup ---
+    cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 50.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
+
+    SceneBuilder sb;
+
+    // --- Materials ---
+    LambertianMaterial white(glm::vec3(0.73f));
+    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseLightMaterial light(glm::vec3(15.0f));
+
+    // --- Cornell box dimensions ---
+    const float W = 555.0f;   // box width, height, depth
+
+    // Floor (y = 0)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Ceiling (y = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, W, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, -W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Back wall (z = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    white
+    //);
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white);
+
+
+    // Left wall (x = 0), red
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    red
+    //);
+    sb.AddQuad(glm::vec3(-W/ 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);
+
+    // Right wall (x = W), green
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(W, 0.0f, W),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, -W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    green
+    //);
+
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
+
+    // --- Area light on the ceiling ---
+    sb.AddQuad(
+        glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1,0,0,0),  // positive Z
+        light
+    );
+
+    sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    
+    
 
     return sb.Build();
 }

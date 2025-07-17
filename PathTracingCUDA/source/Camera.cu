@@ -9,7 +9,8 @@ __host__ Camera::Camera()
 {
     this->center = glm::vec3(0.0f, 0.0f, -2.0f);
     this->lookAt = glm::vec3(0.0f);
-    this->vfov = 90;
+    this->vfov = 90.0f;
+    this->backgroundColor = glm::vec3(0.70, 0.80, 1.00);
 
     this->Init();
 }
@@ -110,17 +111,28 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         HitRecord rec;
         if (!HitScene(scene, r, Interval(0.001f, infinity), rec)) //hit sky
         {
+            /*
             float a = 0.5f * (r.direction().y + 1.0f);
             glm::vec3 sky = (1.0f - a) * glm::vec3(1.0f)
                 + a * glm::vec3(0.5f, 0.7f, 1.0f);
-            col += totalAttenuation * sky;
+            */
+
+            col += totalAttenuation * this->backgroundColor;
+            break;
+        }
+
+        
+        MaterialData& materialData = scene.materials[rec.matDataID];
+        if (materialData.type == MAT_LIGHT_DIFFUSE)
+        {
+            col += totalAttenuation * materialData.emission;
             break;
         }
 
         Ray scattered;
         glm::vec3 attenuation;
 
-        MaterialData& materialData = scene.materials[rec.matDataID];
+        
         if (!Scatter(materialData, randState, r, rec, attenuation, scattered))
         {
             break;

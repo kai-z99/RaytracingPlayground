@@ -77,6 +77,30 @@ struct DialectricMaterial : public Material
 	}
 };
 
+struct DiffuseLightMaterial : public Material
+{
+	glm::vec3 emissive;
+
+	DiffuseLightMaterial(glm::vec3 emissive = glm::vec3(1.0f))
+	{
+		this->tag = MAT_LIGHT_DIFFUSE;
+		this->color = glm::vec3(0.0f);
+		this->emissive = emissive;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.color = this->color;
+		m.emission = this->emissive;
+		m.type = this->tag;
+
+		return m;
+	}
+};
+
+
+
 class SceneBuilder
 {
 public:

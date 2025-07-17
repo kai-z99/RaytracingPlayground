@@ -10,45 +10,17 @@ enum MaterialType
 	MAT_LAMBERTIAN = 0,
 	MAT_METAL,
 	MAT_DIALECTRIC,
+	MAT_LIGHT_DIFFUSE,
 };
 
 struct MaterialData
 {
 	glm::vec3 color;
+	glm::vec3 emission;
 	float fuzz;
 	float refractionIndex; //eta
 	MaterialType type;
 };
-
-__device__ inline MaterialData* MakeLambertian(const glm::vec3& color)
-{
-	MaterialData* m = new MaterialData();
-	m->color = color;
-	m->fuzz = 0.0f;
-	m->refractionIndex = 1.0f;
-	m->type = MAT_LAMBERTIAN;
-	return m;
-}
-
-__device__ inline MaterialData* MakeMetal(const glm::vec3& color, float fuzz)
-{
-	MaterialData* m = new MaterialData();
-	m->color = color;
-	m->fuzz = (fuzz < 1.0f ? fuzz : 1.0f);
-	m->refractionIndex = 1.0f;
-	m->type = MAT_METAL;
-	return m;
-}
-
-__device__ inline MaterialData* MakeDialectric(float refractionIndex)
-{
-	MaterialData* m = new MaterialData();
-	m->color = glm::vec3(1.0f);  
-	m->fuzz = 0.0f;
-	m->refractionIndex = refractionIndex;
-	m->type = MAT_DIALECTRIC;
-	return m;
-}
 
 __device__ inline float FresnelSchlick(float cosT, float eta)
 {
@@ -120,6 +92,12 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		return true;
 	}
 
+	case MAT_LIGHT_DIFFUSE:
+	{
+		return false;
+
+	}
+
 	default:
 	{
 		printf("UNEXPECTED MATERIAL\n");
@@ -128,3 +106,35 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		
 	}
 }
+
+/*
+__device__ inline MaterialData* MakeLambertian(const glm::vec3& color)
+{
+	MaterialData* m = new MaterialData();
+	m->color = color;
+	m->fuzz = 0.0f;
+	m->refractionIndex = 1.0f;
+	m->type = MAT_LAMBERTIAN;
+	return m;
+}
+
+__device__ inline MaterialData* MakeMetal(const glm::vec3& color, float fuzz)
+{
+	MaterialData* m = new MaterialData();
+	m->color = color;
+	m->fuzz = (fuzz < 1.0f ? fuzz : 1.0f);
+	m->refractionIndex = 1.0f;
+	m->type = MAT_METAL;
+	return m;
+}
+
+__device__ inline MaterialData* MakeDialectric(float refractionIndex)
+{
+	MaterialData* m = new MaterialData();
+	m->color = glm::vec3(1.0f);
+	m->fuzz = 0.0f;
+	m->refractionIndex = refractionIndex;
+	m->type = MAT_DIALECTRIC;
+	return m;
+}
+*/

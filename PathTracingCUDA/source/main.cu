@@ -24,7 +24,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10;
+    c.samplesPerPixel = 1000;
     c.maxBounceDepth = 12;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -195,7 +195,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::RayTracingInOneWeekend(seed, uCamera);
+    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

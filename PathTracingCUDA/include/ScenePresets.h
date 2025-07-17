@@ -12,4 +12,6 @@ namespace Scenes
 	Scene* TriangleTestScene(int seed, Camera*& cam);
 
 	Scene* PlaneTestScene(int seed, Camera*& cam);
+
+	Scene* CornellBoxScene(int seed, Camera*& cam);
 }

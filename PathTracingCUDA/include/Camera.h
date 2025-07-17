@@ -12,6 +12,7 @@ public:
     float vfov;
     int samplesPerPixel;
     int maxRayDepth;
+    glm::vec3 backgroundColor;
 
     __host__ Camera();
     __host__ void Init();
@@ -27,8 +28,6 @@ private:
     glm::vec3 u, v, w;
     float focalLength;
         
-    
-
     __device__ Ray GetRay(curandState& randState, int i, int j) const;
 
     __device__ glm::vec3 SampleSquare(curandState& randState) const;
