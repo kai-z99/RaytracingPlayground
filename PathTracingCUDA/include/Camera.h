@@ -14,6 +14,7 @@ public:
     int maxRayDepth;
 
     __host__ Camera();
+    __host__ void Init();
     __device__ void RenderPixel(curandState& randState, const Scene& scene, unsigned int i, unsigned int j);
     __host__ void SetPixelBuffer(unsigned char* buffer);
 
@@ -26,7 +27,7 @@ private:
     glm::vec3 u, v, w;
     float focalLength;
         
-    __host__ void Init();
+    
 
     __device__ Ray GetRay(curandState& randState, int i, int j) const;
 

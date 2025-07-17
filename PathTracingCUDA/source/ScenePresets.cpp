@@ -5,8 +5,13 @@
 #include <glm/gtx/quaternion.hpp>
 #include <random>
 
-Scene* Scenes::RayTracingInOneWeekend(int seed)
+Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
 {
+    cam->center = glm::vec3(13, 2, 3);
+    cam->vfov = 20;
+    cam->lookAt = glm::vec3(0, 0, 0);
+    cam->Init();
+
     SceneBuilder wb;
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
@@ -63,7 +68,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed)
     return wb.Build();
 }
 
-Scene* Scenes::KaisScene(int seed)
+Scene* Scenes::KaisScene(int seed, Camera*& cam)
 {
     SceneBuilder sb;
     std::mt19937 rng(seed);
@@ -84,7 +89,7 @@ Scene* Scenes::KaisScene(int seed)
     return sb.Build();
 }
 
-Scene* Scenes::TriangleTestScene(int seed)
+Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
 {
     SceneBuilder sb;
 
@@ -171,6 +176,8 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 
     (cam)->lookAt = glm::vec3(0, .5, 0);
     (cam)->center = glm::vec3(-2, 0.5, 2);
+    cam->vfov = 25;
+    cam->Init();
 
     //floor
     sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1,0,0,0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));

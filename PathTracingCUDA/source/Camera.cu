@@ -7,6 +7,10 @@
 
 __host__ Camera::Camera()
 {
+    this->center = glm::vec3(0.0f, 0.0f, -2.0f);
+    this->lookAt = glm::vec3(0.0f);
+    this->vfov = 90;
+
     this->Init();
 }
 
@@ -33,12 +37,6 @@ __host__ void Camera::SetPixelBuffer(unsigned char* buffer)
 __host__ void Camera::Init()
 {
     this->up = glm::vec3(0, 1, 0);
-    this->center = glm::vec3(-2, 0.5, 2);
-    //this->center = glm::vec3(0.0f, 0.0f, 2.0f);
-
-    this->lookAt = glm::vec3(0, .5, 0);
-    this->vfov = 30;
-
     this->focalLength = glm::length(center - lookAt);
 
     this->w = glm::normalize(center - lookAt);
@@ -48,8 +46,6 @@ __host__ void Camera::Init()
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
     this->halfHeight = tan(glm::radians(this->vfov) * 0.5);
     this->halfWidth = this->aspect * this->halfHeight;
-    this->samplesPerPixel = 1; //user set
-    this->maxRayDepth = 1; //user set
 }
 
 __device__ Ray Camera::GetRay(curandState& randState, int i, int j) const

@@ -5,11 +5,11 @@
 
 namespace Scenes
 {
-	Scene* RayTracingInOneWeekend(int seed);
+	Scene* RayTracingInOneWeekend(int seed, Camera*& cam);
 
-	Scene* KaisScene(int seed);
+	Scene* KaisScene(int seed, Camera*& cam);
 
-	Scene* TriangleTestScene(int seed);
+	Scene* TriangleTestScene(int seed, Camera*& cam);
 
 	Scene* PlaneTestScene(int seed, Camera*& cam);
 }
