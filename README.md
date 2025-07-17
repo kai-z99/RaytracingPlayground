@@ -1,8 +1,9 @@
-# Ray Tracing Performance Testing
+# A CUDA Path Tracer
 
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
-- GPU implementation leverages CUDA for parallelism
+- The BVH is built with a median-split strategy along the longest axis of each AABB.
+- This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
 
 ## Render Configuration
 - Resolution: **800×600 pixels**
