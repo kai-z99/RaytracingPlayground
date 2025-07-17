@@ -146,6 +146,14 @@ void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const M
 	this->triMaterialsIDs.push_back(matID);
 }
 
+void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform, const Material& material)
+{
+
+	//LOAD OBJ
+}
+
+
+
 int SceneBuilder::PushMaterialAndGetID(MaterialData m)
 {
 	this->materials.push_back(m);

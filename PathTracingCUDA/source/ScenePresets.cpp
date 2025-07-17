@@ -68,29 +68,13 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     return wb.Build();
 }
 
-Scene* Scenes::KaisScene(int seed, Camera*& cam)
-{
-    SceneBuilder sb;
-    std::mt19937 rng(seed);
-    std::uniform_real_distribution<float> U(0.0f, 1.0f);
-
-    for (int i = 0; i < 30; i++)
-    {
-        for (int j = 0; j < 30; j++)
-        {
-            sb.AddSphere(glm::vec3((float)(1.5f * i), 0.85f, (float)(1.5f * j)), 0.55f, MetalMaterial(glm::vec3(U(rng), U(rng), U(rng))));
-        }
-        
-    }
-    
-    sb.AddQuad(
-        glm::vec3(-300.0f, 0.0f, -300.0f), glm::vec3(0.0f, 0.0f, 600.0f), glm::vec3(600.0f, 0.0f, 0.0f), LambertianMaterial());
-
-    return sb.Build();
-}
-
 Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
 {
+    (cam)->lookAt = glm::vec3(0, .5, 0);
+    (cam)->center = glm::vec3(-2, 0.5, 2);
+    cam->vfov = 90;
+    cam->Init();
+
     SceneBuilder sb;
 
     // -------------------------------------------------------------------------
@@ -215,6 +199,7 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
     return sb.Build();
 }
 
+//Rendertime for 1000spp 12 bounce: 535.266 secs
 Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 {
     // --- Camera setup ---

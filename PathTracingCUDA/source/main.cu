@@ -21,6 +21,8 @@ struct Config
     int maxBounceDepth;
 };
 
+//27.16
+// 53.3681 secs
 Config MakeConfig()
 {
     Config c;

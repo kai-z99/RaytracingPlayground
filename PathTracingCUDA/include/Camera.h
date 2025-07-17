@@ -13,6 +13,7 @@ public:
     int samplesPerPixel;
     int maxRayDepth;
     glm::vec3 backgroundColor;
+    bool russianroulette;
 
     __host__ Camera();
     __host__ void Init();

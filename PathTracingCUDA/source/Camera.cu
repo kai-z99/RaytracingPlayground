@@ -11,6 +11,7 @@ __host__ Camera::Camera()
     this->lookAt = glm::vec3(0.0f);
     this->vfov = 90.0f;
     this->backgroundColor = glm::vec3(0.70, 0.80, 1.00);
+    this->russianroulette = true;
 
     this->Init();
 }
@@ -139,6 +140,19 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         }
 
         totalAttenuation *= attenuation;
+
+        if (this->russianroulette && depth >= 3)
+        {
+            //the max compoenent of total attenution
+            float p = fminf(fmaxf(totalAttenuation.r, fmaxf(totalAttenuation.g, totalAttenuation.b)), 0.95f);
+
+            //We lose energy when we terminate
+            if (RandomFloat(randState) > p) break;
+
+            //To preserve energy: boost the energy of non-terminated paths by the probablity of being terminated.
+            totalAttenuation /= p; 
+        }
+
         r = scattered;
     }
     return col;

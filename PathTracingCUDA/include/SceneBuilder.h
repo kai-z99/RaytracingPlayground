@@ -117,6 +117,8 @@ public:
 
 	void AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material);
 
+	void AddModel(const std::string& path, const glm::mat4& transform, const Material& material);
+
 private:
 	void UploadMaterialDataToScene(Scene*& scene);
 	std::vector<MaterialData> materials;
