@@ -1,8 +1,9 @@
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
-- The BVH is built with a median-split strategy along the longest axis of each AABB.
-- This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
-- A technique called russian roulette is also used to terminate rays that have low contribution early.
+  - The BVH is built with a median-split strategy along the longest axis of each AABB.
+  - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
+  - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
+- A technique called russian roulette is used to terminate rays that have low contribution early.
 
 ## Render Configuration
 - GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
