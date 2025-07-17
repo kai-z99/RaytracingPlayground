@@ -2,6 +2,7 @@
 - BVH = Bounding Volume Hierarchy (used for acceleration)
 - The BVH is built with a median-split strategy along the longest axis of each AABB.
 - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
+- A technique called russian roulette is also used to terminate rays that have low contribution early.
 
 ## Render Configuration
 - GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
@@ -18,7 +19,7 @@
 | CPU          | BVH          | ~142 seconds |
 | GPU (CUDA)   | N/A          | ~12.4 seconds|
 | GPU (CUDA)   | BVH, Recursive Traversal | ~3.45 seconds|
-| GPU (CUDA)   | BVH, Flat Traversal | ~1.65 seconds|
+| GPU (CUDA)   | BVH, Flat Traversal | ~1.25 seconds|
 
 
 
@@ -36,6 +37,6 @@
 
 | Platform     | Acceleration | Time         |
 |--------------|--------------|--------------|
-| GPU (CUDA)   | BVH, Flat Traversal | ~535 seconds|
+| GPU (CUDA)   | BVH, Flat Traversal | ~270.8 seconds|
 
 ![Render Output](Images/rayShowCUDA5.png)
