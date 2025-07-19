@@ -5,6 +5,25 @@
   - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
 - A technique called russian roulette is used to terminate rays that have low contribution early.
 
+<br/>
+
+## Render Configuration
+- GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
+- Resolution: **1920×1080 pixels**
+- Rays per Pixel: **10000**
+- Maximum Bounce Depth: **15**
+- Scene: **Cornell Box, Stanford Dragon (871306 triangles)**
+## Performance Results
+
+| Platform     | Acceleration | Time         |
+|--------------|--------------|--------------|
+| GPU (CUDA)   | BVH, Flat Traversal | ~999.8 seconds|
+
+![Render Output](Images/rayShowCUDA10.png)
+
+<br/>
+<br/>
+
 ## Render Configuration
 - GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
 - Resolution: **800×600 pixels**
@@ -28,16 +47,4 @@
 (Image uses 1000spp)
 
 
-## Render Configuration
-- GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
-- Resolution: **1920×1080 pixels**
-- Rays per Pixel: **1000**
-- Maximum Bounce Depth: **12**
-- Scene: **Cornell Box, assorted material spheres**
-## Performance Results
 
-| Platform     | Acceleration | Time         |
-|--------------|--------------|--------------|
-| GPU (CUDA)   | BVH, Flat Traversal | ~270.8 seconds|
-
-![Render Output](Images/rayShowCUDA5.png)
