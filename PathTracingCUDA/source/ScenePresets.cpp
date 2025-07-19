@@ -70,12 +70,13 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
 
 Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
 {
-    (cam)->lookAt = glm::vec3(0, .5, 0);
-    (cam)->center = glm::vec3(-2, 0.5, 2);
+    (cam)->lookAt = glm::vec3(0, 0, 0);
+    (cam)->center = glm::vec3(0, 30, 70);
     cam->vfov = 90;
     cam->Init();
 
     SceneBuilder sb;
+
 
     // -------------------------------------------------------------------------
     // Random-number helpers
@@ -126,7 +127,7 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
         Material* mat;
         glm::vec3 tint(distColor(rng), distColor(rng), distColor(rng));
 
-        if (choose(rng) < 1.3f)
+        if (choose(rng) < 0.3f)
         {
             mat = new MetalMaterial(glm::vec3(tint), 0.00f);
         }
@@ -138,8 +139,6 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
         {
             mat = new LambertianMaterial(tint);
         }
-
-        mat = new LambertianMaterial(tint);
         
         // --- four triangular faces -------------------------------------------
         sb.AddTriangle(W(v0), W(v1), W(v2), *mat); // base
@@ -155,12 +154,15 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
 Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 {
     SceneBuilder sb;
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+    std::uniform_real_distribution<float> U2(-1.0f, 1.0f);
 
     float gap = 0.0f;
 
     (cam)->lookAt = glm::vec3(0, .5, 0);
     (cam)->center = glm::vec3(-2, 0.5, 2);
-    cam->vfov = 25;
+    cam->vfov = 50;
     cam->Init();
 
     //floor
@@ -183,17 +185,24 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
     sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial());
     sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DialectricMaterial());
 
+    for (int i = 0; i < 200; i++)
+    {
+        float r = 0.05f + U(rng) * 0.12f;
+        sb.AddSphere(glm::vec3(U2(rng) * 4, r, U2(rng) * 4), r, LambertianMaterial(glm::vec3(U(rng), U(rng), U(rng))));
+    }
+    
+
     //lights
 
     for (int i = -5; i <= 5; i++)
     {
         for (int j = -5; j <= 5; j++)
         {
-            //sb.AddQuad(glm::vec3((float)i, 1.0f - 0.001f, (float)j), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
+            sb.AddQuad(glm::vec3((float)i, 1.0f - 0.001f, (float)j), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
         }
     }
 
-    sb.AddQuad(glm::vec3(0.0f, 1.0f - 0.001f, 0.0f), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
+    //sb.AddQuad(glm::vec3(0.0f, 1.0f - 0.001f, 0.0f), glm::vec2(0.2f), glm::vec4(1, 0, 0, 0), DiffuseLightMaterial(glm::vec3(5.0f)));
     
 
     return sb.Build();
@@ -282,8 +291,29 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     
-    
+    return sb.Build();
+}
+
+Scene* Scenes::ModelTest(int seed, Camera*& cam)
+{
+    cam->lookAt = { 0,0,0 };
+    cam->center = {0, 1, 3};
+    cam->vfov = 20;
+    cam->Init();
+
+    SceneBuilder sb;
+
+    glm::mat4 M(1.0f);
+    M = glm::rotate(glm::mat4(1.0f), glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, LambertianMaterial(glm::vec3(0.2f, 0.2f, 1.0f)));
+
+
+    sb.AddQuad(glm::vec3(0.0f, -0.70498f / 2.0f, 0.0f), glm::vec2(5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), LambertianMaterial(glm::vec3(0.7f)));
+
 
     return sb.Build();
 }

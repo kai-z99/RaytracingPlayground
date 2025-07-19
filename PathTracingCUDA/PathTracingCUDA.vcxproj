@@ -51,6 +51,7 @@
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\Sphere.h" />
     <ClInclude Include="include\SceneBuilder.h" />
+    <ClInclude Include="include\tiny_obj_loader.h" />
     <ClInclude Include="include\Triangle.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

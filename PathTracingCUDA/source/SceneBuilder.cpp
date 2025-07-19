@@ -2,6 +2,9 @@
 #include "../include/Primitives.h"
 
 #include <glm/gtc/quaternion.hpp>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "../include/tiny_obj_loader.h"
+
 
 #include <iostream>
 
@@ -148,8 +151,85 @@ void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const M
 
 void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform, const Material& material)
 {
+	int tris = 0;
+	std::cout << "LOADING MODEL AT: " << path << '\n';
 
-	//LOAD OBJ
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> mats;
+	std::string warn, err;
+	tinyobj::LoadObj(&attrib, &shapes, &mats, &warn, &err, path.c_str());
+
+	//compute aabb
+	glm::vec3 vmin(FLT_MAX), vmax(-FLT_MAX);
+	for (size_t i = 0; i < attrib.vertices.size() / 3; i++)
+	{
+		//get the triangle
+		glm::vec3 v
+		(
+			attrib.vertices[3 * i + 0],
+			attrib.vertices[3 * i + 1],
+			attrib.vertices[3 * i + 2]
+
+		);
+
+		vmin = glm::min(vmin, v);
+		vmax = glm::max(vmax, v);
+	}
+
+	//compute scale factor for 1x1
+	glm::vec3 extent = vmax - vmin;
+	float scale = 1.0f / glm::max(extent.x, glm::max(extent.y, extent.z)); // 1 / maxBoxDimension
+	glm::vec3 center = (vmin + vmax) / 2.0f;
+
+	std::cout << "X EXTENT: " << extent.x * scale << '\n';
+	std::cout << "Y EXTENT: " << extent.y * scale << '\n';
+	std::cout << "Z EXTENT: " << extent.z * scale << '\n';
+
+	//build transform
+	glm::mat4 T = glm::translate(glm::mat4(1.0f), -center); //shift the model so that its geometric center is (0,0,0) in model space.
+	glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scale)); //that way we can uniformally scale it like this.
+	glm::mat4 M = S * T * transform;
+
+	//triangulate and add
+	for (const tinyobj::shape_t& shape : shapes)
+	{
+		size_t offset = 0;
+
+		for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
+		{
+			int fv = shape.mesh.num_face_vertices[f];
+
+			//fan-triangulate
+			for (int v = 1; v + 1 < fv; v++)
+			{
+				glm::vec3 tri[3];
+				int idxs[3] = {0, v, v + 1};
+				for (int k = 0; k < 3; k++)
+				{
+					tinyobj::index_t idx = shape.mesh.indices[offset + idxs[k]];
+					tri[k] = glm::vec3
+					(
+						attrib.vertices[3 * idx.vertex_index + 0],
+						attrib.vertices[3 * idx.vertex_index + 1],
+						attrib.vertices[3 * idx.vertex_index + 2]
+					);
+				}
+
+				//apply M then add
+				glm::vec3 p0 = glm::vec3(M * glm::vec4(tri[0], 1.0f));
+				glm::vec3 p1 = glm::vec3(M * glm::vec4(tri[1], 1.0f));
+				glm::vec3 p2 = glm::vec3(M * glm::vec4(tri[2], 1.0f));
+
+				this->AddTriangle(p0, p1, p2, material);
+				tris++;
+			}
+
+			offset += fv;
+		}
+	}
+
+	std::cout << "MODEL LOADED. TRIANGLES: " << tris << '\n';
 }
 
 

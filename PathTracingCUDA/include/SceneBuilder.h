@@ -4,6 +4,7 @@
 #include "Scene.h"
 
 #include <vector>
+#include <unordered_map>
 
 struct Material
 {
@@ -143,5 +144,6 @@ private:
 	std::vector<glm::vec3> triP2s;
 	std::vector<int> triMaterialsIDs;
 
+	//models
 
 };
