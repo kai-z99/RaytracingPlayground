@@ -21,6 +21,8 @@
 
 ![Render Output](Images/rayShowCUDA10.png)
 ![Render Output](Images/rayShowCUDA11.png)
+![Render Output](Images/rayShowCUDA12.png)
+
 <br/>
 <br/>
 
