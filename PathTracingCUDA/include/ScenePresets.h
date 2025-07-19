@@ -14,4 +14,6 @@ namespace Scenes
 	Scene* CornellBoxScene(int seed, Camera*& cam);
 
 	Scene* ModelTest(int seed, Camera*& cam);
+
+	Scene* StatueScene(int seed, Camera*& cam);
 }

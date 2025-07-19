@@ -85,9 +85,8 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 			direction = glm::refract(ray.direction(), N, eta);
 		}
 
-
 		scattered = Ray(rec.p, direction);
-		attenuation = glm::vec3(1.0);
+		attenuation = glm::vec3(1.0f);
 
 		return true;
 	}

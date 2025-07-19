@@ -189,7 +189,7 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 	//build transform
 	glm::mat4 T = glm::translate(glm::mat4(1.0f), -center); //shift the model so that its geometric center is (0,0,0) in model space.
 	glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scale)); //that way we can uniformally scale it like this.
-	glm::mat4 M = S * T * transform;
+	glm::mat4 M = transform * S * T;
 
 	//triangulate and add
 	for (const tinyobj::shape_t& shape : shapes)

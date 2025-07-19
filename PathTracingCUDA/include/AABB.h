@@ -12,7 +12,7 @@ __device__ inline float IntersectAABB(const Ray& r, const glm::vec3& bmin, const
 	float t0 = tMin;
 	float t1 = tMax;
 
-	#pragma unroll
+	//#pragma unroll
 	for (int axis = 0; axis < 3; axis++)
 	{
 		//solve t0 = (x_0 - Q_x) / d_x (for x,y,z)

@@ -137,3 +137,54 @@ struct Scene
      return hitAny;
 
 }
+
+__device__ inline bool HitSceneLinear(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
+{
+    bool hitAny = false;
+    float closestT = ray_t.max;
+    HitRecord tmp;
+
+    // --- Test every sphere ---
+    for (uint32_t i = 0; i < scene.spheres->n; ++i) {
+        if (HitSphere(*scene.spheres,
+            i,
+            r,
+            Interval(ray_t.min, closestT),
+            tmp))
+        {
+            hitAny = true;
+            closestT = tmp.t;
+            rec = tmp;
+        }
+    }
+
+    // --- Test every quad ---
+    for (uint32_t i = 0; i < scene.quads->n; ++i) {
+        if (HitQuad(*scene.quads,
+            i,
+            r,
+            Interval(ray_t.min, closestT),
+            tmp))
+        {
+            hitAny = true;
+            closestT = tmp.t;
+            rec = tmp;
+        }
+    }
+
+    // --- Test every triangle ---
+    for (uint32_t i = 0; i < scene.tris->n; ++i) {
+        if (HitTriangle(*scene.tris,
+            i,
+            r,
+            Interval(ray_t.min, closestT),
+            tmp))
+        {
+            hitAny = true;
+            closestT = tmp.t;
+            rec = tmp;
+        }
+    }
+
+    return hitAny;
+}

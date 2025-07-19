@@ -209,6 +209,15 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 }
 
 //Rendertime for 1000spp 12 bounce: 535.266 secs
+//With model: 1757.1 secs, 15bounce, 1000sp, MODEL LOADED. TRIANGLES: 871306
+//Dragon 999 seconds, 10'000sp, 1020x1080, 15 bounce
+//dragon dialectric :  1571.88 secs
+
+//800x600, 100spp, 15 bounce, dragon
+//Lambertian:  35.7787 secs
+//Metal: 36.9474 secs
+//dialectric: 50.1525 secs
+
 Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 {
     // --- Camera setup ---
@@ -288,11 +297,24 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
         light
     );
 
-    sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
-    sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
-    sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
-    sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
-    
+   
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //
+
+    std::string objName = "dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.71f;
+    float rotDeg = 90.0f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(-0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.5f)));
+
     return sb.Build();
 }
 
@@ -309,10 +331,136 @@ Scene* Scenes::ModelTest(int seed, Camera*& cam)
     M = glm::rotate(glm::mat4(1.0f), glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, LambertianMaterial(glm::vec3(0.2f, 0.2f, 1.0f)));
-
-
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, DialectricMaterial());
     sb.AddQuad(glm::vec3(0.0f, -0.70498f / 2.0f, 0.0f), glm::vec2(5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), LambertianMaterial(glm::vec3(0.7f)));
+
+
+    return sb.Build();
+}
+
+Scene* Scenes::StatueScene(int seed, Camera*& cam)
+{
+    // --- Camera setup ---
+    cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 50.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
+
+    SceneBuilder sb;
+
+    // --- Materials ---
+    LambertianMaterial white(glm::vec3(0.73f));
+    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseLightMaterial light(glm::vec3(15.0f));
+
+    // --- Cornell box dimensions ---
+    const float W = 555.0f;   // box width, height, depth
+
+    // Floor (y = 0)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Ceiling (y = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, W, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, -W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Back wall (z = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    white
+    //);
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white);
+
+
+    // Left wall (x = 0), red
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    red
+    //);
+    sb.AddQuad(glm::vec3(-W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);
+
+    // Right wall (x = W), green
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(W, 0.0f, W),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, -W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    green
+    //);
+
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
+
+    // --- Area light on the ceiling ---
+    sb.AddQuad(
+        glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1, 0, 0, 0),  // positive Z
+        light
+    );
+
+
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //
+
+    std::string objName = "erato.obj";
+    float scale = 450.00f;
+    float yExtent = 1;
+    float rotDeg = 90.0f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(-150, (yExtent / 2.0f) * scale, -150));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.816, 0.573, 0.91)));
+
+
+    objName = "buddha.obj";
+
+    rotDeg = 135.0f;
+    scale = 300.00f;
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(150, (yExtent / 2.0f) * scale, -75));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.502, 0.82, 0.698)));
+
+    objName = "lucy.obj";
+    rotDeg = 180.0f;
+    scale = 200.00f;
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+
+    M = glm::scale(M, glm::vec3(scale));
+
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(1, 0.667, 0.4)));
+
 
 
     return sb.Build();
