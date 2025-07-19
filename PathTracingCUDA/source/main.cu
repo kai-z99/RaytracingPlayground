@@ -26,8 +26,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10;
-    c.maxBounceDepth = 12;
+    c.samplesPerPixel = 100;
+    c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -197,7 +197,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::RayTracingInOneWeekend(seed, uCamera);
+    Scene* uScene = Scenes::StatueScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

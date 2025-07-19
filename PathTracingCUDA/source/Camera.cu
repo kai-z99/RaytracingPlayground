@@ -132,9 +132,10 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         Ray scattered;
         glm::vec3 attenuation;
+        float pdf;
 
         
-        if (!Scatter(materialData, randState, r, rec, attenuation, scattered))
+        if (!Scatter(materialData, randState, r, rec, attenuation, scattered, pdf))
         {
             break;
         }

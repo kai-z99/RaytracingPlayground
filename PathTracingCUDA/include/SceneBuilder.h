@@ -56,14 +56,38 @@ struct MetalMaterial : public Material
 
 };
 
+struct PBRMaterial : public Material
+{
+	glm::vec3 albedo;
+	float metallic;
+	float roughness;
+
+	PBRMaterial(glm::vec3 albedo = glm::vec3(1.0f), float metallic = 0.5f, float roughness = 0.5f)
+	{
+		this->tag = MAT_PBR;
+		this->albedo = albedo;
+		this->metallic = metallic;
+		this->roughness = roughness;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.albedo = this->albedo;
+		m.metallic = this->metallic;
+		m.roughness = this->roughness;
+		m.type = this->tag;
+	}
+};
+
 struct DialectricMaterial : public Material
 {
 	float eta;
 
-	DialectricMaterial(float eta = 1.5f)
+	DialectricMaterial(glm::vec3 color = glm::vec3(1.0f), float eta = 1.5f)
 	{
 		this->tag = MAT_DIALECTRIC;
-		this->color = glm::vec3(1.0f);
+		this->color = color;
 		this->eta = eta;
 		
 	}

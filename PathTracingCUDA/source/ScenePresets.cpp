@@ -49,14 +49,14 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
             }
             else
             {                                // glass
-                DialectricMaterial m(1.5f);
+                DialectricMaterial m(glm::vec3(1.0f), 1.5f);
                 wb.AddSphere(center, 0.2f, m);
             }
         }
     }
 
     //3 large spheres
-    DialectricMaterial glass(1.5f);
+    DialectricMaterial glass(glm::vec3(1.0f), 1.5f);
     wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
 
     LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
@@ -133,7 +133,7 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
         }
         else if (choose(rng) < 0.5f)
         {
-            mat = new DialectricMaterial();
+            mat = new DialectricMaterial(glm::vec3(1.0f));
         }
         else
         {
@@ -182,8 +182,8 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 
     //spheres
     sb.AddSphere(glm::vec3(0.0f, 0.3f, 0.0f), 0.3f, MetalMaterial(glm::vec3(0.3f, 0.3f, 0.3f), 0.05f));
-    sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial());
-    sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DialectricMaterial());
+    sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial(glm::vec3(1.0f)));
+    sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DialectricMaterial(glm::vec3(1.0f)));
 
     for (int i = 0; i < 200; i++)
     {
@@ -338,6 +338,7 @@ Scene* Scenes::ModelTest(int seed, Camera*& cam)
     return sb.Build();
 }
 
+//assorted mat: 1756.86 secs
 Scene* Scenes::StatueScene(int seed, Camera*& cam)
 {
     // --- Camera setup ---
@@ -422,7 +423,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
-    //
+    //0.816, 0.573, 0.910.3f
 
     std::string objName = "erato.obj";
     float scale = 450.00f;
@@ -433,33 +434,32 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(-150, (yExtent / 2.0f) * scale, -150));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.816, 0.573, 0.91)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.502, 0.82, 0.698)));
 
 
-    objName = "buddha.obj";
+    objName = "lucy.obj";
 
     rotDeg = 135.0f;
-    scale = 300.00f;
+    scale = 350.00f;
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(150, (yExtent / 2.0f) * scale, -75));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.502, 0.82, 0.698)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, MetalMaterial(glm::vec3(1), 0.25f));
 
-    objName = "lucy.obj";
+    objName = "buddha.obj";
     rotDeg = 180.0f;
-    scale = 200.00f;
+    scale = 150.00f;
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
 
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
-
     M = glm::scale(M, glm::vec3(scale));
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(1, 0.667, 0.4)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DialectricMaterial(glm::vec3(1, 1, 1)));
 
 
 

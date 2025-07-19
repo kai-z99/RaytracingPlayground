@@ -7,17 +7,24 @@
 
 enum MaterialType
 {
-	MAT_LAMBERTIAN = 0,
-	MAT_METAL,
+	MAT_LAMBERTIAN = 0, //deprecated to MAT_PBR
+	MAT_METAL,			//deprecated to MAT_PBR
+	MAT_PBR,
 	MAT_DIALECTRIC,
 	MAT_LIGHT_DIFFUSE,
 };
 
 struct MaterialData
 {
-	glm::vec3 color;
+	glm::vec3 color; //deprecated
+	float fuzz; //deprecated
+
+	glm::vec3 albedo;
 	glm::vec3 emission;
-	float fuzz;
+
+	float metallic;
+	float roughness;
+
 	float refractionIndex; //eta
 	MaterialType type;
 };
@@ -34,7 +41,8 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 						const Ray& ray,
 						const HitRecord& rec,
 						glm::vec3& attenuation,
-						Ray& scattered)
+						Ray& scattered,
+						float& pdf)
 {
 	switch (materialData.type)
 	{
@@ -86,7 +94,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		}
 
 		scattered = Ray(rec.p, direction);
-		attenuation = glm::vec3(1.0f);
+		attenuation = materialData.color;
 
 		return true;
 	}
