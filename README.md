@@ -6,7 +6,7 @@
 - A technique called russian roulette is used to terminate rays that have low contribution early.
 - GGX Importance Sampling
   - We must sample biased towards the GGX normal distribution for proper convergence when rendering metallic objects.
-<img src="Images/1kggx.png" alt="GGX Render" width="400"/> <img src="Images/1klambert.png" alt="Lambert Render" width="400"/>
+<img src="Images/1kggx.png" alt="GGX Render" width="350"/> <img src="Images/1klambert.png" alt="Lambert Render" width="350"/>
   - On the left is when we use importance sampling, on the right is naive cosine sampling. Both images are rendered with 1000 samples per pixel.
   - Similarly for diffuse objects, use the correct importance sampling for proper convergence.
 
