@@ -29,7 +29,7 @@
 | GPU (CUDA)   | BVH, Flat Traversal | ~999.8 seconds|
 
 ![Render Output](Images/rayShowCUDA10.png)
-![Render Output](Images/rayShowCUDA11.png)
+![Render Output](Images/rayShowCUDA22.png)
 ![Render Output](Images/rayShowCUDA12.png)
 
 <br/>
