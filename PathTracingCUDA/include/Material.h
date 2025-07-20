@@ -198,57 +198,6 @@ __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curan
 	return halfway;
 }
 
-
-__device__ inline bool ScatterGGX(const MaterialData& materialData,
-	curandState& randState,
-	const Ray& ray,
-	const HitRecord& rec,
-	glm::vec3& attenuation,
-	Ray& scattered,
-	float& pdf)
-{
-	
-	glm::vec3 N = rec.normal;
-	glm::vec3 V = glm::normalize(-ray.direction());
-
-	if (materialData.roughness < 1e-6)
-	{
-		glm::vec3 L = glm::reflect(-V, N);
-		scattered = Ray(rec.p, L);
-		attenuation = glm::vec3(1.0);   // mirror BRDF = delta
-		pdf = 1.0f;
-		return true;
-	}
-
-	float pdfHalf;
-	glm::vec3 halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
-
-	//reflect on the haldway vector to get sample vector
-	glm::vec3 L = glm::reflect(-V, halfway);
-	if (glm::dot(L, N) <= 0.0f) return false;
-
-	pdf = pdfHalf / (4.0f * fabsf(dot(L, halfway)));
-	if (pdf < 1e-6f) pdf = 1e-6f;
-
-	//evalyate BRDF to find attenuation
-	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
-	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
-	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
-
-	float D = D_GGX(NdotH, materialData.roughness * materialData.roughness);
-	float G = G_Smith(NdotV, NdotL, materialData.roughness);
-
-	glm::vec3 F0 = mix(glm::vec3(0.04f), materialData.albedo, materialData.metallic);
-	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
-	glm::vec3 F = FresnelSchlick(VdotH, F0);
-
-	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
-	attenuation = specular * (NdotL / pdf); //costheta * brdf / pdf
-	scattered = Ray(rec.p, L);
-
-	return true;
-}
-
 __device__ inline glm::vec3 SampleLambertian(const glm::vec3& N, curandState& randState, float& pdf)
 {
 	//cos(theta) = sqrt(1 - zeta1)
@@ -275,6 +224,66 @@ __device__ inline glm::vec3 SampleLambertian(const glm::vec3& N, curandState& ra
 
 }
 
+__device__ inline bool ScatterGGX(const MaterialData& materialData,
+	curandState& randState,
+	const Ray& ray,
+	const HitRecord& rec,
+	glm::vec3& attenuation,
+	Ray& scattered,
+	float& pdf)
+{
+	
+	glm::vec3 N = rec.normal;
+	glm::vec3 V = glm::normalize(-ray.direction());
+
+	if (materialData.roughness < 0.04f) //fall back to mirror
+	{
+		glm::vec3 L = glm::reflect(-V, N);
+		scattered = Ray(rec.p, L);
+		attenuation = glm::vec3(1.0);   
+		pdf = 1.0f;	
+		return true;
+	}
+
+
+	float pdfHalf;
+	glm::vec3 halfway;
+
+	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
+	/*
+	{ //no importance sampling: bad convergence
+		float lambertPdf;
+		glm::vec3 L = SampleLambertian(N, randState, lambertPdf);
+		halfway = glm::normalize(V + L);
+		pdfHalf = lambertPdf;
+	*/
+
+	//reflect on the haldway vector to get sample vector
+	glm::vec3 L = glm::reflect(-V, halfway);
+	if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
+
+	pdf = pdfHalf / (4.0f * fabsf(dot(L, halfway)));
+	if (pdf < 1e-6f) pdf = 1e-6f;
+
+	//evalyate BRDF to find attenuation
+	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
+	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
+	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
+
+	float D = D_GGX(NdotH, materialData.roughness * materialData.roughness);
+	float G = G_Smith(NdotV, NdotL, materialData.roughness);
+
+	glm::vec3 F0 = mix(glm::vec3(0.04f), materialData.albedo, materialData.metallic); //still hack
+	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
+	glm::vec3 F = FresnelSchlick(VdotH, F0);
+
+	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
+	attenuation = specular * (NdotL / pdf); //costheta * brdf / pdf
+	scattered = Ray(rec.p, L);
+
+	return true;
+}
+
 __device__ inline bool ScatterLambertian(
 	const MaterialData& materialData,
 	curandState& randState,
@@ -287,7 +296,7 @@ __device__ inline bool ScatterLambertian(
 	glm::vec3 L = SampleLambertian(rec.normal, randState, pdf);
 	if (pdf < 1e-6f) return false;
 	scattered = Ray(rec.p, L);
-	attenuation = materialData.albedo; //albedo / pi = ...
+	attenuation = materialData.albedo; //albedo / pi = ...pdf cancels
 	return true;
 }
 

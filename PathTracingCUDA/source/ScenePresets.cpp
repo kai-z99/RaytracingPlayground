@@ -313,7 +313,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     M = glm::translate(M, glm::vec3(-0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f), 1.0, 0.02f));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f), 1.0f, 0.1f));
 
     return sb.Build();
 }
@@ -484,32 +484,37 @@ Scene* Scenes::PBRTest(int seed, Camera*& cam)
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(-2, r, 0));
+    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
-    //
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.0f));
+    
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.05f));
 
     //M = glm::mat4(1.0f);
     //M = glm::translate(M, glm::vec3(-1, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
     //M = glm::mat4(1.0f);
     //M = glm::translate(M, glm::vec3(0, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
     //M = glm::mat4(1.0f);
     //M = glm::translate(M, glm::vec3(1, r, 0));
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
 
     //M = glm::mat4(1.0f);
     //M = glm::translate(M, glm::vec3(2, r, 0));
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
     //
 
-    sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.0f));
-    sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.1f));
-    sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
-    sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
-    sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
+    sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 0.0f, 0.2f));
+    sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 0.2f, 0.2f));
+    sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 0.4f, 0.2f));
+    sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 0.7f, 0.2f));
+    sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
 
     sb.AddQuad(glm::vec3(-2, 2, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
     sb.AddQuad(glm::vec3(-1, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
