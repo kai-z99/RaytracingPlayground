@@ -8,7 +8,7 @@
 
 struct Material
 {
-	glm::vec3 color;
+	glm::vec3 albedo;
 	
 	virtual ~Material() = default;
 	virtual MaterialData ToMaterialData() const = 0;
@@ -17,52 +17,13 @@ protected:
 	MaterialType tag;
 };
 
-struct LambertianMaterial : public Material
-{
-	LambertianMaterial(glm::vec3 color = glm::vec3(1.0f)) 
-	{
-		this->tag = MAT_LAMBERTIAN;
-		this->color = color;
-	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.color = this->color;
-		m.type = this->tag;
-		return m;
-	}
-};
-
-struct MetalMaterial : public Material
-{
-	float fuzz;
-
-	MetalMaterial(glm::vec3 color = glm::vec3(1.0f), float fuzz = 0.0f)
-	{
-		this->tag = MAT_METAL;
-		this->color = color;
-		this->fuzz = fuzz;
-	}
-	
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.color = this->color;
-		m.fuzz = this->fuzz;
-		m.type = this->tag;
-		return m;
-	}
-
-};
-
 struct PBRMaterial : public Material
 {
 	glm::vec3 albedo;
 	float metallic;
 	float roughness;
 
-	PBRMaterial(glm::vec3 albedo = glm::vec3(1.0f), float metallic = 0.5f, float roughness = 0.5f)
+	PBRMaterial(glm::vec3 albedo = glm::vec3(1.0f), float metallic = 0.0f, float roughness = 1.0f)
 	{
 		this->tag = MAT_PBR;
 		this->albedo = albedo;
@@ -77,17 +38,60 @@ struct PBRMaterial : public Material
 		m.metallic = this->metallic;
 		m.roughness = this->roughness;
 		m.type = this->tag;
+		return m;
 	}
+};
+
+struct LambertianMaterial : public Material
+{
+	LambertianMaterial(glm::vec3 albedo = glm::vec3(1.0f))
+	{
+		this->tag = MAT_PBR;
+		this->albedo = albedo;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.albedo = this->albedo;
+		m.roughness = 0.0f;
+		m.metallic = 0.0f;
+		m.type = this->tag;
+		return m;
+	}
+};
+
+struct MetalMaterial : public Material
+{
+	float fuzz;
+
+	MetalMaterial(glm::vec3 albedo = glm::vec3(1.0f), float fuzz = 0.0f)
+	{
+		this->tag = MAT_PBR;
+		this->albedo = albedo;
+		this->fuzz = fuzz;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.albedo = this->albedo;
+		m.roughness = this->fuzz;
+		m.metallic = 1.0f;
+		m.type = this->tag;
+		return m;
+	}
+
 };
 
 struct DialectricMaterial : public Material
 {
 	float eta;
 
-	DialectricMaterial(glm::vec3 color = glm::vec3(1.0f), float eta = 1.5f)
+	DialectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f)
 	{
 		this->tag = MAT_DIALECTRIC;
-		this->color = color;
+		this->albedo = albedo;
 		this->eta = eta;
 		
 	}
@@ -95,7 +99,7 @@ struct DialectricMaterial : public Material
 	MaterialData ToMaterialData() const override
 	{
 		MaterialData m;
-		m.color = this->color;
+		m.albedo = this->albedo;
 		m.refractionIndex = this->eta;
 		m.type = this->tag;
 		return m;
@@ -109,14 +113,14 @@ struct DiffuseLightMaterial : public Material
 	DiffuseLightMaterial(glm::vec3 emissive = glm::vec3(1.0f))
 	{
 		this->tag = MAT_LIGHT_DIFFUSE;
-		this->color = glm::vec3(0.0f);
+		this->albedo = glm::vec3(0.0f);
 		this->emissive = emissive;
 	}
 
 	MaterialData ToMaterialData() const override
 	{
 		MaterialData m;
-		m.color = this->color;
+		m.albedo = this->albedo;
 		m.emission = this->emissive;
 		m.type = this->tag;
 

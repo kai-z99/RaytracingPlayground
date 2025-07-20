@@ -313,7 +313,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     M = glm::translate(M, glm::vec3(-0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.5f)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f), 1.0, 0.02f));
 
     return sb.Build();
 }
@@ -434,7 +434,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(-150, (yExtent / 2.0f) * scale, -150));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, LambertianMaterial(glm::vec3(0.502, 0.82, 0.698)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1), 1.0f, 0.0f));
 
 
     objName = "lucy.obj";
@@ -447,11 +447,11 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, MetalMaterial(glm::vec3(1), 0.25f));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1), 1.0f, 0.25f));
 
     objName = "buddha.obj";
     rotDeg = 180.0f;
-    scale = 150.00f;
+    scale = 350.00f;
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
@@ -459,9 +459,63 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
     M = glm::scale(M, glm::vec3(scale));
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DialectricMaterial(glm::vec3(1, 1, 1)));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1, 1, 1), 1.0f, 0.7f));
 
 
+
+    return sb.Build();
+}
+
+Scene* Scenes::PBRTest(int seed, Camera*& cam)
+{
+    cam->center = {0, 1, 2};
+    cam->lookAt = { 0, 0, 0 };
+    cam->vfov = 70;
+    cam->backgroundColor = { 0,0,0 };
+    cam->Init();
+    SceneBuilder sb;
+
+    sb.AddQuad({ 0,0,0 }, { 5,5 }, { 1,1,1,0 }, PBRMaterial({ 0.3,0.3,0.3 }, 0, 1.0));
+    sb.AddQuad({ -2.5,0,0 }, { 5,5 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 0, 1.0));
+    sb.AddQuad({ 2.5,0,0 }, { 5,5 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 0, 1.0));
+    sb.AddQuad({ 0,0,-2.5 }, { 5,5 }, { 1,0,0,90 }, PBRMaterial({ 0.0,0.8,0.3 }, 0, 1.0));
+
+    float r = 0.35f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(-2, r, 0));
+
+    //
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.0f));
+
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(-1, r, 0));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(0, r, 0));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(1, r, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
+
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(2, r, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/suzanne.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
+    //
+
+    sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.0f));
+    sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.1f));
+    sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
+    sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
+    sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
+
+    sb.AddQuad(glm::vec3(-2, 2, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
+    sb.AddQuad(glm::vec3(-1, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
+    sb.AddQuad(glm::vec3(0, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
+    sb.AddQuad(glm::vec3(1, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
+    sb.AddQuad(glm::vec3(2, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
 
     return sb.Build();
 }

@@ -16,4 +16,6 @@ namespace Scenes
 	Scene* ModelTest(int seed, Camera*& cam);
 
 	Scene* StatueScene(int seed, Camera*& cam);
+
+	Scene* PBRTest(int seed, Camera*& cam);
 }
