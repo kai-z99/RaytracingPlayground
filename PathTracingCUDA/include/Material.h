@@ -174,6 +174,16 @@ __device__ inline float G_Smith(float NdotV, float NdotL, float roughness)
 	return gv * gl;
 }
 
+__device__ inline float LambdaGGX(float cosTheta, float alpha) {
+	float a2 = alpha * alpha;
+	float cos2 = cosTheta * cosTheta;
+	return (-1.0f + sqrtf(1.0f + a2 * (1.0f - cos2) / cos2)) * 0.5f;
+}
+
+__device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha) {
+	return 1.0f / (1.0f + LambdaGGX(NdotV, alpha) + LambdaGGX(NdotL, alpha));
+}
+
 __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curandState& randState, float& pdf)
 {
 	//cos(theta) = sqrt((1 - zeta1) / (zeta1(a^2 - 1) + 1) )
@@ -264,6 +274,12 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 
 	//reflect on the haldway vector to get sample vector
 	glm::vec3 L = glm::reflect(-V, halfway);	
+
+	//while (glm::dot(L, N) <= 0.0f)
+	//{
+	//	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
+	//	L = glm::reflect(-V, halfway);
+	//}
 	if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
 
 	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //Note this pdf is the way it is because the changes of variables
@@ -275,7 +291,7 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
 
 	float D = D_GGX(NdotH, materialData.roughness * materialData.roughness);
-	float G = G_Smith(NdotV, NdotL, materialData.roughness);
+	float G = G_SmithHeightCorrelated(NdotV, NdotL, materialData.roughness * materialData.roughness);
 
 	glm::vec3 F0 = mix(glm::vec3(0.04f), materialData.albedo, materialData.metallic); //still hack
 	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
