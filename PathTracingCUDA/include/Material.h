@@ -79,16 +79,20 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 	//dielectric 
 	if (materialData.type == MAT_DIALECTRIC) return ScatterDielectric(materialData, randState, ray, rec, attenuation, scattered, pdf);
 
-
 	float r = RandomFloat(randState);
 
+	float pSpec = glm::clamp(materialData.metallic, 1e-6f, 1.0f - 1e-6f);
 	if (r < materialData.metallic)
 	{
-		return ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		attenuation /= materialData.metallic;
+		return ok;
 	}
 	else
 	{
-		return ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		bool ok =  ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		attenuation /= (1.0f - materialData.metallic);
+		return ok;
 	}
 }
 
@@ -259,10 +263,10 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	*/
 
 	//reflect on the haldway vector to get sample vector
-	glm::vec3 L = glm::reflect(-V, halfway);
+	glm::vec3 L = glm::reflect(-V, halfway);	
 	if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
 
-	pdf = pdfHalf / (4.0f * fabsf(dot(L, halfway)));
+	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //Note this pdf is the way it is because the changes of variables
 	if (pdf < 1e-6f) pdf = 1e-6f;
 
 	//evalyate BRDF to find attenuation

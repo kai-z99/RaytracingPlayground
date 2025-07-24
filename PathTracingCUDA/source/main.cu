@@ -197,7 +197,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
+    Scene* uScene = Scenes::PBRTest(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
