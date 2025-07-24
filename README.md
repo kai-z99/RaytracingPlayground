@@ -4,6 +4,15 @@
   - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
   - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
 - A technique called russian roulette is used to terminate rays that have low contribution early.
+- GGX Importance Sampling
+  - We must sample biased towards the GGX normal distribution for proper convergence when rendering metallic objects.
+    
+<img src="Images/1kggx.png" alt="GGX Render" width="350"/>
+<img src="Images/1klambert.png" alt="Lambert Render" width="350"/>
+  - Above is when we use importance sampling, below is naive cosine sampling. Both images are rendered with 1000 samples per pixel.
+  - Similarly for diffuse objects, use the correct importance sampling for proper convergence.
+
+
 
 <br/>
 
@@ -20,7 +29,7 @@
 | GPU (CUDA)   | BVH, Flat Traversal | ~999.8 seconds|
 
 ![Render Output](Images/rayShowCUDA10.png)
-![Render Output](Images/rayShowCUDA11.png)
+![Render Output](Images/rayShowCUDA22.png)
 ![Render Output](Images/rayShowCUDA12.png)
 
 <br/>
@@ -46,6 +55,16 @@
 
 ![Render Output](Images/rayShowCUDA1.png)
 (Image uses 1000spp)
+
+<br/>
+<br/>
+
+## Other Images Gallery
+<img width="1231" height="1110" alt="rayShowCUDA23" src="https://github.com/user-attachments/assets/929d8637-bab5-4862-b87a-2607b3e6edbb" />
+<img width="1918" height="1110" alt="rayShowCUDA20" src="https://github.com/user-attachments/assets/6d1741e8-c49e-4186-ac96-fc07cfbfde94" />
+<img width="1227" height="1111" alt="rayShowCUDA24" src="https://github.com/user-attachments/assets/9a160bc1-a052-4ba3-8c54-490bcffb7d94" />
+<img width="1228" height="1110" alt="rayShowCUDA26" src="https://github.com/user-attachments/assets/9cb5c710-8e62-4d5d-ab21-77312bd39d56" />
+
 
 
 
