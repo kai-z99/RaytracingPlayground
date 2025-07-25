@@ -37,7 +37,6 @@ __device__ inline glm::vec3 FresnelSchlick(float cosTheta, const glm::vec3& F0)
 	return F0 + (glm::vec3(1.0f) - F0) * powf(1.0f - cosTheta, 5.0f);
 }
 
-
 __device__ inline bool ScatterDielectric(const MaterialData& materialData,
 	curandState& randState,
 	const Ray& ray,
@@ -54,7 +53,6 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	Ray& scattered,
 	float& pdf);
 
-
 __device__ inline bool ScatterLambertian(const MaterialData& materialData,
 	curandState& randState,
 	const Ray& ray,
@@ -62,8 +60,6 @@ __device__ inline bool ScatterLambertian(const MaterialData& materialData,
 	glm::vec3& attenuation,
 	Ray& scattered,
 	float& pdf);
-
-
 
 __device__ inline bool Scatter(const MaterialData& materialData, 
 						curandState& randState,
@@ -95,7 +91,6 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		return ok;
 	}
 }
-
 
 __device__ inline bool ScatterDielectric(const MaterialData& materialData,
 	curandState& randState,
@@ -174,17 +169,22 @@ __device__ inline float G_Smith(float NdotV, float NdotL, float roughness)
 	return gv * gl;
 }
 
-__device__ inline float LambdaGGX(float cosTheta, float alpha) {
+//as found in heitz' paper
+__device__ inline float LambdaGGX(float cosTheta, float alpha) 
+{
 	float a2 = alpha * alpha;
 	float cos2 = cosTheta * cosTheta;
 	return (-1.0f + sqrtf(1.0f + a2 * (1.0f - cos2) / cos2)) * 0.5f;
 }
 
-__device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha) {
+__device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha)
+{
 	return 1.0f / (1.0f + LambdaGGX(NdotV, alpha) + LambdaGGX(NdotL, alpha));
 }
 
-__device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curandState& randState, float& pdf)
+
+
+__device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curandState& randState, float& pdfHalf)
 {
 	//cos(theta) = sqrt((1 - zeta1) / (zeta1(a^2 - 1) + 1) )
 	//phi = 2pi * zeta2
@@ -207,22 +207,59 @@ __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curan
 
 	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f); //costheta
 	float D = D_GGX(NdotH, a);
-	pdf = D * NdotH;
+	pdfHalf = D * NdotH;
 
 	return halfway;
 }
 
 //https://jcgt.org/published/0007/04/01/paper.pdf
 //VNDF by Eric Heitz
-__device__ inline glm::vec3 SampleGGX_VNDF(glm::vec3 V, float roughness, curandState& randState, float& pdf)
+__device__ inline glm::vec3 SampleGGX_VNDF(const glm::vec3& N, const glm::vec3& V, float roughness, curandState& randState, float& pdfHalf)
 {
 	float a = roughness * roughness;
+	float zeta1 = RandomFloat(randState);
+	float zeta2 = RandomFloat(randState);
+
+	//get v to tangent space
+	glm::vec3 T, B;
+	BuildTBN(T, B, N);
+	glm::vec3 Vlocal = glm::vec3(glm::dot(V, T), glm::dot(V, B), glm::dot(V, N));
 
 	//3.2
-	glm::vec3 Vh = glm::normalize(glm::vec3(a * V.x, a * V.y, V.z));
+	glm::vec3 Vh = glm::normalize(glm::vec3(a * Vlocal.x, a * Vlocal.y, Vlocal.z));
 
 	//4.1
 	float lengthSq = Vh.x * Vh.x + Vh.y * Vh.y;
+	glm::vec3 T1 = (lengthSq > 0) ? glm::vec3(-Vh.y, Vh.x, 0.0f) * glm::inversesqrt(lengthSq) : glm::vec3(1.0f, 0.0f, 0.0f);
+	glm::vec3 T2 = glm::cross(Vh, T1);
+
+	//4.2
+	float r = sqrtf(zeta1);
+	float phi = 2.0f * pi * zeta2;
+	float t1 = r * cosf(phi);
+	float t2 = r * sinf(phi);
+	float s = 0.5f * (1.0f + Vh.z);
+	t2 = (1.0f - s) * sqrtf(1.0f - (t1 * t1)) + (s * t2);
+
+	//4.3
+	glm::vec3 Nh = t1 * T1 + t2 * T2 + sqrtf(fmax(0.0f, 1.0f - t1*t1 - t2*t2)) * Vh;
+
+	//3.4
+	glm::vec3 Hlocal = glm::normalize(glm::vec3(a * Nh.x, a * Nh.y, fmax(Nh.z, 0.0f)));
+
+	//world space
+	glm::vec3 halfway = glm::normalize(Hlocal.x * T + Hlocal.y * B + Hlocal.z * N);
+
+	//get pdf
+	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
+	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
+	float VdotH = fmaxf(glm::dot(V, halfway), 0.0f);
+	float D = D_GGX(NdotH, a);
+	float G1 = 1.0f / (1.0f + LambdaGGX(NdotV, a));
+
+	pdfHalf = (G1 * VdotH * D) / NdotV; //denom is V dot Z
+
+	return halfway;
 
 }
 
@@ -277,7 +314,7 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	float pdfHalf;
 	glm::vec3 halfway;
 
-	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
+	halfway = SampleGGX_VNDF(N, V, materialData.roughness, randState, pdfHalf);
 	/*
 	{ //no importance sampling: bad convergence
 		float lambertPdf;
