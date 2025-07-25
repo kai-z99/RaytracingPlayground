@@ -3,7 +3,6 @@
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
   - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
   - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
-- A technique called russian roulette is used to terminate rays that have low contribution early.
 - Importance Sampling
   - We must sample biased towards the GGX normal distribution for proper convergence when rendering metallic objects.
   - Heitz (2018) describes an algorithm that samples only visible normals. Both Heitz's algorithm and classic NDF importance sampling are implemented.
@@ -11,8 +10,9 @@
     
 <img src="Images/1kggx.png" alt="GGX Render" width="350"/>
 <img src="Images/1klambert.png" alt="Lambert Render" width="350"/>
-  - Above is when we use importance sampling, below is naive cosine sampling. Both images are rendered with 1000 samples per pixel.
-  - Similarly for diffuse objects, use the correct importance sampling for proper convergence.
+
+- Above is when we use importance sampling, below is naive cosine sampling. Both images are rendered with 1000 samples per pixel.
+  - Similarly for other BRDFs, use the correct importance sampling for proper convergence.
 
 
 
