@@ -85,13 +85,13 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 	if (r < materialData.metallic)
 	{
 		bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
-		attenuation /= materialData.metallic;
+		pdf *= pSpec;
 		return ok;
 	}
 	else
 	{
-		bool ok =  ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-		attenuation /= (1.0f - materialData.metallic);
+		bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		pdf *= (1.0f - pSpec);
 		return ok;
 	}
 }
@@ -210,6 +210,20 @@ __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curan
 	pdf = D * NdotH;
 
 	return halfway;
+}
+
+//https://jcgt.org/published/0007/04/01/paper.pdf
+//VNDF by Eric Heitz
+__device__ inline glm::vec3 SampleGGX_VNDF(glm::vec3 V, float roughness, curandState& randState, float& pdf)
+{
+	float a = roughness * roughness;
+
+	//3.2
+	glm::vec3 Vh = glm::normalize(glm::vec3(a * V.x, a * V.y, V.z));
+
+	//4.1
+	float lengthSq = Vh.x * Vh.x + Vh.y * Vh.y;
+
 }
 
 __device__ inline glm::vec3 SampleLambertian(const glm::vec3& N, curandState& randState, float& pdf)
