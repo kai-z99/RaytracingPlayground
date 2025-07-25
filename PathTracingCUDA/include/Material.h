@@ -2,26 +2,37 @@
 
 #include "Hittable.h"
 
-//NEW REFACTOR 
+//
 //----------
 
 enum MaterialType
 {
-	MAT_PBR,
+	MAT_PBR = 0,
 	MAT_DIALECTRIC,
 	MAT_LIGHT_DIFFUSE,
+	MAT_SUBSURFACE,
 };
 
 struct MaterialData
 {
+	MaterialType type;
+
+	//base
 	glm::vec3 albedo;
 	glm::vec3 emission;
 
+	//metallic-roughness
 	float metallic;
 	float roughness;
 
-	float refractionIndex; //eta
-	MaterialType type;
+	//dielectric/sss
+	float refractionIndex; 
+
+	//sss
+	float subsurface;
+	glm::vec3 sssRadius;
+	glm::vec3 sssTint;
+
 };
 
 __device__ inline float FresnelSchlick(float cosT, float eta)
@@ -77,18 +88,59 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	float r = RandomFloat(randState);
 
-	float pSpec = glm::clamp(materialData.metallic, 1e-6f, 1.0f - 1e-6f);
-	if (r < materialData.metallic)
+	//sss (unused for now)
+	if (materialData.type == MAT_SUBSURFACE)
 	{
-		bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
-		pdf *= pSpec;
-		return ok;
+		float wSpec = glm::clamp(materialData.metallic, 0.0f, 1.0f);
+		float wRest = 1.0f - wSpec;
+
+		float wSSS = glm::clamp(materialData.subsurface, 0.0f, 1.0f) * wRest;
+		float wDiff = (1.0f - glm::clamp(materialData.subsurface, 0.0f, 1.0f)) * wRest;
+
+		float sum = wSpec + wSSS + wDiff;
+		if (sum <= 1e-6f) return false; //todo
+		wSpec /= sum;
+		wSSS /= sum;
+		wDiff /= sum;
+
+		if (r < wSpec)
+		{
+			//bool ok = scatterggx(pdf)
+			//pdf *= wSpec;
+			//return ok;
+		}
+		else if (r < wSpec + wSSS)
+		{
+			//bool ok = ScatterSSS(pdf)
+			//pdf *= wSSS;
+			//return ok;
+		}
+		else
+		{
+			//bool ok = ScatterLambertian(pdf)
+			//pdf *= wDiff;
+			//return ok
+		}
 	}
-	else
+		
+		
+	//metallic-roughness
 	{
-		bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-		pdf *= (1.0f - pSpec);
-		return ok;
+		float wSpec = glm::clamp(materialData.metallic, 1e-6f, 1.0f - 1e-6f);
+		float wDiff = 1.0f - wSpec;
+		if (r < wSpec)
+		{
+			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
+			//note: we cant to pdf *= pSpec since pdf was already used in the calcuation
+			//attenuation /= wSpec; //XXX
+			return ok;
+		}
+		else
+		{
+			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+			//attenuation /= wDiff; //XXX
+			return ok;
+		}
 	}
 }
 
@@ -169,7 +221,7 @@ __device__ inline float G_Smith(float NdotV, float NdotL, float roughness)
 	return gv * gl;
 }
 
-//as found in heitz' paper
+//isotropic GGX
 __device__ inline float LambdaGGX(float cosTheta, float alpha) 
 {
 	float a2 = alpha * alpha;
@@ -212,8 +264,8 @@ __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curan
 	return halfway;
 }
 
-//https://jcgt.org/published/0007/04/01/paper.pdf
-//VNDF by Eric Heitz
+// https://jcgt.org/published/0007/04/01/paper.pdf
+// VNDF described by Eric Heitz (2018)
 __device__ inline glm::vec3 SampleGGX_VNDF(const glm::vec3& N, const glm::vec3& V, float roughness, curandState& randState, float& pdfHalf)
 {
 	float a = roughness * roughness;
@@ -310,18 +362,11 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 		return true;
 	}
 
-
+	
 	float pdfHalf;
 	glm::vec3 halfway;
 
 	halfway = SampleGGX_VNDF(N, V, materialData.roughness, randState, pdfHalf);
-	/*
-	{ //no importance sampling: bad convergence
-		float lambertPdf;
-		glm::vec3 L = SampleLambertian(N, randState, lambertPdf);
-		halfway = glm::normalize(V + L);
-		pdfHalf = lambertPdf;
-	*/
 
 	//reflect on the haldway vector to get sample vector
 	glm::vec3 L = glm::reflect(-V, halfway);	
@@ -331,10 +376,16 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	//	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
 	//	L = glm::reflect(-V, halfway);
 	//}
-	if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
+	//if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
 
 	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //Note this pdf is the way it is because the changes of variables
 	if (pdf < 1e-6f) pdf = 1e-6f;
+	
+
+	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
+	//if (pdf < 1e-6f || glm::dot(L, N) <= 0.0f)           
+	//	return false;
+	//glm::vec3 halfway = glm::normalize(V + L);
 
 	//evalyate BRDF to find attenuation
 	float NdotL = fmaxf(glm::dot(N, L), 0.0f);

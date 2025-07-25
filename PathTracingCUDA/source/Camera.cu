@@ -140,7 +140,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
+
         totalAttenuation *= attenuation;
+        //          *= attenuation(brdf) * fot(scattered.direction, rec.N) / pdf fix later
 
         if (this->russianroulette && depth >= 3)
         {

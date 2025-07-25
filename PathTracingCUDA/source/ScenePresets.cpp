@@ -49,14 +49,14 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
             }
             else
             {                                // glass
-                DialectricMaterial m(glm::vec3(1.0f), 1.5f);
+                DielectricMaterial m(glm::vec3(1.0f), 1.5f);
                 wb.AddSphere(center, 0.2f, m);
             }
         }
     }
 
     //3 large spheres
-    DialectricMaterial glass(glm::vec3(1.0f), 1.5f);
+    DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
     wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
 
     LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
@@ -133,7 +133,7 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
         }
         else if (choose(rng) < 0.5f)
         {
-            mat = new DialectricMaterial(glm::vec3(1.0f));
+            mat = new DielectricMaterial(glm::vec3(1.0f));
         }
         else
         {
@@ -182,8 +182,8 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 
     //spheres
     sb.AddSphere(glm::vec3(0.0f, 0.3f, 0.0f), 0.3f, MetalMaterial(glm::vec3(0.3f, 0.3f, 0.3f), 0.05f));
-    sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DialectricMaterial(glm::vec3(1.0f)));
-    sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DialectricMaterial(glm::vec3(1.0f)));
+    sb.AddSphere(glm::vec3(0.0f, 0.1f, 0.5f), 0.1f, DielectricMaterial(glm::vec3(1.0f)));
+    sb.AddSphere(glm::vec3(1.0f, 0.25f, 0.0f), 0.25f, DielectricMaterial(glm::vec3(1.0f)));
 
     for (int i = 0; i < 200; i++)
     {
@@ -300,41 +300,22 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
    
     //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
-    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
     std::string objName = "dragon.obj";
     float scale = 350.00f;
-    float yExtent = 0.70498;
+    float yExtent = 0.705f;
     float rotDeg = -90.0f;
+
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 50));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    /*
-    glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 50));
-    M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
-    M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 0.5f, 0.1f));
 
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(-170, (yExtent / 2.0f) * scale, -30));
-    M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
-    //M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
-    M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(0.5f, 1.0f, 0.5f), 1.0f, 0.25f));
-
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(170, (yExtent / 2.0f) * scale, -30));
-    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
-    //M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
-    M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 0.5f, 0.5f), 1.0f, 0.25f));
-    */
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.2f));
-
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
     return sb.Build();
 }
 
@@ -420,7 +401,7 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
 
     //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
-    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
@@ -465,7 +446,7 @@ Scene* Scenes::ModelTest(int seed, Camera*& cam)
     M = glm::rotate(glm::mat4(1.0f), glm::radians(80.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, DialectricMaterial());
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, DielectricMaterial());
     sb.AddQuad(glm::vec3(0.0f, -0.70498f / 2.0f, 0.0f), glm::vec2(5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), LambertianMaterial(glm::vec3(0.7f)));
 
 
@@ -556,7 +537,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
 
     //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
-    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DialectricMaterial());
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //0.816, 0.573, 0.910.3f
 
@@ -605,16 +586,18 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
 Scene* Scenes::PBRTest(int seed, Camera*& cam)
 {
     cam->center = {0, 1, 2};
-    cam->lookAt = { 0, 0, 0 };
-    cam->vfov = 70;
+    cam->lookAt = { 0, 1, 0 };
+    cam->vfov = 80;
     cam->backgroundColor = { 0,0,0 };
     cam->Init();
     SceneBuilder sb;
 
-    sb.AddQuad({ 0,0,0 }, { 5,5 }, { 1,1,1,0 }, PBRMaterial({ 0.3,0.3,0.3 }, 1, 1.0));
-    sb.AddQuad({ -2.5,0,0 }, { 5,5 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 1, 1.0));
-    sb.AddQuad({ 2.5,0,0 }, { 5,5 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 1, 1.0));
-    sb.AddQuad({ 0,0,-2.5 }, { 5,5 }, { 1,0,0,90 }, PBRMaterial({ 0.0,0.8,0.3 }, 1, 1.0));
+    float e = 1e-6f;
+    sb.AddQuad({ 0,0,0 }, { 6,6 }, { 1,1,1,0 }, PBRMaterial({ 0.3,0.3,0.3 }, 1, 1.0));
+    sb.AddQuad({ -3,0,0 }, { 6,6 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 1, 1.0));
+    sb.AddQuad({ 3,0,0 }, { 6,6 }, { 0,0,1,90 }, PBRMaterial({ 0.8,0.3,0.3 }, 1, 1.0));
+    sb.AddQuad({ 0,0,-3 }, { 6,6 }, { 1,0,0,90 }, PBRMaterial({ 0.0,0.8,0.3 }, 1, 1.0));
+    sb.AddQuad({ 0,3 + e,0 }, { 6,6 }, { 1,1,1,0 }, PBRMaterial({ 0.3,0.3,0.3 }, 1, 1.0));
 
     float r = 0.35f;
 
@@ -623,40 +606,42 @@ Scene* Scenes::PBRTest(int seed, Camera*& cam)
     M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
     
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.05f));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.05f));
 
-    //M = glm::mat4(1.0f);
-    //M = glm::translate(M, glm::vec3(-1, r, 0));
-    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(-1, r, 0));
+    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
-    //M = glm::mat4(1.0f);
-    //M = glm::translate(M, glm::vec3(0, r, 0));
-    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(0, r, 0));
+    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
-    //M = glm::mat4(1.0f);
-    //M = glm::translate(M, glm::vec3(1, r, 0));
-    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(1, r, 0));
+    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
 
-    //M = glm::mat4(1.0f);
-    //M = glm::translate(M, glm::vec3(2, r, 0));
-    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
-    //
-
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(2, r, 0));
+    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
+    
+    /*
     sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.0f, 0.5f));
     sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.2f, 0.5f));
     sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.5f, 0.5f));
     sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.7f, 0.5f));
     sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.5f));
+    */
 
-    sb.AddQuad(glm::vec3(-2, 2, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
-    sb.AddQuad(glm::vec3(-1, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
-    sb.AddQuad(glm::vec3(0, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
-    sb.AddQuad(glm::vec3(1, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
-    sb.AddQuad(glm::vec3(2, 2, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(5.0f)));
+
+    sb.AddQuad(glm::vec3(-2, 3, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
+    sb.AddQuad(glm::vec3(-1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
+    sb.AddQuad(glm::vec3(0, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
+    sb.AddQuad(glm::vec3(1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
+    sb.AddQuad(glm::vec3(2, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
 
     return sb.Build();
 }

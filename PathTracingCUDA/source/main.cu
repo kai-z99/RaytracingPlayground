@@ -8,12 +8,7 @@
 #include <chrono>
 #include <random>
 
-// todo: implement transformations in scene builder. Everntually itll move to instances.
-// todo: Add obj loading
-// todo: Make camera part of scene
-// todo: make screen w/h a part of config
-// todo: emissive
-// todo: russion roullette? Check out saved article.
+//Todo: move pdf out of the scatter funcs and into the raycoloriter>
 
 struct Config
 {
@@ -26,7 +21,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10000;
+    c.samplesPerPixel = 1000;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -197,7 +192,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::StatueScene(seed, uCamera);
+    Scene* uScene = Scenes::MetalHeadScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

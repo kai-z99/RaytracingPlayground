@@ -84,11 +84,11 @@ struct MetalMaterial : public Material
 
 };
 
-struct DialectricMaterial : public Material
+struct DielectricMaterial : public Material
 {
 	float eta;
 
-	DialectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f)
+	DielectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f)
 	{
 		this->tag = MAT_DIALECTRIC;
 		this->albedo = albedo;
@@ -122,6 +122,52 @@ struct DiffuseLightMaterial : public Material
 		MaterialData m;
 		m.albedo = this->albedo;
 		m.emission = this->emissive;
+		m.type = this->tag;
+
+		return m;
+	}
+};
+
+struct SubsurfaceMaterial : public Material
+{
+	float subsurface;
+	glm::vec3 sssRadius;
+	glm::vec3 sssTint;
+	float eta;
+	float roughness;
+	float metallic;
+
+	SubsurfaceMaterial
+	(
+		glm::vec3 albedo = glm::vec3(1.0f),
+		glm::vec3 sssTint = glm::vec3(1.0f),
+		float subsurface = 1.0f,
+		glm::vec3 radius = glm::vec3(1.0f),
+		float eta = 1.5f,
+		float metallic = 0.0f,
+		float roughness = 0.5f
+	)
+	{
+		this->tag = MAT_SUBSURFACE;
+		this->albedo = albedo;
+		this->subsurface = subsurface;
+		this->sssTint = sssTint;
+		this->sssRadius = radius;
+		this->eta = eta;
+		this->roughness = roughness;
+		this->metallic = metallic;
+	}
+
+	MaterialData ToMaterialData() const override
+	{
+		MaterialData m;
+		m.albedo = this->albedo;
+		m.sssTint = this->sssTint;
+		m.sssRadius = this->sssRadius;
+		m.refractionIndex = this->eta;
+		m.subsurface = this->subsurface;
+		m.roughness = this->roughness;
+		m.metallic = this->metallic;
 		m.type = this->tag;
 
 		return m;
