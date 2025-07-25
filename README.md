@@ -62,7 +62,7 @@
 <br/>
 
 ## Other Images Gallery
-<img width="1231" height="1110" alt="rayShowCUDA23" src="https://github.com/user-attachments/assets/929d8637-bab5-4862-b87a-2607b3e6edbb" />
+<img width="1231" height="1108" alt="image" src="https://github.com/user-attachments/assets/4f89f2c6-73ef-4ee1-8eaa-3ea073080534" />
 <img width="1918" height="1110" alt="rayShowCUDA20" src="https://github.com/user-attachments/assets/6d1741e8-c49e-4186-ac96-fc07cfbfde94" />
 <img width="1227" height="1111" alt="rayShowCUDA24" src="https://github.com/user-attachments/assets/9a160bc1-a052-4ba3-8c54-490bcffb7d94" />
 <img width="1228" height="1107" alt="rayShowCUDA27" src="https://github.com/user-attachments/assets/77079b7a-0800-4c81-b991-1cdda5f172ec" />
