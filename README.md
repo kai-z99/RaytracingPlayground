@@ -4,8 +4,10 @@
   - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
   - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
 - A technique called russian roulette is used to terminate rays that have low contribution early.
-- GGX Importance Sampling
+- Importance Sampling
   - We must sample biased towards the GGX normal distribution for proper convergence when rendering metallic objects.
+  - Heitz (2018) describes an algorithm that samples only visible normals. Both Heitz's algorithm and classic NDF importance sampling are implemented.
+  - https://jcgt.org/published/0007/04/01/paper.pdf
     
 <img src="Images/1kggx.png" alt="GGX Render" width="350"/>
 <img src="Images/1klambert.png" alt="Lambert Render" width="350"/>
