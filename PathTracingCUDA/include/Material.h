@@ -131,14 +131,13 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		if (r < wSpec)
 		{
 			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//note: we cant to pdf *= pSpec since pdf was already used in the calcuation
-			//attenuation /= wSpec; //XXX
+			//pdf *= wSpec;
 			return ok;
 		}
 		else
 		{
 			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//attenuation /= wDiff; //XXX
+			//pdf *= wDiff;
 			return ok;
 		}
 	}
@@ -312,7 +311,6 @@ __device__ inline glm::vec3 SampleGGX_VNDF(const glm::vec3& N, const glm::vec3& 
 	pdfHalf = (G1 * VdotH * D) / NdotV; //denom is V dot Z
 
 	return halfway;
-
 }
 
 __device__ inline glm::vec3 SampleLambertian(const glm::vec3& N, curandState& randState, float& pdf)
@@ -367,9 +365,12 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	glm::vec3 halfway;
 
 	halfway = SampleGGX_VNDF(N, V, materialData.roughness, randState, pdfHalf);
-
+	//halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
+	
 	//reflect on the haldway vector to get sample vector
 	glm::vec3 L = glm::reflect(-V, halfway);	
+
+	if (glm::dot(L, N) <= 0.0f) return false;
 
 	//while (glm::dot(L, N) <= 0.0f)
 	//{
@@ -378,8 +379,8 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	//}
 	//if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
 
-	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //Note this pdf is the way it is because the changes of variables
-	if (pdf < 1e-6f) pdf = 1e-6f;
+	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobia factor to pdf
+	if (pdf < 1e-6f) return false;
 	
 
 	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
@@ -400,7 +401,7 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	glm::vec3 F = FresnelSchlick(VdotH, F0);
 
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
-	attenuation = specular * (NdotL / pdf); //costheta * brdf / pdf
+	attenuation = specular; //just the brdf
 	scattered = Ray(rec.p, L);
 
 	return true;
@@ -418,7 +419,8 @@ __device__ inline bool ScatterLambertian(
 	glm::vec3 L = SampleLambertian(rec.normal, randState, pdf);
 	if (pdf < 1e-6f) return false;
 	scattered = Ray(rec.p, L);
-	attenuation = materialData.albedo; //albedo / pi = ...pdf cancels
+	attenuation = materialData.albedo / pi;
+
 	return true;
 }
 

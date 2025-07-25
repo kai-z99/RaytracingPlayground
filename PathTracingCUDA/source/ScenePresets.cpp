@@ -310,12 +310,13 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     float rotDeg = -90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 50));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
+
     return sb.Build();
 }
 
@@ -605,43 +606,99 @@ Scene* Scenes::PBRTest(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(-2, r, 0));
     M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
 
+    //
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 0.0f, 0.5f));
+
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(-1, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 0.2f, 0.5f));
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(0, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 0.5f, 0.5f));
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(1, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 0.7f, 0.5f));
+
+    //M = glm::mat4(1.0f);
+    //M = glm::translate(M, glm::vec3(2, r, 0));
+    //M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
+    //
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.05f));
-
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(-1, r, 0));
-    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.2f));
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(0, r, 0));
-    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(1, r, 0));
-    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.7f));
-
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(2, r, 0));
-    M = glm::rotate(M, glm::radians(90.0f), glm::vec3(0, 1, 0));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 1.0f));
-    
-    /*
     sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.0f, 0.5f));
     sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.2f, 0.5f));
     sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.5f, 0.5f));
     sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.7f, 0.5f));
     sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.5f));
-    */
+    
+    sb.AddQuad(glm::vec3(-2, 3, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
+    sb.AddQuad(glm::vec3(-1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
+    sb.AddQuad(glm::vec3(0, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
+    sb.AddQuad(glm::vec3(1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
+    sb.AddQuad(glm::vec3(2, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
 
+    return sb.Build();
+}
 
-    sb.AddQuad(glm::vec3(-2, 3, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
-    sb.AddQuad(glm::vec3(-1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
-    sb.AddQuad(glm::vec3(0, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
-    sb.AddQuad(glm::vec3(1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
-    sb.AddQuad(glm::vec3(2, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(7.0f)));
+Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
+{
+    // ---------------------------------------------------------------------
+    // Camera
+    // ---------------------------------------------------------------------
+    cam->center = glm::vec3(0.0f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 60.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
 
+    // ---------------------------------------------------------------------
+    SceneBuilder sb;
+
+    // Materials
+    LambertianMaterial white(glm::vec3(0.73f));
+    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    PBRMaterial metal(glm::vec3(1.0f), 1.0f, 0.0f);
+
+    DiffuseLightMaterial light(glm::vec3(15.0f));
+
+    // Cornell box size
+    const float W = 555.0f;                 // width  = height = depth
+
+    // ---------------------------------------------------------------------
+    // 5 walls (front is left open for the camera)
+    // ---------------------------------------------------------------------
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white); // floor
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white); // ceiling
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white); // back
+    sb.AddQuad(glm::vec3(-W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);   // left
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green); // right
+
+    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------
+    sb.AddQuad(glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1, 0, 0, 0),
+        light);
+
+    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------
+    sb.AddBox(glm::vec3(70.0f, 82.5f, 100.0f),          // centre
+        glm::vec3(165.0f, 165.0f, 165.0f),          // size
+        glm::vec4(0, 1, 0, -18.0f),                 // rotation
+        white);
+
+    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------------
+    sb.AddBox(glm::vec3(-100.0f, 165, -110.0f),         // centre
+        glm::vec3(165.0f, 330.0f, 165.0f),          // size
+        glm::vec4(0, 1, 0, 18.0f),                 
+        metal);
+    
     return sb.Build();
 }

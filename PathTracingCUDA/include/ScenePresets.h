@@ -20,4 +20,6 @@ namespace Scenes
 	Scene* StatueScene(int seed, Camera*& cam);
 
 	Scene* PBRTest(int seed, Camera*& cam);
+
+	Scene* CornellBoxOGScene(int seed, Camera*& cam);
 }

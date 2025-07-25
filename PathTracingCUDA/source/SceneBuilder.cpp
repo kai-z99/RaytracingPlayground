@@ -139,6 +139,42 @@ void SceneBuilder::AddQuad(glm::vec3 position, glm::vec2 size, glm::vec4 rotatio
 	AddQuad(origin, u, v, material);
 }
 
+void SceneBuilder::AddBox(glm::vec3 center,
+	glm::vec3 size,
+	glm::vec4 rotation,
+	const Material& material)
+{
+	// --- build a quaternion ------------------------------------------------
+	glm::vec3 axis = glm::normalize(glm::vec3(rotation));   // (x,y,z)
+	float     ang = glm::radians(rotation.w);              
+	glm::quat q = glm::angleAxis(ang, axis);
+
+	// --- oriented edge vectors (full length, not half!) --------------------
+	glm::vec3 U = q * glm::vec3(size.x, 0.0f, 0.0f);        // “right”
+	glm::vec3 V = q * glm::vec3(0.0f, size.y, 0.0f);        // “up”
+	glm::vec3 W = q * glm::vec3(0.0f, 0.0f, size.z);        // “forward”
+
+	// For each face: pick a centre, then call AddQuad(origin,u,v)
+	auto addFace = [&](glm::vec3 faceCenter,
+		glm::vec3 u, glm::vec3 v)
+		{
+			glm::vec3 origin = faceCenter - 0.5f * u - 0.5f * v;
+			AddQuad(origin, u, v, material);
+		};
+
+	addFace(center + 0.5f * W, U, V);
+
+	addFace(center - 0.5f * W, -U, V);
+
+	addFace(center + 0.5f * U, -W, V);
+
+	addFace(center - 0.5f * U, W, V);
+
+	addFace(center + 0.5f * V, U, -W);
+
+	addFace(center - 0.5f * V, U, W);
+}
+
 void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material)
 {
 	this->triP0s.push_back(p0);

@@ -190,6 +190,8 @@ public:
 	//centered quad
 	void AddQuad(glm::vec3 position, glm::vec2 size, glm::vec4 rotation, const Material& material);
 
+	void AddBox(glm::vec3 center, glm::vec3 size, glm::vec4 rotation, const Material& material);
+
 	void AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const Material& material);
 
 	void AddModel(const std::string& path, const glm::mat4& transform, const Material& material);

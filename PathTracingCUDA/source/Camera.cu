@@ -110,39 +110,40 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
     for (int depth = 0; depth < maxDepth; ++depth)
     {
         HitRecord rec;
+
+        //found source: sky
         if (!HitScene(scene, r, Interval(0.001f, infinity), rec)) //hit sky
         {
-            /*
-            float a = 0.5f * (r.direction().y + 1.0f);
-            glm::vec3 sky = (1.0f - a) * glm::vec3(1.0f)
-                + a * glm::vec3(0.5f, 0.7f, 1.0f);
-            */
-
             col += totalAttenuation * this->backgroundColor;
             break;
         }
 
-        
         MaterialData& materialData = scene.materials[rec.matDataID];
+
+        //found source: area light
         if (materialData.type == MAT_LIGHT_DIFFUSE)
         {
             col += totalAttenuation * materialData.emission;
             break;
         }
 
+        //surface hit, scatter?
+
         Ray scattered;
         glm::vec3 attenuation;
         float pdf;
 
-        
         if (!Scatter(materialData, randState, r, rec, attenuation, scattered, pdf))
         {
+            //surface has absorbed ray, exit
             break;
         }
 
+        //scattered and attenuated succesfully---
 
-        totalAttenuation *= attenuation;
-        //          *= attenuation(brdf) * fot(scattered.direction, rec.N) / pdf fix later
+        //estimate rendering equation for 1 monte carlo sample
+        float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
+        totalAttenuation *= attenuation * cosine / pdf;
 
         if (this->russianroulette && depth >= 3)
         {
@@ -158,5 +159,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         r = scattered;
     }
+
     return col;
 }
