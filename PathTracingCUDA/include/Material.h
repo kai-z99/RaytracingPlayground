@@ -85,8 +85,9 @@ __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 
 __device__ inline bool Scatter(const MaterialData& materialData, 
 						curandState& randState,
+						const Scene& scene,
 						const Ray& ray,
-						const HitRecord& rec,
+						HitRecord& rec,
 						glm::vec3& attenuation,
 						Ray& scattered,
 						float& pdf)
@@ -99,7 +100,15 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	float r = RandomFloat(randState);
 
+	//SSS
+	float wSSS = materialData.subsurface;
+	if (materialData.type == MAT_SUBSURFACE && r < wSSS)
+	{
+		bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+		return ok;
+	}
 
+	r = RandomFloat(randState);
 	//metallic-roughness
 	{
 		float wSpec = glm::clamp(materialData.metallic, 1e-6f, 1.0f - 1e-6f);
@@ -396,6 +405,35 @@ __device__ inline bool ScatterLambertian(
 	return true;
 }
 
+//https://zero-radiance.github.io/post/sampling-diffusion/
+// Performs sampling of a Normalized Burley diffusion profile in polar coordinates.
+// 'u' is the random number (the value of the CDF): [0, 1).
+// rcp(s) = 1 / ShapeParam = ScatteringDistance.
+// 'r' is the sampled radial distance, s.t. (u = 0 -> r = 0) and (u = 1 -> r = Inf).
+// rcp(Pdf) is the reciprocal of the corresponding PDF value.
+__device__ inline void SampleBurleyDiffusionProfile(float u, float rcpS, float& r, float& rcpPdf)
+{
+	const float LOG2_E = 1.44269504089;
+	u = 1 - u; // Convert CDF to CCDF; the resulting value of (u != 0)
+
+	float g = 1 + (4 * u) * (2 * u + sqrtf(1 + (4 * u) * u));
+	float n = exp2f(log2f(g) * (-1.0 / 3.0));                    // g^(-1/3)
+	float p = (g * n) * n;                                   // g^(+1/3)
+	float c = 1 + p + n;                                     // 1 + g^(+1/3) + g^(-1/3)
+	float x = (3 / LOG2_E) * log2f(c / (4 * u));           // 3 * Log[c / (4 * u)]
+
+	// x      = s * r
+	// exp_13 = Exp[-x/3] = Exp[-1/3 * 3 * Log[c / (4 * u)]]
+	// exp_13 = Exp[-Log[c / (4 * u)]] = (4 * u) / c
+	// exp_1  = Exp[-x] = exp_13 * exp_13 * exp_13
+	// expSum = exp_1 + exp_13 = exp_13 * (1 + exp_13 * exp_13)
+	// rcpExp = rcp(expSum) = c^3 / ((4 * u) * (c^2 + 16 * u^2))
+	float rcpExp = ((c * c) * c) / ((4 * u) * ((c * c) + (4 * u) * (4 * u)));
+
+	r = x * rcpS;
+	rcpPdf = (8 * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
+}
+
 __device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	curandState& randState,
 	const Scene& scene,
@@ -405,7 +443,7 @@ __device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
-	// 1.  Sample radial distance r from Burley’s CDF
+	// 1.  Sample radial distance r from Burley?s CDF
 	float u = fmaxf(RandomFloat(randState), 1e-6f);
 	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
 	float c = powf(g, 1.f / 3.f);
