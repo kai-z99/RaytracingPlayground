@@ -310,22 +310,22 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     float rotDeg = -90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 370, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 200, 0));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
-    SubsurfaceMaterial sssM = SubsurfaceMaterial
-    (
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(1.0, 0.35, 0.35),
-        0.7f,
-        (60.0f)
+    LambertianMaterial m = LambertianMaterial(glm::vec3(1.0f, 0.3f, 0.3f));
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(1.0f),
+        glm::vec3(1.0f, 0.3f, 0.3f),
+        1.0f,
+        75.0f
     );
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sssM);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
 
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Hittable.h"
-
+#include "Scene.h"
 //
 //----------
 
@@ -74,8 +74,9 @@ __device__ inline bool ScatterLambertian(const MaterialData& materialData,
 
 __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	curandState& randState,
+	const Scene& scene,
 	const Ray& ray,
-	const HitRecord& rec,
+	HitRecord& rec,
 	glm::vec3& attenuation,
 	Ray& scattered,
 	float& pdf);
@@ -98,42 +99,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	float r = RandomFloat(randState);
 
-	//sss
-	if (materialData.type == MAT_SUBSURFACE)
-	{
-		float wSpec = glm::clamp(materialData.metallic, 0.0f, 1.0f);
-		float wRest = 1.0f - wSpec;
 
-		float wSSS = glm::clamp(materialData.subsurface, 0.0f, 1.0f) * wRest;
-		float wDiff = (1.0f - glm::clamp(materialData.subsurface, 0.0f, 1.0f)) * wRest;
-
-		float sum = wSpec + wSSS + wDiff;
-		if (sum <= 1e-6f) return false; //todo
-		wSpec /= sum;
-		wSSS /= sum;
-		wDiff /= sum;
-
-		if (r < wSpec)
-		{
-			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//pdf *= wSpec;
-			return ok;
-		}
-		else if (r < wSpec + wSSS)
-		{
-			bool ok = ScatterSubsurface(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//pdf *= wSSS;
-			return ok;
-		}
-		else
-		{
-			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//pdf *= wDiff;
-			return ok;
-		}
-	}
-		
-		
 	//metallic-roughness
 	{
 		float wSpec = glm::clamp(materialData.metallic, 1e-6f, 1.0f - 1e-6f);
@@ -141,13 +107,11 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		if (r < wSpec)
 		{
 			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//pdf *= wSpec;
 			return ok;
 		}
 		else
 		{
 			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			//pdf *= wDiff;
 			return ok;
 		}
 	}
@@ -242,7 +206,6 @@ __device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float 
 {
 	return 1.0f / (1.0f + LambdaGGX(NdotV, alpha) + LambdaGGX(NdotL, alpha));
 }
-
 
 
 __device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curandState& randState, float& pdfHalf)
@@ -433,7 +396,83 @@ __device__ inline bool ScatterLambertian(
 	return true;
 }
 
+__device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
+	curandState& randState,
+	const Scene& scene,
+	const HitRecord& rec,
+	glm::vec3& xi, //returned entry point
+	glm::vec3& xiN, //return entry point normal
+	glm::vec3& Sp,
+	float& pdfS)
+{
+	// 1.  Sample radial distance r from Burley’s CDF
+	float u = fmaxf(RandomFloat(randState), 1e-6f);
+	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	float c = powf(g, 1.f / 3.f);
+	float r = materialData.sssRadius * (c + 1.f / c - 2.f);
 
+	// 2.  Uniform azimuth
+	float phi = 2.f * pi * RandomFloat(randState);
+
+	// 3.  Offset in tangent plane
+	glm::vec3 T, B; BuildTBN(T, B, rec.normal);
+	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+
+	// 4.  Project back onto the real surface
+	Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
+	HitRecord h;
+	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
+
+	xi = h.p;
+	xiN = h.normal;
+
+	// 5.  Burley profile value & pdf
+	float s = materialData.sssRadius;
+	r = fmaxf(r, s * 1e-4f);
+	float e1 = expf(-r / s);
+	float e3 = expf(-r / (3.f * s));
+	float Rd = (e1 + e3) / (8.f * pi * s * r);    // Burley 
+	pdfS = Rd;
+	Sp = materialData.sssTint * glm::vec3(Rd);
+
+	return true;
+}
+
+__device__ inline bool ScatterSubsurface(const MaterialData& materialData,
+	curandState& randState,
+	const Scene& scene,
+	const Ray& ray,
+	HitRecord& rec,
+	glm::vec3& attenuation,
+	Ray& scattered,
+	float& pdf)
+{
+
+	//find where the light entered the surface xi
+	glm::vec3 xi;   
+	glm::vec3 xiN;
+	glm::vec3 Sp;
+	float pdfS;
+	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS)) return false;
+
+	float pdfF;
+	glm::vec3 L = SampleLambertian(xiN, randState, pdfF);
+	if (pdfF < 1e-6f) return false;
+
+	attenuation = Sp / pi;
+	scattered = Ray(xi +xiN * 1e-4f, L);
+	pdf = pdfS * pdfF;
+	rec.normal = xiN;
+
+	return true;
+}
+	
+
+
+
+
+
+/*
 __device__ inline float SampleBurleyDistance(float u, float d)
 {
 	// Avoid u==0
@@ -444,7 +483,9 @@ __device__ inline float SampleBurleyDistance(float u, float d)
 	float r = d * (c + 1.0f / c - 2.0f);                           
 	return r;                                                      
 }
+*/
 
+/*
 __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	curandState& randState,
 	const Ray& ray,
@@ -499,5 +540,41 @@ __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	return true;
 
 }
+*/
 
+//sss
+/*
+if (materialData.type == MAT_SUBSURFACE)
+{
+	float wSpec = glm::clamp(materialData.metallic, 0.0f, 1.0f);
+	float wRest = 1.0f - wSpec;
 
+	float wSSS = glm::clamp(materialData.subsurface, 0.0f, 1.0f) * wRest;
+	float wDiff = (1.0f - glm::clamp(materialData.subsurface, 0.0f, 1.0f)) * wRest;
+
+	float sum = wSpec + wSSS + wDiff;
+	if (sum <= 1e-6f) return false; //todo
+	wSpec /= sum;
+	wSSS /= sum;
+	wDiff /= sum;
+
+	if (r < wSpec)
+	{
+		bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		//pdf *= wSpec;
+		return ok;
+	}
+	else if (r < wSpec + wSSS)
+	{
+		bool ok = ScatterSubsurface(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		//pdf *= wSSS;
+		return ok;
+	}
+	else
+	{
+		bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+		//pdf *= wDiff;
+		return ok;
+	}
+}
+*/

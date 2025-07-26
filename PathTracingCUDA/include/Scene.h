@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Generic.h"
-#include "Material.h"
+//#include "Material.h"
 #include "Primitives.h"
 #include "BVH.h"
 #include "AABB.h"
 
 //device only
+struct MaterialData;
+
 struct Scene
 {
     SpheresPacked* spheres;

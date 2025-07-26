@@ -2,6 +2,7 @@
 
 #include "Generic.h"
 #include "Scene.h"
+#include "Material.h"
 
 #include <vector>
 #include <unordered_map>

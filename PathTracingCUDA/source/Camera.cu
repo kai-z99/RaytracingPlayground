@@ -104,6 +104,7 @@ __device__ void Camera::WriteColor(unsigned char* pixelBuffer, int i, int j, glm
 
 __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int maxDepth, const Scene& scene) const
 {
+    bool prevWasSSS = false;
     glm::vec3 col(0.0f);
     glm::vec3 totalAttenuation(1.0f);
 
@@ -133,10 +134,24 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         glm::vec3 attenuation;
         float pdf;
 
-        if (!Scatter(materialData, randState, r, rec, attenuation, scattered, pdf))
+        if (materialData.type == MAT_SUBSURFACE && !prevWasSSS)
         {
-            //surface has absorbed ray, exit
-            break;
+            if (!ScatterSubsurface(materialData, randState, scene, r, rec, attenuation, scattered, pdf))
+            {
+                break;
+            }
+
+            prevWasSSS = true;
+        }
+        else
+        {
+            if (!Scatter(materialData, randState, r, rec, attenuation, scattered, pdf))
+            {
+                //surface has absorbed ray, exit
+                break;
+            }
+
+            prevWasSSS = false;
         }
 
         //scattered and attenuated succesfully---
@@ -144,11 +159,28 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //estimate rendering equation for 1 monte carlo sample
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
         totalAttenuation *= attenuation * cosine / pdf;
+
         glm::vec3 contrib = attenuation * cosine / pdf;
+
+        if (!isfinite(pdf))
+        {
+            printf("warning: pdf\n");
+            break;
+        }
+        if (!isfinite(cosine))
+        {
+            printf("warning: cosine\n");
+            break;
+        }
+        if (!isfinite(attenuation.r) || !isfinite(attenuation.g) || !isfinite(attenuation.b))
+        {
+            printf("warning: atttenuation\n");
+            break;
+        }
 
         if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b))
         {
-            printf("warning");
+            printf("warning: contrib\n");
             break;
         }
 
