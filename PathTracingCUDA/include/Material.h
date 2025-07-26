@@ -30,7 +30,7 @@ struct MaterialData
 
 	//sss
 	float subsurface;
-	glm::vec3 sssRadius;
+	float sssRadius;
 	glm::vec3 sssTint;
 
 };
@@ -72,6 +72,16 @@ __device__ inline bool ScatterLambertian(const MaterialData& materialData,
 	Ray& scattered,
 	float& pdf);
 
+__device__ inline bool ScatterSubsurface(const MaterialData& materialData,
+	curandState& randState,
+	const Ray& ray,
+	const HitRecord& rec,
+	glm::vec3& attenuation,
+	Ray& scattered,
+	float& pdf);
+
+
+
 __device__ inline bool Scatter(const MaterialData& materialData, 
 						curandState& randState,
 						const Ray& ray,
@@ -88,7 +98,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	float r = RandomFloat(randState);
 
-	//sss (unused for now)
+	//sss
 	if (materialData.type == MAT_SUBSURFACE)
 	{
 		float wSpec = glm::clamp(materialData.metallic, 0.0f, 1.0f);
@@ -105,21 +115,21 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 		if (r < wSpec)
 		{
-			//bool ok = scatterggx(pdf)
+			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
 			//pdf *= wSpec;
-			//return ok;
+			return ok;
 		}
 		else if (r < wSpec + wSSS)
 		{
-			//bool ok = ScatterSSS(pdf)
+			bool ok = ScatterSubsurface(materialData, randState, ray, rec, attenuation, scattered, pdf);
 			//pdf *= wSSS;
-			//return ok;
+			return ok;
 		}
 		else
 		{
-			//bool ok = ScatterLambertian(pdf)
+			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
 			//pdf *= wDiff;
-			//return ok
+			return ok;
 		}
 	}
 		
@@ -381,7 +391,6 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 
 	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobia factor to pdf
 	if (pdf < 1e-6f) return false;
-	
 
 	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
 	//if (pdf < 1e-6f || glm::dot(L, N) <= 0.0f)           
@@ -422,6 +431,73 @@ __device__ inline bool ScatterLambertian(
 	attenuation = materialData.albedo / pi;
 
 	return true;
+}
+
+
+__device__ inline float SampleBurleyDistance(float u, float d)
+{
+	// Avoid u==0
+	u = fmaxf(u, 1e-6f);
+
+	float g = 1.0f + 4.0f * u * (2.0f * u + sqrtf(1.0f + 4.0f * u * u));   
+	float c = powf(g, 1.0f / 3.0f);
+	float r = d * (c + 1.0f / c - 2.0f);                           
+	return r;                                                      
+}
+
+__device__ inline bool ScatterSubsurface(const MaterialData& materialData,
+	curandState& randState,
+	const Ray& ray,
+	const HitRecord& rec,
+	glm::vec3& attenuation,
+	Ray& scattered,
+	float& pdf)
+{
+	const glm::vec3 N = rec.normal;
+	const glm::vec3 A = materialData.albedo;
+	const glm::vec3 tint = materialData.sssTint;
+	const float s = materialData.sssRadius;
+
+	// 1. Sample a radius and angle
+	float zeta1 = RandomFloat(randState);
+	float zeta2 = RandomFloat(randState);
+
+	float r = glm::max(SampleBurleyDistance(zeta1, s), 1e-4f * s);
+	float phi = 2.0f * pi * zeta2;
+
+	// 2. Convert polar offset to a point on the surface
+	glm::vec3 T, B;
+	BuildTBN(T, B, N);
+	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+	glm::vec3 pOut = rec.p + offset;
+
+	// 3. Sample an outgoing direction
+	float dirPdf;
+	glm::vec3 L = SampleLambertian(N, randState, dirPdf);
+	if (dirPdf < 1e-6f) return false;
+
+	// 4. Calculate the BSSRDF value
+	// The normalized diffusion profile Rd(r)
+	float e1 = expf(-r / s);
+	float e3 = expf(-r / (3.0f * s));
+	float Rd = s * (e1 + e3) / (8.0f * pi * r); // This is the profile from Burley's paper
+
+	float Fr = FresnelSchlick(glm::dot(N, -ray.direction()), materialData.refractionIndex);
+	float Ft = 1.0f - Fr;
+
+	// The attenuation should be the BSSRDF value
+	attenuation = Ft * A * tint * (Rd/pi);
+
+	// 5. Calculate the PDF
+	// The PDF of sampling the radius r is r * R(r)
+	float pr = (s * 0.25f) * (e1 + e3);
+	float pdfPos = pr / (2.0f * pi * r);     
+	pdf = pdfPos * dirPdf;                        
+	if (pdf < 1e-6f || isnan(pdf)) return false;
+
+	scattered = Ray(pOut + 1e-3f * N, L); // Small offset to avoid self-intersection
+	return true;
+
 }
 
 

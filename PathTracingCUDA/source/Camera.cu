@@ -144,6 +144,13 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //estimate rendering equation for 1 monte carlo sample
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
         totalAttenuation *= attenuation * cosine / pdf;
+        glm::vec3 contrib = attenuation * cosine / pdf;
+
+        if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b))
+        {
+            printf("warning");
+            break;
+        }
 
         if (this->russianroulette && depth >= 3)
         {

@@ -310,12 +310,24 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     float rotDeg = -90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 370, 0));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
+
+    SubsurfaceMaterial sssM = SubsurfaceMaterial
+    (
+        glm::vec3(1.0f, 1.0f, 1.0f),
+        glm::vec3(1.0, 0.35, 0.35),
+        0.7f,
+        (60.0f)
+    );
+
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sssM);
+
+
 
     return sb.Build();
 }
@@ -652,7 +664,7 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     // ---------------------------------------------------------------------
     cam->center = glm::vec3(0.0f, 278.0f, 800.0f);
     cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
-    cam->vfov = 60.0f;
+    cam->vfov = 55.0f;
     cam->backgroundColor = glm::vec3(0.0f);
     cam->Init();
 
@@ -695,9 +707,9 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
 
     // ---------------------------------------------------------------------
     // ---------------------------------------------------------------------
-    sb.AddBox(glm::vec3(-100.0f, 165, -110.0f),         // centre
+    sb.AddBox(glm::vec3(-100.0f, 165, -100.0f),         // centre
         glm::vec3(165.0f, 330.0f, 165.0f),          // size
-        glm::vec4(0, 1, 0, 18.0f),                 
+        glm::vec4(0, 1, 0, 19.0f),                 
         metal);
     
     return sb.Build();

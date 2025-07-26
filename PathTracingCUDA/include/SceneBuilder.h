@@ -131,7 +131,7 @@ struct DiffuseLightMaterial : public Material
 struct SubsurfaceMaterial : public Material
 {
 	float subsurface;
-	glm::vec3 sssRadius;
+	float sssRadius;
 	glm::vec3 sssTint;
 	float eta;
 	float roughness;
@@ -142,7 +142,7 @@ struct SubsurfaceMaterial : public Material
 		glm::vec3 albedo = glm::vec3(1.0f),
 		glm::vec3 sssTint = glm::vec3(1.0f),
 		float subsurface = 1.0f,
-		glm::vec3 radius = glm::vec3(1.0f),
+		float radius = 1.0f,
 		float eta = 1.5f,
 		float metallic = 0.0f,
 		float roughness = 0.5f
