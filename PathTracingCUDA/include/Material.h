@@ -443,36 +443,29 @@ __device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
-	// 1.  Sample radial distance r from Burley?s CDF
 	float u = fmaxf(RandomFloat(randState), 1e-6f);
-	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	float c = powf(g, 1.f / 3.f);
-	float r = materialData.sssRadius * (c + 1.f / c - 2.f);
+	float r, rcpPdf;
+	SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
 
-	// 2.  Uniform azimuth
-	float phi = 2.f * pi * RandomFloat(randState);
+	float phi = 2.0f * pi * RandomFloat(randState);
 
-	// 3.  Offset in tangent plane
-	glm::vec3 T, B; BuildTBN(T, B, rec.normal);
+	glm::vec3 T, B;  BuildTBN(T, B, rec.normal);
 	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
 
-	// 4.  Project back onto the real surface
-	Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
-	HitRecord h;
-	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
+	//Project back onto the real surface
+	//Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
+	//HitRecord h;
+	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), h)) return false;
+	//xi = h.p;
+	//xiN = h.normal;
 
-	xi = h.p;
-	xiN = h.normal;
+	//assume exit point is just offset on the same surface
+	xi = rec.p + offset;
+	xiN = rec.normal;
 
-	// 5.  Burley profile value & pdf
-	float s = materialData.sssRadius;
-	r = fmaxf(r, s * 1e-4f);
-	float e1 = expf(-r / s);
-	float e3 = expf(-r / (3.f * s));
-	float Rd = (e1 + e3) / (8.f * pi * s * r);    // Burley 
-	pdfS = Rd;
+	pdfS = 1.0f / rcpPdf / r;   //mathematticaly shoud be 1 / rcpPdf? no r
+	float Rd = pdfS; //mathermatcially should  be pdfS / r?
 	Sp = materialData.sssTint * glm::vec3(Rd);
-
 	return true;
 }
 
@@ -497,7 +490,10 @@ __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	glm::vec3 L = SampleLambertian(xiN, randState, pdfF);
 	if (pdfF < 1e-6f) return false;
 
-	attenuation = Sp / pi;
+	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+	float F = FresnelSchlick(VdotN, materialData.refractionIndex); //use me?
+
+	attenuation = Sp * (1.0f - F) / pi;
 	scattered = Ray(xi +xiN * 1e-4f, L);
 	pdf = pdfS * pdfF;
 	rec.normal = xiN;
@@ -505,10 +501,6 @@ __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	return true;
 }
 	
-
-
-
-
 
 /*
 __device__ inline float SampleBurleyDistance(float u, float d)
@@ -616,3 +608,36 @@ if (materialData.type == MAT_SUBSURFACE)
 	}
 }
 */
+
+//// 1.  Sample radial distance r from Burleys CDF
+//float u = fmaxf(RandomFloat(randState), 1e-6f);
+//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+//float c = powf(g, 1.f / 3.f);
+//float r = materialData.sssRadius * (c + 1.f / c - 2.f);
+
+//// 2.  Uniform azimuth
+//float phi = 2.f * pi * RandomFloat(randState);
+
+//// 3.  Offset in tangent plane
+//glm::vec3 T, B; BuildTBN(T, B, rec.normal);
+//glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+
+//// 4.  Project back onto the real surface
+//Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
+//HitRecord h;
+//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
+
+//xi = h.p;
+//xiN = h.normal;
+
+//// 5.  Burley profile value & pdf
+//float s = materialData.sssRadius;
+//r = fmaxf(r, s * 1e-4f);
+//float e1 = expf(-r / s);
+//float e3 = expf(-r / (3.f * s));
+//float Rd = (e1 + e3) / (8.f * pi * r * s);    // Burley 
+//pdfS = Rd;
+//Sp = materialData.sssTint * glm::vec3(Rd);
+
+//return true;
+//

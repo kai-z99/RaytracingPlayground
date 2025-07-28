@@ -223,7 +223,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     // --- Camera setup ---
     cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
     cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
-    cam->vfov = 50.0f;
+    cam->vfov = 30.0f;
     cam->backgroundColor = glm::vec3(0.0f);
     cam->Init();
 
@@ -304,25 +304,26 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "dragon.obj";
-    float scale = 350.00f;
-    float yExtent = 0.705f;
-    float rotDeg = -90.0f;
+    std::string objName = "lucy.obj";
+    float scale = 450.00f;
+    float yExtent = 1.000f;
+    float rotDeg = 180.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 200, 0));
-    M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
-    LambertianMaterial m = LambertianMaterial(glm::vec3(1.0f, 0.3f, 0.3f));
+    LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(1.0f, 0.3f, 0.3f),
+        glm::vec3(0.7f, 0.7f, 0.7f),
         1.0f,
-        120.0f,
+        5.6f,
         1.5f,
         1.0f
 
