@@ -443,29 +443,72 @@ __device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
-	float u = fmaxf(RandomFloat(randState), 1e-6f);
-	float r, rcpPdf;
-	SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
+	//1. Sample radial distance & reciprocal PDF via helper
+	//float u = fmaxf(RandomFloat(randState), 1e-6f);
+	//float r, rcpPdf;
+	//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
 
-	float phi = 2.0f * pi * RandomFloat(randState);
+	//float pdfBurley = 1.0f / rcpPdf;
 
-	glm::vec3 T, B;  BuildTBN(T, B, rec.normal);
-	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+	//// 2. Uniform azimuth
+	//float phi = 2.0f * pi * RandomFloat(randState);
 
-	//Project back onto the real surface
+	//// 3. Offset in tangent plane
+	//glm::vec3 T, B;
+	//BuildTBN(T, B, rec.normal);
+	//glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+
+	//// 4. Project back onto the real surface
 	//Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
 	//HitRecord h;
 	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), h)) return false;
+
 	//xi = h.p;
 	//xiN = h.normal;
 
-	//assume exit point is just offset on the same surface
-	xi = rec.p + offset;
-	xiN = rec.normal;
+	//// 5. Compute the normalized diffusion profile Rd(r)
+	//float s = materialData.sssRadius;
+	//float e1 = expf(-r / s);
+	//float e3 = expf(-r / (3.0f * s));
+	//float Rd = (e1 + e3) / (8.0f * pi * r * s);
 
-	pdfS = 1.0f / rcpPdf / r;   //mathematticaly shoud be 1 / rcpPdf? no r
-	float Rd = pdfS; //mathermatcially should  be pdfS / r?
+	//Sp = materialData.sssTint * Rd;
+	//pdfS = pdfBurley;
+	//return true;
+
+
+
+	//VERSION 2
+	// 1.  Sample radial distance r from Burleys CDF
+	float u = fmaxf(RandomFloat(randState), 1e-6f);
+	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	float c = powf(g, 1.f / 3.f);
+	float r = materialData.sssRadius * (c + 1.f / c - 2.f);
+
+	// 2.  Uniform azimuth
+	float phi = 2.f * pi * RandomFloat(randState);
+
+	// 3.  Offset in tangent plane
+	glm::vec3 T, B; BuildTBN(T, B, rec.normal);
+	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+
+	// 4.  Project back onto the real surface
+	Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
+	HitRecord h;
+	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.f), h)) return false;
+
+	xi = h.p;
+	xiN = h.normal;
+
+	// 5.  Burley profile value & pdf
+	float s = materialData.sssRadius;
+	r = fmaxf(r, s * 1e-4f);
+	float e1 = expf(-r / s);
+	float e3 = expf(-r / (3.f * s));
+	float Rd = (e1 + e3) / (8.f * pi * r * s);    // Burley 
+	pdfS = Rd;
 	Sp = materialData.sssTint * glm::vec3(Rd);
+
 	return true;
 }
 
@@ -641,3 +684,36 @@ if (materialData.type == MAT_SUBSURFACE)
 
 //return true;
 //
+
+//VERSION 1
+//float u = fmaxf(RandomFloat(randState), 1e-6f);
+//float r, rcpPdf;
+//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
+
+//float phi = 2.0f * pi * RandomFloat(randState);
+
+//glm::vec3 T, B;  BuildTBN(T, B, rec.normal);
+//glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+
+////Project back onto the real surface
+//Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
+//HitRecord h;
+//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.0f), h)) return false;
+//xi = h.p;
+//xiN = h.normal;
+
+////assume exit point is just offset on the same surface?
+////xi = rec.p + offset;
+////xiN = rec.normal;
+
+//pdfS = 1.0f / rcpPdf / r;   //mathematticaly shoud be 1 / rcpPdf? no r
+//// 2) normalized diffusion profile Rd(r):
+//float s = materialData.sssRadius;
+//float rcpS = 1.0f / s;
+//float e1 = expf(-r * rcpS);        // e^{-r/s}
+//float e3 = expf(-r * (rcpS / 3.0f)); // e^{-r/(3s)}
+//float Rd = (e1 + e3) * rcpS / (8.0f * pi * r);
+
+////float Rd = pdfS; //mathermatcially should  be pdfS / r?
+//Sp = materialData.sssTint * glm::vec3(Rd);
+//return true;

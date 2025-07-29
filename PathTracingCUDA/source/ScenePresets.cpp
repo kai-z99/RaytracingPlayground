@@ -223,7 +223,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     // --- Camera setup ---
     cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
     cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
-    cam->vfov = 30.0f;
+    cam->vfov = 27.0f;
     cam->backgroundColor = glm::vec3(0.0f);
     cam->Init();
 
@@ -321,7 +321,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(0.7f, 0.7f, 0.7f),
+        glm::vec3(0.7f, 0.7f, 0.7f), //1.0f, 0.875f, 0.769f
         1.0f,
         5.6f,
         1.5f,
