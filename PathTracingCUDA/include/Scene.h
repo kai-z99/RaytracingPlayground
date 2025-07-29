@@ -26,14 +26,14 @@ struct Scene
 };
 
 //traverse the bvh instead of linearly scanning
- __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
+ __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec, int* hitCount = nullptr)
 {
      constexpr int MAX_STACK = 64;
      uint32_t stack[MAX_STACK]; //each element represents the index in BVHNodes*
      int stackPtr = 0;
      bool hitAny = false;
      float closestSoFar = ray_t.max;
-
+     int count = 0;
      //start with the root of BVH
      stack[stackPtr++] = 0;
 
@@ -90,6 +90,7 @@ struct Scene
 
                  if (hit)
                  {
+                     count++;
                      hitAny = true;
                      closestSoFar = tempRec.t;
                      rec = tempRec;
@@ -136,9 +137,82 @@ struct Scene
          
      }
 
+     if (hitCount)
+     {
+         *hitCount = count;
+     }
      return hitAny;
 
 }
+
+__device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitList& outHits)
+{
+    constexpr int MAX_STACK = 64;
+    uint32_t      stack[MAX_STACK];
+    int           stackPtr = 0;
+
+    outHits.reset();
+
+    // we don’t early–exit on the first or closest hit; we record them all
+    stack[stackPtr++] = 0;
+    while (stackPtr)
+    {
+        uint32_t nodeIdx = stack[--stackPtr];
+        const BVHNode& node = scene.BVHNodes[nodeIdx];
+
+        // if this node’s AABB is missed, skip it
+        if (IntersectAABB(r, node.bboxMin, node.bboxMax, ray_t.max) < 0.0f)
+            continue;
+
+        // leaf?
+        if (node.primCount)
+        {
+            for (uint32_t i = 0; i < node.primCount; ++i)
+            {
+                uint32_t idx = node.leftFirst + i;
+                PrimType type = scene.primTypes[idx];
+                uint32_t primIdx = scene.primIndices[idx];
+
+                HitRecord tempRec;
+                bool hit = false;
+                switch (type)
+                {
+                case PRIM_SPHERE:
+                    hit = HitSphere(*scene.spheres, primIdx, r, ray_t, tempRec);
+                    break;
+                case PRIM_QUAD:
+                    hit = HitQuad(*scene.quads, primIdx, r, ray_t, tempRec);
+                    break;
+                case PRIM_TRIANGLE:
+                    hit = HitTriangle(*scene.tris, primIdx, r, ray_t, tempRec);
+                    break;
+                default:
+                    break;
+                }
+
+                if (hit)
+                {
+                    // stash every hit
+                    if (!outHits.add(tempRec)) return true;
+                }
+            }
+        }
+        else
+        {
+            // interior: push children if they might hit
+            const BVHNode& L = scene.BVHNodes[node.leftFirst];
+            const BVHNode& R = scene.BVHNodes[node.rightFirst];
+
+            float tL = IntersectAABB(r, L.bboxMin, L.bboxMax, ray_t.max);
+            float tR = IntersectAABB(r, R.bboxMin, R.bboxMax, ray_t.max);
+            if (tL >= 0.0f) stack[stackPtr++] = node.leftFirst;
+            if (tR >= 0.0f) stack[stackPtr++] = node.rightFirst;
+        }
+    }
+
+    return outHits.count > 0;
+}
+
 
 __device__ inline bool HitSceneLinear(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
 {

@@ -105,5 +105,8 @@
     <CudaCompile Include="source\Camera.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="source\Material.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

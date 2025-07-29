@@ -27,6 +27,7 @@
     <CudaCompile Include="source\main.cu">
       <FileType>Document</FileType>
     </CudaCompile>
+    <CudaCompile Include="source\Material.cu" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\screen.frag" />

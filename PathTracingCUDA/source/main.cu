@@ -4,6 +4,7 @@
 #include "../include/Camera.h"
 #include "../include/Scene.h"
 #include "../include/ScenePresets.h"
+#include "../include/Material.h"
 
 #include <chrono>
 #include <random>
@@ -21,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 296;
+    c.samplesPerPixel = 2048;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -196,6 +197,8 @@ int main()
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
+
+    printf("rejected: %i, total: %i, rptcg: %f", rejected, total, (float)rejected/(float)total);
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));

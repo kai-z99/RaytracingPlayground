@@ -10,3 +10,19 @@ public:
 	float t;
 	int matDataID;
 };
+
+struct HitList
+{
+    static constexpr int MAX_HITS = 128;
+    HitRecord hits[MAX_HITS];
+    int       count = 0;
+
+    __device__ void reset() { count = 0; }
+
+    __device__ bool add(const HitRecord& r)
+    {
+        if (count >= MAX_HITS) return false;
+        hits[count++] = r;
+        return true;
+    }
+};

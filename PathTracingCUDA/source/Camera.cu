@@ -107,6 +107,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
     glm::vec3 col(0.0f);
     glm::vec3 totalAttenuation(1.0f);
 
+    bool prevSSS = false;
+
     for (int depth = 0; depth < maxDepth; ++depth)
     {
         HitRecord rec;
@@ -133,7 +135,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         glm::vec3 attenuation;
         float pdf;
 
-        if (!Scatter(materialData, randState, scene, r, rec, attenuation, scattered, pdf))
+        if (!Scatter(materialData, randState, scene, r, rec, attenuation, scattered, pdf, prevSSS))
         {
             //surface has absorbed ray, exit
             break;
@@ -143,10 +145,15 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         //estimate rendering equation for 1 monte carlo sample
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
-        totalAttenuation *= attenuation * cosine / pdf;
-
         glm::vec3 contrib = attenuation * cosine / pdf;
 
+        //contrib.r = fminf(contrib.r, 2.0f);
+        //contrib.g = fminf(contrib.g, 2.0f);
+        //contrib.b = fminf(contrib.b, 2.0f);
+
+        totalAttenuation *= contrib;
+
+        
         if (!isfinite(pdf))
         {
             printf("warning: pdf\n");
@@ -169,6 +176,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
+
+        
         if (this->russianroulette && depth >= 3)
         {
             //the max compoenent of total attenution

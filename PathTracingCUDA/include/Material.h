@@ -2,8 +2,12 @@
 
 #include "Hittable.h"
 #include "Scene.h"
+
+extern __managed__ unsigned int rejected;
+extern __managed__ unsigned int total;
 //
 //----------
+// 
 
 enum MaterialType
 {
@@ -72,7 +76,16 @@ __device__ inline bool ScatterLambertian(const MaterialData& materialData,
 	Ray& scattered,
 	float& pdf);
 
-__device__ inline bool ScatterSubsurface(const MaterialData& materialData,
+__device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
+	curandState& randState,
+	const Scene& scene,
+	const HitRecord& rec,
+	glm::vec3& xi, //returned entry point
+	glm::vec3& xiN, //return entry point normal
+	glm::vec3& Sp,
+	float& pdfS);
+
+__device__ bool ScatterSubsurface(const MaterialData& materialData,
 	curandState& randState,
 	const Scene& scene,
 	const Ray& ray,
@@ -81,8 +94,6 @@ __device__ inline bool ScatterSubsurface(const MaterialData& materialData,
 	Ray& scattered,
 	float& pdf);
 
-
-
 __device__ inline bool Scatter(const MaterialData& materialData, 
 						curandState& randState,
 						const Scene& scene,
@@ -90,7 +101,8 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 						HitRecord& rec,
 						glm::vec3& attenuation,
 						Ray& scattered,
-						float& pdf)
+						float& pdf,
+						bool& prevSSS)
 {
 	//light
 	if (materialData.type == MAT_LIGHT_DIFFUSE) return false;
@@ -104,9 +116,21 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 	float wSSS = materialData.subsurface;
 	if (materialData.type == MAT_SUBSURFACE && r < wSSS)
 	{
-		bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
-		return ok;
+		if (prevSSS)
+		{
+			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+			prevSSS = false;
+			return ok;
+		}
+		else
+		{
+			bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+			if (ok) prevSSS = true;
+			return ok;
+		}
+		
 	}
+	prevSSS = false;
 
 	r = RandomFloat(randState);
 	//metallic-roughness
@@ -403,147 +427,7 @@ __device__ inline bool ScatterLambertian(
 	attenuation = materialData.albedo / pi;
 
 	return true;
-}
-
-//https://zero-radiance.github.io/post/sampling-diffusion/
-// Performs sampling of a Normalized Burley diffusion profile in polar coordinates.
-// 'u' is the random number (the value of the CDF): [0, 1).
-// rcp(s) = 1 / ShapeParam = ScatteringDistance.
-// 'r' is the sampled radial distance, s.t. (u = 0 -> r = 0) and (u = 1 -> r = Inf).
-// rcp(Pdf) is the reciprocal of the corresponding PDF value.
-__device__ inline void SampleBurleyDiffusionProfile(float u, float rcpS, float& r, float& rcpPdf)
-{
-	const float LOG2_E = 1.44269504089;
-	u = 1 - u; // Convert CDF to CCDF; the resulting value of (u != 0)
-
-	float g = 1 + (4 * u) * (2 * u + sqrtf(1 + (4 * u) * u));
-	float n = exp2f(log2f(g) * (-1.0 / 3.0));                    // g^(-1/3)
-	float p = (g * n) * n;                                   // g^(+1/3)
-	float c = 1 + p + n;                                     // 1 + g^(+1/3) + g^(-1/3)
-	float x = (3 / LOG2_E) * log2f(c / (4 * u));           // 3 * Log[c / (4 * u)]
-
-	// x      = s * r
-	// exp_13 = Exp[-x/3] = Exp[-1/3 * 3 * Log[c / (4 * u)]]
-	// exp_13 = Exp[-Log[c / (4 * u)]] = (4 * u) / c
-	// exp_1  = Exp[-x] = exp_13 * exp_13 * exp_13
-	// expSum = exp_1 + exp_13 = exp_13 * (1 + exp_13 * exp_13)
-	// rcpExp = rcp(expSum) = c^3 / ((4 * u) * (c^2 + 16 * u^2))
-	float rcpExp = ((c * c) * c) / ((4 * u) * ((c * c) + (4 * u) * (4 * u)));
-
-	r = x * rcpS;
-	rcpPdf = (8 * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
-}
-
-__device__ inline bool SampleSubsurfaceDisk(const MaterialData& materialData,
-	curandState& randState,
-	const Scene& scene,
-	const HitRecord& rec,
-	glm::vec3& xi, //returned entry point
-	glm::vec3& xiN, //return entry point normal
-	glm::vec3& Sp,
-	float& pdfS)
-{
-	//1. Sample radial distance & reciprocal PDF via helper
-	//float u = fmaxf(RandomFloat(randState), 1e-6f);
-	//float r, rcpPdf;
-	//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
-
-	//float pdfBurley = 1.0f / rcpPdf;
-
-	//// 2. Uniform azimuth
-	//float phi = 2.0f * pi * RandomFloat(randState);
-
-	//// 3. Offset in tangent plane
-	//glm::vec3 T, B;
-	//BuildTBN(T, B, rec.normal);
-	//glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
-
-	//// 4. Project back onto the real surface
-	//Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
-	//HitRecord h;
-	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), h)) return false;
-
-	//xi = h.p;
-	//xiN = h.normal;
-
-	//// 5. Compute the normalized diffusion profile Rd(r)
-	//float s = materialData.sssRadius;
-	//float e1 = expf(-r / s);
-	//float e3 = expf(-r / (3.0f * s));
-	//float Rd = (e1 + e3) / (8.0f * pi * r * s);
-
-	//Sp = materialData.sssTint * Rd;
-	//pdfS = pdfBurley;
-	//return true;
-
-
-
-	//VERSION 2
-	// 1.  Sample radial distance r from Burleys CDF
-	float u = fmaxf(RandomFloat(randState), 1e-6f);
-	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	float c = powf(g, 1.f / 3.f);
-	float r = materialData.sssRadius * (c + 1.f / c - 2.f);
-
-	// 2.  Uniform azimuth
-	float phi = 2.f * pi * RandomFloat(randState);
-
-	// 3.  Offset in tangent plane
-	glm::vec3 T, B; BuildTBN(T, B, rec.normal);
-	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
-
-	// 4.  Project back onto the real surface
-	Ray probe(rec.p + offset + rec.normal * 1e-4f, -rec.normal);
-	HitRecord h;
-	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.f), h)) return false;
-
-	xi = h.p;
-	xiN = h.normal;
-
-	// 5.  Burley profile value & pdf
-	float s = materialData.sssRadius;
-	r = fmaxf(r, s * 1e-4f);
-	float e1 = expf(-r / s);
-	float e3 = expf(-r / (3.f * s));
-	float Rd = (e1 + e3) / (8.f * pi * r * s);    // Burley 
-	pdfS = Rd;
-	Sp = materialData.sssTint * glm::vec3(Rd);
-
-	return true;
-}
-
-__device__ inline bool ScatterSubsurface(const MaterialData& materialData,
-	curandState& randState,
-	const Scene& scene,
-	const Ray& ray,
-	HitRecord& rec,
-	glm::vec3& attenuation,
-	Ray& scattered,
-	float& pdf)
-{
-
-	//find where the light entered the surface xi
-	glm::vec3 xi;   
-	glm::vec3 xiN;
-	glm::vec3 Sp;
-	float pdfS;
-	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS)) return false;
-
-	float pdfF;
-	glm::vec3 L = SampleLambertian(xiN, randState, pdfF);
-	if (pdfF < 1e-6f) return false;
-
-	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
-	float F = FresnelSchlick(VdotN, materialData.refractionIndex); //use me?
-
-	attenuation = Sp * (1.0f - F) / pi;
-	scattered = Ray(xi +xiN * 1e-4f, L);
-	pdf = pdfS * pdfF;
-	rec.normal = xiN;
-
-	return true;
-}
-	
+}	
 
 /*
 __device__ inline float SampleBurleyDistance(float u, float d)
