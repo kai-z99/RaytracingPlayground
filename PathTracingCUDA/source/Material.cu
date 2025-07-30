@@ -12,6 +12,8 @@ __device__ inline float BurleyRd(float r, float s, float l) {
 	return (s * (e1 + e3)) / (8.0f * pi * l * r);
 }
 
+
+
 __device__ inline float Luminance(const glm::vec3& col)
 {
 	const glm::vec3 lumaWeights(0.2126f, 0.7152f, 0.0722f);
@@ -56,12 +58,20 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
-	//1. Sample radial distance & reciprocal PDF
-	float u = fmaxf(RandomFloat(randState), 1e-6f);
-	float r, rcpPdf;
-	SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
+	//A. Sample radial distance & reciprocal PDF
+	//float u = fmaxf(RandomFloat(randState), 1e-6f);
+	//float r, rcpPdf;
+	//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
+	//float pdfBurley = 1.0f / rcpPdf;
 
-	float pdfBurley = 1.0f / rcpPdf;
+	//B. Sample radial distance, pdf = Rd
+	float u = fmaxf(RandomFloat(randState), 1e-6f);
+	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	float c = powf(g, 1.f / 3.f);
+	float r = materialData.sssRadius * (c + 1.f / c - 2.f);	
+
+	//C. uniform sample R
+	//float r = sqrtf(RandomFloat(randState)) * materialData.sssRadius;
 
 	// 2. Uniform azimuth
 	float phi = 2.0f * pi * RandomFloat(randState);
@@ -74,14 +84,21 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	// 4. Project back onto the real surface
 	Ray probe(rec.p + (rec.normal * 1e-4f) + offset, -rec.normal);
-	HitList hList;
-	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), hList)) return false;
+	//HitList hList;
+	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), hList)) return false;
 
-	int nHits = hList.count;
-	float u2 = fmaxf(RandomFloat(randState), 1e-6f);
-	int pick = fminf(int(u2 * nHits), nHits - 1);
-	const HitRecord& h = hList.hits[pick];
+	HitRecord h;
+	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
 
+	//int nHits = hList.count;
+	////pbrt design: pick one ----
+	//float u2 = fmaxf(RandomFloat(randState), 1e-6f);
+	//int pick = fminf(int(u2 * nHits), nHits - 1);
+	//const HitRecord& h = hList.hits[pick];
+	
+
+	//TODO--- anti-firefly: evaulate all ----
+	
 	xi = h.p;
 	xiN = h.normal;
 
@@ -90,11 +107,11 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float l = materialData.sssRadius;
 	float rMin = 1e-4f * materialData.sssRadius;
 	r = fmaxf(r, rMin);
-
 	float Rd = BurleyRd(r, s, l);
-
 	Sp = materialData.sssTint * Rd;
-	pdfS = fmaxf(Rd / float(nHits), 1e-4f);
+
+	//if using burley sample, use burleyPDF instead.
+	pdfS = fmaxf(Rd /*/ float(nHits)*/, 1e-4f);
 
 	return true;
 }
@@ -134,9 +151,11 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	if (pdfF < 1e-6f) return false;
 
 	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
-	float F = FresnelSchlick(VdotN, materialData.refractionIndex); //use me?
+	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);
+	float F_i = FresnelSchlick(VdotN, materialData.refractionIndex); 
+	float F_o = FresnelSchlick(LdotxiN, materialData.refractionIndex);
 
-	attenuation = Sp * (1.0f - F) / pi;
+	attenuation = Sp * (1.0f - F_i) * (1.0f - F_o) / pi;
 	scattered = Ray(xi + xiN * 1e-4f, L);
 	pdf = pdfS * pdfF;
 	rec.normal = xiN;

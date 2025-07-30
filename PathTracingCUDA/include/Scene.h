@@ -178,7 +178,7 @@ __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t
                 switch (type)
                 {
                 case PRIM_SPHERE:
-                    hit = HitSphere(*scene.spheres, primIdx, r, ray_t, tempRec);
+                    hit = HitSphere(*scene.spheres, primIdx, r, ray_t, tempRec); //only will record outer hit, careful
                     break;
                 case PRIM_QUAD:
                     hit = HitQuad(*scene.quads, primIdx, r, ray_t, tempRec);

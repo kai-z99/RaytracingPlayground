@@ -119,7 +119,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		if (prevSSS)
 		{
 			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			prevSSS = false;
+			if (ok) prevSSS = false;
 			return ok;
 		}
 		else
@@ -130,6 +130,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		}
 		
 	}
+
 	prevSSS = false;
 
 	r = RandomFloat(randState);
@@ -385,7 +386,7 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	//}
 	//if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
 
-	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobia factor to pdf
+	pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobian factor to pdf
 	if (pdf < 1e-6f) return false;
 
 	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
