@@ -577,7 +577,7 @@ if (materialData.type == MAT_SUBSURFACE)
 //VERSION 1
 //float u = fmaxf(RandomFloat(randState), 1e-6f);
 //float r, rcpPdf;
-//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
+//SampleBurleyRadius(u, 1.0f / materialData.sssRadius, r, rcpPdf);
 
 //float phi = 2.0f * pi * RandomFloat(randState);
 

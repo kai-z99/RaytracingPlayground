@@ -1,22 +1,18 @@
 #include "../include/Material.h"
 
-#define DIPOLE
+//#define DIPOLE
 
 __managed__ unsigned int rejected = 0;
 __managed__ unsigned int total = 0;
 
 
-
-__device__ inline void SampleDipoleRadius(float u, float sssRadius, float& r, float& pdfRd) 
+__device__ inline float Luminance(const glm::vec3& col)
 {
-	// (B) Newton-solve F(r)=u using evalDipoleRd and its CDF
-	
-	// Finally:
-	//pdfRd = 2.0f * M_PI * r * evalDipoleRd(r, sigma_s, sigma_a, eta)
-	//	/ normalization;
+	const glm::vec3 lumaWeights(0.2126f, 0.7152f, 0.0722f);
+	return glm::dot(col, lumaWeights);
 }
 
-//DIFFUSION PROFILES---------------------------
+//DIFFUSION PROFILES ---------------------------
 //---------------------------------------------
 
 //Jensen et al (2005)
@@ -34,10 +30,31 @@ __device__ inline float BurleyRd(float r, float s, float l) {
 	return (s * (e1 + e3)) / (8.0f * pi * l * r);
 }
 
-__device__ inline float Luminance(const glm::vec3& col)
+//evaluate diffusion profiles
+__device__ inline float EvalSSSProfile(float r, const MaterialData& mat)
 {
-	const glm::vec3 lumaWeights(0.2126f, 0.7152f, 0.0722f);
-	return glm::dot(col, lumaWeights);
+#ifdef DIPOLE
+	// Dipole path
+	return DipoleRd(r, mat.sigmaS, mat.sigmaA, mat.refractionIndex);
+#else
+	// Burley path
+	float A = Luminance(mat.sssTint);
+	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
+	float l = mat.sssRadius;
+	float rMin = 1e-4f * mat.sssRadius;
+	float rClamped = fmaxf(r, rMin);
+	float Rd = BurleyRd(rClamped, s, l);
+	return Rd;
+
+#endif
+}
+
+//SAMPLERS ---------------------------
+//---------------------------------------------
+
+//?
+__device__ inline void SampleDipoleRadius(float u, float sssRadius, float& r, float& pdfRd)
+{
 }
 
 //https://zero-radiance.github.io/post/sampling-diffusion/
@@ -46,7 +63,7 @@ __device__ inline float Luminance(const glm::vec3& col)
 // rcp(s) = 1 / ShapeParam = ScatteringDistance.
 // 'r' is the sampled radial distance, s.t. (u = 0 -> r = 0) and (u = 1 -> r = Inf).
 // rcp(Pdf) is the reciprocal of the corresponding PDF value.
-__device__ inline void SampleBurleyDiffusionProfile(float u, float rcpS, float& r, float& rcpPdf)
+__device__ inline void SampleBurleyRadius(float u, float rcpS, float& r, float& rcpPdf)
 {
 	const float LOG2_E = 1.44269504089f;
 	u = 1.0f - u; // Convert CDF to CCDF; the resulting value of (u != 0)
@@ -69,43 +86,35 @@ __device__ inline void SampleBurleyDiffusionProfile(float u, float rcpS, float& 
 	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
-__device__ inline float EvalSSSProfile(
-	float r, const MaterialData& mat)
+__device__ inline void SampleBurleyRadius(float u, const MaterialData& materialData, float& r, float& pdf)
 {
-#ifdef USE_DIPOLE
-	// Dipole path
-	return DipoleRd(r, mat.sigmaS, mat.sigmaA, mat.refractionIndex);
-#else
-	// Burley path
-	float A = Luminance(mat.sssTint);
-	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
-	float l = mat.sssRadius;
-	float rMin = 1e-4f * mat.sssRadius;
-	r = fmaxf(r, rMin);
-	float Rd = BurleyRd(r, s, l);
-	return Rd;
+	u = fmaxf(u, 1e-6f);
+	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	float c = powf(g, 1.f / 3.f);
+	r = materialData.sssRadius * (c + 1.f / c - 2.f);	
 
-#endif
+	float Rd = EvalSSSProfile(r, materialData);
+	pdf = Rd;
 }
+
 
 __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf)
 {
-#ifdef USE_DIPOLE
+#ifdef DIPOLE
 	// invoke dipole sample
-	SampleDipoleRadius(u, mat, r, pdf);
+	//SampleDipoleRadius(u, mat, r, pdf);
 #else
-	// invoke Burley sample
-	SampleBurleyDiffusionProfile( u, 1.0f / mat.sssRadius, r, /*rcpPdf*/ pdf);
+	//type1
+	SampleBurleyRadius(u, 1.0f / mat.sssRadius, r, pdf);
 	pdf = 1.0f / pdf;
 
-	//float u = fmaxf(u, 1e-6f);
-	//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	//float c = powf(g, 1.f / 3.f);
-	//float r = mat.sssRadius * (c + 1.f / c - 2.f);
-	//pdf = 0.0f; //use Rd
+	//type2
+	//SampleBurleyRadius(u, mat, r, pdf);
 
 #endif
 }
+
+
 
 __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	curandState& randState,
@@ -116,60 +125,41 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
-	//A. Sample radial distance & reciprocal PDF
-	//float u = fmaxf(RandomFloat(randState), 1e-6f);
-	//float r, rcpPdf;
-	//SampleBurleyDiffusionProfile(u, 1.0f / materialData.sssRadius, r, rcpPdf);
-	//float pdfBurley = 1.0f / rcpPdf;
-
-	//B. Sample radial distance, pdf = Rd
-	//float u = fmaxf(RandomFloat(randState), 1e-6f);
-	//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	//float c = powf(g, 1.f / 3.f);
-	//float r = materialData.sssRadius * (c + 1.f / c - 2.f);	
+	// 1. importance sample a radius (theta)
 	float u = RandomFloat(randState);
 	float r, samplePdf;
 	SampleSSSRadius(u, materialData, r, samplePdf);
 
-	//C. uniform sample R
-	//float r = sqrtf(RandomFloat(randState)) * materialData.sssRadius;
-
-	// 2. Uniform azimuth
+	// 2. Take uniform azimuthal angle
 	float phi = 2.0f * pi * RandomFloat(randState);
-	float pdfPhi = 1.0f / (2.0f * pi);
 
-	// 3. Offset in tangent plane
+	// 3. tangent -> world space
 	glm::vec3 T, B;
 	BuildTBN(T, B, rec.normal);
 	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
 
-	// 4. Project back onto the real surface
-	Ray probe(rec.p + (rec.normal * 1e-4f) + offset, -rec.normal);
-	//HitList hList;
-	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), hList)) return false;
+	// 4. Probe down from disk to find ALL intersection
+	float l = 2.0f * sqrtf(materialData.sssRadius * materialData.sssRadius - r * r); //As in pbrt
+	Ray probe(rec.p + (rec.normal * (l * 0.5f)) + offset, -rec.normal);
+	HitList hList;
+	if (!HitScene(scene, probe, Interval(0.0f, l), hList)) return false;
 
-	HitRecord h;
-	if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
+	//HitRecord h;
+	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
 
-	//int nHits = hList.count;
-	////pbrt design: pick one ----
-	//float u2 = fmaxf(RandomFloat(randState), 1e-6f);
-	//int pick = fminf(int(u2 * nHits), nHits - 1);
-	//const HitRecord& h = hList.hits[pick];
-	
+	// 5. By PBRT: Pick one random intersection
+	int nHits = hList.count;
+	float u2 = fmaxf(RandomFloat(randState), 1e-6f);
+	int pick = fminf(int(u2 * nHits), nHits - 1);
 
-	//TODO--- anti-firefly: evaulate all ----
-	
+	const HitRecord& h = hList.hits[pick];
 	xi = h.p;
 	xiN = h.normal;
 
+	// 6. Evaulate diffusion profile and assign pdf
 	float Rd = EvalSSSProfile(r, materialData);
 	Sp = materialData.sssTint * Rd;
-
-	//if using burley sample, use burleyPDF instead.
-	//pdfS = fmaxf(Rd /*/ float(nHits)*/, 1e-4f);
-
-	pdfS = samplePdf;
+	pdfS = fmaxf(samplePdf / nHits, 1e-4f);
 
 	return true;
 }
@@ -223,58 +213,3 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//VERSION 2
-// 1.  Sample radial distance r from Burleys CDF
-//float u = fmaxf(RandomFloat(randState), 1e-6f);
-//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-//float c = powf(g, 1.f / 3.f);
-//float r = materialData.sssRadius * (c + 1.f / c - 2.f);
-
-//// 2.  Uniform azimuth
-//float phi = 2.f * pi * RandomFloat(randState);
-
-//// 3.  Offset in tangent plane
-//glm::vec3 T, B; BuildTBN(T, B, rec.normal);
-//glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
-
-//// 4.  Project back onto the real surface
-//Ray probe(rec.p + (rec.normal * 1e-4f) + offset, -rec.normal);
-//HitList hList;
-//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 3.0f), hList)) return false;
-
-//int nHits = hList.count;
-//float u2 = fmaxf(RandomFloat(randState), 1e-6f);
-//int pick = fminf(int(u2 * nHits), nHits - 1);
-//const HitRecord& h = hList.hits[pick];
-//
-//xi = h.p;
-//xiN = h.normal;
-
-//glm::vec3 tint = materialData.sssTint;
-//float A = Luminance(tint);
-//float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
-//float l = materialData.sssRadius;
-//r = fmaxf(r, 1e-6f * l);
-//float Rd = BurleyRd(r, s, l);
-
-//Sp = materialData.sssTint * glm::vec3(Rd);
-//pdfS = Rd / (float)nHits;
-
-//return true;
