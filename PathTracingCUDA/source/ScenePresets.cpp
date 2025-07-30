@@ -319,14 +319,25 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
     LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    //SubsurfaceMaterial sm = SubsurfaceMaterial(
+    //    glm::vec3(0.7f, 0.7f, 0.7f),
+    //    glm::vec3(0.7f, 0.7f, 0.7f), //
+    //    1.0f,
+    //    5.6f,
+    //    1.5f,
+    //    1.0f
+    //);
+
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(0.7f, 0.7f, 0.7f),
         glm::vec3(0.7f, 0.7f, 0.7f), //
         1.0f,
         5.6f,
+        1.0f,
+        1.0f,
         1.5f,
-        1.0f
-
+        1.5f,
+        0.5f
     );
 
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);

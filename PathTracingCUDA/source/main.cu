@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 1024;
+    c.samplesPerPixel = 128;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';

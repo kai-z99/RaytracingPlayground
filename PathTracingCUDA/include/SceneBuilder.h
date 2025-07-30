@@ -137,6 +137,8 @@ struct SubsurfaceMaterial : public Material
 	float eta;
 	float roughness;
 	float metallic;
+	float sigmaS;
+	float sigmaA;
 
 	SubsurfaceMaterial
 	(
@@ -144,6 +146,8 @@ struct SubsurfaceMaterial : public Material
 		glm::vec3 sssTint = glm::vec3(1.0f),
 		float subsurface = 1.0f,
 		float radius = 1.0f,
+		float sigmaS = 1.0f,
+		float sigmaA = 1.0f,
 		float eta = 1.5f,
 		float metallic = 0.0f,
 		float roughness = 0.5f
@@ -157,6 +161,8 @@ struct SubsurfaceMaterial : public Material
 		this->eta = eta;
 		this->roughness = roughness;
 		this->metallic = metallic;
+		this->sigmaA = sigmaA;
+		this->sigmaS = sigmaS;
 	}
 
 	MaterialData ToMaterialData() const override
@@ -169,6 +175,8 @@ struct SubsurfaceMaterial : public Material
 		m.subsurface = this->subsurface;
 		m.roughness = this->roughness;
 		m.metallic = this->metallic;
+		m.sigmaA = this->sigmaA;
+		m.sigmaS = this->sigmaS;
 		m.type = this->tag;
 
 		return m;

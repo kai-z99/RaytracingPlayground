@@ -1,7 +1,29 @@
 #include "../include/Material.h"
 
+#define DIPOLE
+
 __managed__ unsigned int rejected = 0;
 __managed__ unsigned int total = 0;
+
+
+
+__device__ inline void SampleDipoleRadius(float u, float sssRadius, float& r, float& pdfRd) 
+{
+	// (B) Newton-solve F(r)=u using evalDipoleRd and its CDF
+	
+	// Finally:
+	//pdfRd = 2.0f * M_PI * r * evalDipoleRd(r, sigma_s, sigma_a, eta)
+	//	/ normalization;
+}
+
+//DIFFUSION PROFILES---------------------------
+//---------------------------------------------
+
+//Jensen et al (2005)
+__device__ inline float DipoleRd(float r, float sigmaS, float sigmaA, float eta)
+{
+	return 0.0f;
+}
 
 //Burley et al (2015)
 //range: (0, inf)
@@ -11,8 +33,6 @@ __device__ inline float BurleyRd(float r, float s, float l) {
 	float e3 = std::exp(-sl * (1.0f / 3.0f));
 	return (s * (e1 + e3)) / (8.0f * pi * l * r);
 }
-
-
 
 __device__ inline float Luminance(const glm::vec3& col)
 {
@@ -49,6 +69,44 @@ __device__ inline void SampleBurleyDiffusionProfile(float u, float rcpS, float& 
 	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
+__device__ inline float EvalSSSProfile(
+	float r, const MaterialData& mat)
+{
+#ifdef USE_DIPOLE
+	// Dipole path
+	return DipoleRd(r, mat.sigmaS, mat.sigmaA, mat.refractionIndex);
+#else
+	// Burley path
+	float A = Luminance(mat.sssTint);
+	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
+	float l = mat.sssRadius;
+	float rMin = 1e-4f * mat.sssRadius;
+	r = fmaxf(r, rMin);
+	float Rd = BurleyRd(r, s, l);
+	return Rd;
+
+#endif
+}
+
+__device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf)
+{
+#ifdef USE_DIPOLE
+	// invoke dipole sample
+	SampleDipoleRadius(u, mat, r, pdf);
+#else
+	// invoke Burley sample
+	SampleBurleyDiffusionProfile( u, 1.0f / mat.sssRadius, r, /*rcpPdf*/ pdf);
+	pdf = 1.0f / pdf;
+
+	//float u = fmaxf(u, 1e-6f);
+	//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	//float c = powf(g, 1.f / 3.f);
+	//float r = mat.sssRadius * (c + 1.f / c - 2.f);
+	//pdf = 0.0f; //use Rd
+
+#endif
+}
+
 __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	curandState& randState,
 	const Scene& scene,
@@ -65,10 +123,13 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	//float pdfBurley = 1.0f / rcpPdf;
 
 	//B. Sample radial distance, pdf = Rd
-	float u = fmaxf(RandomFloat(randState), 1e-6f);
-	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	float c = powf(g, 1.f / 3.f);
-	float r = materialData.sssRadius * (c + 1.f / c - 2.f);	
+	//float u = fmaxf(RandomFloat(randState), 1e-6f);
+	//float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
+	//float c = powf(g, 1.f / 3.f);
+	//float r = materialData.sssRadius * (c + 1.f / c - 2.f);	
+	float u = RandomFloat(randState);
+	float r, samplePdf;
+	SampleSSSRadius(u, materialData, r, samplePdf);
 
 	//C. uniform sample R
 	//float r = sqrtf(RandomFloat(randState)) * materialData.sssRadius;
@@ -102,16 +163,13 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	xi = h.p;
 	xiN = h.normal;
 
-	float A = Luminance(materialData.sssTint);
-	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f),
-	float l = materialData.sssRadius;
-	float rMin = 1e-4f * materialData.sssRadius;
-	r = fmaxf(r, rMin);
-	float Rd = BurleyRd(r, s, l);
+	float Rd = EvalSSSProfile(r, materialData);
 	Sp = materialData.sssTint * Rd;
 
 	//if using burley sample, use burleyPDF instead.
-	pdfS = fmaxf(Rd /*/ float(nHits)*/, 1e-4f);
+	//pdfS = fmaxf(Rd /*/ float(nHits)*/, 1e-4f);
+
+	pdfS = samplePdf;
 
 	return true;
 }
@@ -165,6 +223,22 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //VERSION 2
 // 1.  Sample radial distance r from Burleys CDF

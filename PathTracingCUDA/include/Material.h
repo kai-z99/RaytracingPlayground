@@ -32,10 +32,14 @@ struct MaterialData
 	//dielectric/sss
 	float refractionIndex; 
 
-	//sss
+	//burley's sss
 	float subsurface;
 	float sssRadius;
 	glm::vec3 sssTint;
+
+	//dipole sss
+	float sigmaS;
+	float sigmaA;
 
 };
 
