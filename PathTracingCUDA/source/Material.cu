@@ -114,8 +114,6 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 #endif
 }
 
-
-
 __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	curandState& randState,
 	const Scene& scene,
@@ -139,6 +137,8 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
 
 	// 4. Probe down from disk to find ALL intersection
+
+
 	float l = 2.0f * sqrtf(materialData.sssRadius * materialData.sssRadius - r * r); //As in pbrt
 	Ray probe(rec.p + (rec.normal * (l * 0.5f)) + offset, -rec.normal);
 	HitList hList;
