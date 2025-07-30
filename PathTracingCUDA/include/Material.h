@@ -3,6 +3,7 @@
 #include "Hittable.h"
 #include "Scene.h"
 
+extern __managed__ unsigned int noIntersection;
 extern __managed__ unsigned int rejected;
 extern __managed__ unsigned int total;
 //

@@ -185,10 +185,14 @@ void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const M
 	this->triMaterialsIDs.push_back(matID);
 }
 
+
 void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform, const Material& material)
 {
 	int tris = 0;
 	std::cout << "LOADING MODEL AT: " << path << '\n';
+
+	MaterialData   md = material.ToMaterialData();
+    int            meshMatID = PushMaterialAndGetID(md);
 
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -257,7 +261,11 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 				glm::vec3 p1 = glm::vec3(M * glm::vec4(tri[1], 1.0f));
 				glm::vec3 p2 = glm::vec3(M * glm::vec4(tri[2], 1.0f));
 
-				this->AddTriangle(p0, p1, p2, material);
+				this->triP0s.push_back(p0);
+				this->triP1s.push_back(p1);
+				this->triP2s.push_back(p2);
+
+				this->triMaterialsIDs.push_back(meshMatID); //dont push a new duplicate material for every triangle
 				tris++;
 			}
 

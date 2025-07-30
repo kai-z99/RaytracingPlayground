@@ -1,7 +1,7 @@
 #include "../include/Material.h"
 
 //#define DIPOLE
-
+__managed__ unsigned int noIntersection = 0;
 __managed__ unsigned int rejected = 0;
 __managed__ unsigned int total = 0;
 
@@ -123,30 +123,72 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3& Sp,
 	float& pdfS)
 {
+	// 0. pick an axis
+	glm::vec3 T, B;
+	BuildTBN(T, B, rec.normal);
+	float uA = RandomFloat(randState);
+	float pdfAxis;
+	glm::vec3 axisN, vx, vy;
+
+	if (uA < 0.5f)
+	{
+		pdfAxis = 0.5f;
+		axisN = rec.normal; vx = T; vy = B;
+	}
+	else if (uA < 0.75f)
+	{
+		pdfAxis = 0.25f;
+		axisN = T;  vx = B;  vy = rec.normal;
+	}
+	else
+	{
+		pdfAxis = 0.25f;
+		axisN = B;  vx = rec.normal;  vy = T;
+	}
+
 	// 1. importance sample a radius (theta)
 	float u = RandomFloat(randState);
-	float r, samplePdf;
-	SampleSSSRadius(u, materialData, r, samplePdf);
+	float r, pdfR;
+	SampleSSSRadius(u, materialData, r, pdfR);
+	pdfR = 1.0f / pdfR;
 
 	// 2. Take uniform azimuthal angle
 	float phi = 2.0f * pi * RandomFloat(randState);
+	float pdfPhi = 1.0f / (2.0f * pi);
 
 	// 3. tangent -> world space
-	glm::vec3 T, B;
-	BuildTBN(T, B, rec.normal);
-	glm::vec3 offset = r * (cosf(phi) * T + sinf(phi) * B);
+	glm::vec3 offset = r * (cosf(phi)*vx + sinf(phi)*vy);
 
-	// 4. Probe down from disk to find ALL intersection
-
-
-	float l = 2.0f * sqrtf(materialData.sssRadius * materialData.sssRadius - r * r); //As in pbrt
-	Ray probe(rec.p + (rec.normal * (l * 0.5f)) + offset, -rec.normal);
+	// 4. Probe from disk to find intersections
+	float rMax, tmp_inv;
+	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv);
+	float l = 2.0f * sqrtf(rMax * rMax - r * r); //As in pbrt
+	//printf("rMax: %f, r: %f, l: %f\n", rMax, r, l);
+	Ray probe(rec.p + (axisN * (l * 0.5f)) + offset, -axisN);
 	HitList hList;
-	if (!HitScene(scene, probe, Interval(0.0f, l), hList)) return false;
+	if (!HitScene(scene, probe, Interval(0.0f, l), hList))
+	{
+		return false;
+	}
+		
+	//only keep intesection with same material
+	int keep = 0;
+	for (int i = 0; i < hList.count; ++i)
+	{
+		if (hList.hits[i].matDataID == rec.matDataID)
+		{
+			hList.hits[keep++] = hList.hits[i];
+		}
+	}
 
-	//HitRecord h;
-	//if (!HitScene(scene, probe, Interval(0.0f, materialData.sssRadius * 4.f), h)) return false;
-
+	hList.count = keep;
+	if (hList.count == 0)
+	{
+		atomicAdd(&noIntersection, 1);
+		return false;
+	}
+		
+	
 	// 5. By PBRT: Pick one random intersection
 	int nHits = hList.count;
 	float u2 = fmaxf(RandomFloat(randState), 1e-6f);
@@ -159,7 +201,9 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	// 6. Evaulate diffusion profile and assign pdf
 	float Rd = EvalSSSProfile(r, materialData);
 	Sp = materialData.sssTint * Rd;
-	pdfS = fmaxf(samplePdf / nHits, 1e-4f);
+
+	float cosTheta = fabsf(glm::dot(h.normal, axisN));
+	pdfS = fmaxf(pdfR * pdfAxis * pdfPhi * cosTheta / (float)nHits, 1e-4f);
 
 	return true;
 }
@@ -182,6 +226,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	//do some rejection sampling to reduce variance
 	atomicAdd(&total, 1);
+	
 	int tries = 4;
 	while (tries > 0 && !SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS))
 	{
@@ -210,6 +255,5 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	//printf("Sp: %f, %f, %f. PDF: %f\n", Sp.r, Sp.g, Sp.b, pdf);
 	
-
 	return true;
 }

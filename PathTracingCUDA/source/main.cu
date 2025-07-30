@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel =1024;
+    c.samplesPerPixel = 128;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -198,7 +198,7 @@ int main()
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
 
-    printf("rejected: %i, total: %i, rptcg: %f", rejected, total, (float)rejected/(float)total);
+    printf("rejected: %i, total: %i, rptcg: %f, no material: %i", rejected, total, (float)rejected/(float)total, noIntersection);
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
