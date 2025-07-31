@@ -132,10 +132,10 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //surface hit, scatter?
 
         Ray scattered;
-        glm::vec3 bsdfEvaluation;
+        glm::vec3 evaluation;
         float pdf;
 
-        if (!Scatter(materialData, randState, scene, r, rec, bsdfEvaluation, scattered, pdf, prevSSS))
+        if (!Scatter(materialData, randState, scene, r, rec, evaluation, scattered, pdf, prevSSS))
         {
             //surface has absorbed ray, exit
             break;
@@ -144,8 +144,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //scattered and attenuated succesfully---
 
         //estimate rendering equation for 1 monte carlo sample
+        //Note: if its a sss surface, we evaluate the seperable bssrdf instead where evaluation is bssrdf * bsdf of initial hit
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
-        glm::vec3 contrib = bsdfEvaluation * cosine / pdf;
+        glm::vec3 contrib = evaluation * cosine / pdf;
 
         contrib.r = fminf(contrib.r, 2.0f);
         contrib.g = fminf(contrib.g, 2.0f);
@@ -164,7 +165,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             printf("warning: cosine\n");
             break;
         }
-        if (!isfinite(bsdfEvaluation.r) || !isfinite(bsdfEvaluation.g) || !isfinite(bsdfEvaluation.b))
+        if (!isfinite(evaluation.r) || !isfinite(evaluation.g) || !isfinite(evaluation.b))
         {
             printf("warning: atttenuation\n");
             break;
