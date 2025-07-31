@@ -332,7 +332,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
         glm::vec3(0.7f, 0.7f, 0.7f),
         glm::vec3(0.7f, 0.7f, 0.7f), //
         1.0f,
-        1.6f,
+        20.6f,
         1.0f,
         1.0f,
         1.5f,

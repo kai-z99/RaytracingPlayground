@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-
+//TODO: update push ids to not push duplicates
 Scene* SceneBuilder::Build()
 {
 	std::cout << "BUILDING WORLD...\n";

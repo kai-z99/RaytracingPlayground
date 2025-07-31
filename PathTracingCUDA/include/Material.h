@@ -44,6 +44,27 @@ struct MaterialData
 
 };
 
+struct ShadingFrame { glm::vec3 ntb; }; // orthonormal basis
+
+struct BSDFSample 
+{
+	float3 wi;      // world-space
+	float3 f;       // BSDF value [sr^-1]
+	float  pdf;     // solid-angle PDF
+	uint32_t flags; // e.g., Specular|Diffuse|Reflection|Transmission
+};
+
+struct BSDFCtx 
+{
+	MaterialData mat;
+	ShadingFrame frame;
+	float3 wo_local;  // outgoing in local frame (wo = -ray.dir)
+	// precomputed params:
+	float3 F0;        // for metallic workflow
+	float  alpha;     // GGX roughness^2
+	float  eta;       // IOR
+};
+
 __device__ inline float FresnelSchlick(float cosT, float eta)
 {
 	float r0 = (1 - eta) / (1 + eta);
@@ -117,24 +138,30 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	float r = RandomFloat(randState);
 
-	//SSS
-	float wSSS = materialData.subsurface;
-	if (materialData.type == MAT_SUBSURFACE && r < wSSS)
-	{
-		if (prevSSS)
-		{
-			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = false;
-			return ok;
-		}
-		else
-		{
-			bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = true;
-			return ok;
-		}
-		
-	}
+	//SSS IGNORE
+	//This is the frensel term of sss rendering equation...
+	//float VoN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+	//float Fo = FresnelSchlick(VoN, materialData.refractionIndex); // or exact dielectric Fresnel
+	//float pSSS = materialData.subsurface * (1.0f - Fo);
+	//if (materialData.type == MAT_SUBSURFACE && r < pSSS)
+	//{
+	//	bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+	//	if (ok) prevSSS = true;
+	//	return ok;
+	//	/*if (prevSSS)
+	//	{
+	//		bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+	//		if (ok) prevSSS = false;
+	//		return ok;
+	//	}
+	//	else
+	//	{
+	//		bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+	//		if (ok) prevSSS = true;
+	//		return ok;
+	//	}*/
+	//	
+	//}
 
 	prevSSS = false;
 

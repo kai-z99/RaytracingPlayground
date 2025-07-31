@@ -1,6 +1,7 @@
 #include "../include/Material.h"
 
 //#define DIPOLE
+//#define REJECTION_SAMPLE
 __managed__ unsigned int noIntersection = 0;
 __managed__ unsigned int rejected = 0;
 __managed__ unsigned int total = 0;
@@ -10,6 +11,15 @@ __device__ inline float Luminance(const glm::vec3& col)
 {
 	const glm::vec3 lumaWeights(0.2126f, 0.7152f, 0.0722f);
 	return glm::dot(col, lumaWeights);
+}
+
+__device__ inline float FresnelMoment1(float invEta) {
+	float eta = invEta; // NOTE: PBRT calls this with 1/eta;
+	float e2 = eta * eta, e3 = e2 * eta, e4 = e3 * eta, e5 = e4 * eta;
+	if (eta < 1.f)
+		return 0.45966f - 1.73965f * eta + 3.37668f * e2 - 3.904945f * e3 + 2.49277f * e4 - 0.68441f * e5;
+	else
+		return -4.61686f + 11.1136f * eta - 10.4646f * e2 + 5.11455f * e3 - 1.27198f * e4 + 0.12746f * e5;
 }
 
 //DIFFUSION PROFILES ---------------------------
@@ -105,8 +115,10 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	//SampleDipoleRadius(u, mat, r, pdf);
 #else
 	//type1
-	SampleBurleyRadius(u, 1.0f / mat.sssRadius, r, pdf);
-	pdf = 1.0f / pdf;
+	float A = Luminance(mat.sssTint);
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	SampleBurleyRadius(u, s / mat.sssRadius, r, pdf);
+	pdf = 1.0f / pdf; //function returns inverse pdf
 
 	//type2
 	//SampleBurleyRadius(u, mat, r, pdf);
@@ -150,7 +162,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float u = RandomFloat(randState);
 	float r, pdfR;
 	SampleSSSRadius(u, materialData, r, pdfR);
-	pdfR = 1.0f / pdfR;
 
 	// 2. Take uniform azimuthal angle
 	float phi = 2.0f * pi * RandomFloat(randState);
@@ -159,7 +170,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	// 3. tangent -> world space
 	glm::vec3 offset = r * (cosf(phi)*vx + sinf(phi)*vy);
 
-	// 4. Probe from disk to find intersections
+	// 4. Probe to find intersections
 	float rMax, tmp_inv;
 	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv);
 	float l = 2.0f * sqrtf(rMax * rMax - r * r); //As in pbrt
@@ -187,7 +198,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 		atomicAdd(&noIntersection, 1);
 		return false;
 	}
-		
 	
 	// 5. By PBRT: Pick one random intersection
 	int nHits = hList.count;
@@ -203,7 +213,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	Sp = materialData.sssTint * Rd;
 
 	float cosTheta = fabsf(glm::dot(h.normal, axisN));
-	pdfS = fmaxf(pdfR * pdfAxis * pdfPhi * cosTheta / (float)nHits, 1e-4f);
+	pdfS = fmaxf(pdfR * pdfAxis * pdfPhi * cosTheta / ((float)nHits), 1e-4f);
 
 	return true;
 }
@@ -227,6 +237,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	//do some rejection sampling to reduce variance
 	atomicAdd(&total, 1);
 	
+#ifdef REJECTION_SAMPLE
 	int tries = 4;
 	while (tries > 0 && !SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS))
 	{
@@ -238,17 +249,23 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 		atomicAdd(&rejected, 1);
 		return false;
 	}
+#else
+	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS)) return false;
+#endif 
 
 	float pdfF;
 	glm::vec3 L = SampleLambertian(xiN, randState, pdfF);
 	if (pdfF < 1e-6f) return false;
 
-	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+	//entry at hemisphere sample
 	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);
-	float F_i = FresnelSchlick(VdotN, materialData.refractionIndex); 
-	float F_o = FresnelSchlick(LdotxiN, materialData.refractionIndex);
+	float F_i = FresnelSchlick(LdotxiN, materialData.refractionIndex);
+	float c = 1.0f - 2.0f * FresnelMoment1(1.0f / materialData.refractionIndex);
 
-	attenuation = Sp * (1.0f - F_i) * (1.0f - F_o) / pi;
+	//as per pbrt
+	float eta2 = materialData.refractionIndex * materialData.refractionIndex;
+
+	attenuation = eta2 * Sp * (1.0f - F_i) / (c*pi);
 	scattered = Ray(xi + xiN * 1e-4f, L);
 	pdf = pdfS * pdfF;
 	rec.normal = xiN;
