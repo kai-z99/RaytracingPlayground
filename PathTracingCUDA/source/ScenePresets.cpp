@@ -329,8 +329,8 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.7f, 0.7f, 0.7f),
-        glm::vec3(0.7f, 0.7f, 0.7f), //
+        glm::vec3(1.0f, 0.4f, 0.4f),
+        glm::vec3(0.4f, 0.4f, 1.0f), //
         1.0f,
         20.6f,
         1.0f,

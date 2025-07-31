@@ -13,15 +13,6 @@ __device__ inline float Luminance(const glm::vec3& col)
 	return glm::dot(col, lumaWeights);
 }
 
-__device__ inline float FresnelMoment1(float invEta) {
-	float eta = invEta; // NOTE: PBRT calls this with 1/eta;
-	float e2 = eta * eta, e3 = e2 * eta, e4 = e3 * eta, e5 = e4 * eta;
-	if (eta < 1.f)
-		return 0.45966f - 1.73965f * eta + 3.37668f * e2 - 3.904945f * e3 + 2.49277f * e4 - 0.68441f * e5;
-	else
-		return -4.61686f + 11.1136f * eta - 10.4646f * e2 + 5.11455f * e3 - 1.27198f * e4 + 0.12746f * e5;
-}
-
 //DIFFUSION PROFILES ---------------------------
 //---------------------------------------------
 
@@ -115,13 +106,13 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	//SampleDipoleRadius(u, mat, r, pdf);
 #else
 	//type1
-	float A = Luminance(mat.sssTint);
-	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
-	SampleBurleyRadius(u, s / mat.sssRadius, r, pdf);
-	pdf = 1.0f / pdf; //function returns inverse pdf
+	//float A = Luminance(mat.sssTint);
+	//float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	//SampleBurleyRadius(u, s / mat.sssRadius, r, pdf);
+	//pdf = 1.0f / pdf; //function returns inverse pdf
 
 	//type2
-	//SampleBurleyRadius(u, mat, r, pdf);
+	SampleBurleyRadius(u, mat, r, pdf);
 
 #endif
 }
@@ -165,7 +156,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	// 2. Take uniform azimuthal angle
 	float phi = 2.0f * pi * RandomFloat(randState);
-	float pdfPhi = 1.0f / (2.0f * pi);
+	float pdfPhi = 1.0f / (2.0f * pi); //no need
 
 	// 3. tangent -> world space
 	glm::vec3 offset = r * (cosf(phi)*vx + sinf(phi)*vy);
@@ -210,10 +201,10 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	// 6. Evaulate diffusion profile and assign pdf
 	float Rd = EvalSSSProfile(r, materialData);
-	Sp = materialData.sssTint * Rd;
+	Sp = Rd * materialData.sssTint;
 
 	float cosTheta = fabsf(glm::dot(h.normal, axisN));
-	pdfS = fmaxf(pdfR * pdfAxis * pdfPhi * cosTheta / ((float)nHits), 1e-4f);
+	pdfS = fmaxf(pdfR * pdfAxis  /** pdfPhi*/ * cosTheta / ((float)nHits), 1e-4f);
 
 	return true;
 }
@@ -232,7 +223,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	glm::vec3 xi;
 	glm::vec3 xiN;
 	glm::vec3 Sp;
-	float pdfS;
+	float pdfBssrdf;
 
 	//do some rejection sampling to reduce variance
 	atomicAdd(&total, 1);
@@ -250,24 +241,26 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 		return false;
 	}
 #else
-	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfS)) return false;
+	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, Sp, pdfBssrdf)) return false;
 #endif 
 
-	float pdfF;
-	glm::vec3 L = SampleLambertian(xiN, randState, pdfF);
-	if (pdfF < 1e-6f) return false;
+	//exit brdf
+	float pdfBsdf;
+	glm::vec3 L = SampleLambertian(xiN, randState, pdfBsdf);
+	if (pdfBsdf < 1e-6f) return false;
 
-	//entry at hemisphere sample
+	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
 	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);
-	float F_i = FresnelSchlick(LdotxiN, materialData.refractionIndex);
-	float c = 1.0f - 2.0f * FresnelMoment1(1.0f / materialData.refractionIndex);
+	float F_o = FresnelSchlick(VdotN, materialData.refractionIndex); 
+	float F_i = FresnelSchlick(LdotxiN, materialData.refractionIndex); 
 
-	//as per pbrt
-	float eta2 = materialData.refractionIndex * materialData.refractionIndex;
+	//Sp * Sw * (1 - Fr)
+	glm::vec3 bssrdfEvaluation = Sp * (1.0f - F_i) * (1.0f - F_o);
+	glm::vec3 bsdfEvalution = materialData.albedo / pi;
 
-	attenuation = eta2 * Sp * (1.0f - F_i) / (c*pi);
+	attenuation = bssrdfEvaluation * bsdfEvalution;
 	scattered = Ray(xi + xiN * 1e-4f, L);
-	pdf = pdfS * pdfF;
+	pdf = pdfBssrdf * pdfBsdf;
 	rec.normal = xiN;
 
 	//printf("Sp: %f, %f, %f. PDF: %f\n", Sp.r, Sp.g, Sp.b, pdf);
