@@ -5,7 +5,8 @@
 __managed__ unsigned int noIntersection = 0;
 __managed__ unsigned int rejected = 0;
 __managed__ unsigned int total = 0;
-
+__managed__ unsigned int clampedPDFs = 0;
+__managed__ unsigned int PDFs = 0;
 
 __device__ inline float Luminance(const glm::vec3& col)
 {
@@ -207,6 +208,9 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
 	pdfS = fmaxf(pdfR * pdfAxis  /** pdfPhi*/ * cosTheta / ((float)nHits), 1e-4f);
+
+	atomicAdd(&PDFs, 1);
+	if (pdfS == 1e-4f) atomicAdd(&clampedPDFs, 1);
 
 	return true;
 }

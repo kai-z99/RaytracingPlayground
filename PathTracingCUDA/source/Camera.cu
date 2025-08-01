@@ -148,9 +148,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
         glm::vec3 contrib = evaluation * cosine / pdf;
 
-       // contrib.r = fminf(contrib.r, 1.2f);
-       // contrib.g = fminf(contrib.g, 1.2f);
-       // contrib.b = fminf(contrib.b, 1.2f);
+       contrib.r = fminf(contrib.r, 1.5f);
+       contrib.g = fminf(contrib.g, 1.5f);
+       contrib.b = fminf(contrib.b, 1.5f);
 
         totalAttenuation *= contrib;
 

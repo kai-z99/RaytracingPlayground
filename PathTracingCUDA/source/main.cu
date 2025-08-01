@@ -198,13 +198,17 @@ int main()
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
 
-    printf("rejected: %i, total: %i, rptcg: %f, no material: %i", rejected, total, (float)rejected/(float)total, noIntersection);
+    printf("rejected: %i, total: %i, rptcg: %f, no material: %i\n", rejected, total, (float)rejected/(float)total, noIntersection);
+    printf("bssrdf pdfs: %i, clamped bssrdf pdfs: %i, pctg: %f", PDFs, clampedPDFs, (float)clampedPDFs / (float)PDFs);
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
 
     //display result
     DisplayResult(hPixels);
+
+
+
 
     //free allocated  memory
     CleanUp(uScene, uCamera, dPixels, hPixels);

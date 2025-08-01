@@ -6,6 +6,9 @@
 extern __managed__ unsigned int noIntersection;
 extern __managed__ unsigned int rejected;
 extern __managed__ unsigned int total;
+extern __managed__ unsigned int clampedPDFs;
+extern __managed__ unsigned int PDFs;
+
 //
 //----------
 // 

@@ -331,12 +331,12 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
         glm::vec3(1.0f, 0.4f, 0.4f), //red sss == yellow
-        1.0f,
-        13.6f,
+        0.9f,
+        16.6f,
         1.0f,
         1.0f,
         1.5f,
-        1.5f,
+        1.0f,
         0.5f
     );
 
