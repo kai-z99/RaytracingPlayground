@@ -148,9 +148,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
         glm::vec3 contrib = evaluation * cosine / pdf;
 
-        contrib.r = fminf(contrib.r, 2.0f);
-        contrib.g = fminf(contrib.g, 2.0f);
-        contrib.b = fminf(contrib.b, 2.0f);
+        contrib.r = fminf(contrib.r, 1.2f);
+        contrib.g = fminf(contrib.g, 1.2f);
+        contrib.b = fminf(contrib.b, 1.2f);
 
         totalAttenuation *= contrib;
 
@@ -177,8 +177,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
-
         
+
         if (this->russianroulette && depth >= 3)
         {
             //the max compoenent of total attenution

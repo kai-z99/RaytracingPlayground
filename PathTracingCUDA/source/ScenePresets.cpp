@@ -329,10 +329,10 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.96f, 0.96f, 0.26f),
-        glm::vec3(0.85f), //
+        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
+        glm::vec3(1.0f, 0.4f, 0.4f), //red sss == yellow
         1.0f,
-        10.6f,
+        13.6f,
         1.0f,
         1.0f,
         1.5f,
@@ -340,6 +340,9 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
         0.5f
     );
 
+    //glm::vec3(1.0f, 0.4f, 0.4f),
+    //glm::vec3(0.4f, 0.4f, 1.0f), 
+    
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
 
     M = glm::mat4(1.0f);

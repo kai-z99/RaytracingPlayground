@@ -133,7 +133,6 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 			if (ok) prevSSS = true;
 			return ok;
 		}
-		
 	}
 
 	prevSSS = false;
