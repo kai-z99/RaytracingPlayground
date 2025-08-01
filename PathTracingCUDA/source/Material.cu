@@ -106,14 +106,15 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	//SampleDipoleRadius(u, mat, r, pdf);
 #else
 	//type1
-	//float A = Luminance(mat.sssTint);
-	//float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
-	//SampleBurleyRadius(u, s / mat.sssRadius, r, pdf);
-	//pdf = 1.0f / pdf; //function returns inverse pdf
-	//pdf /= (2.0f * pi * fmaxf(r, 1e-6f)); //convert to area
+	float A = Luminance(mat.sssTint);
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	SampleBurleyRadius(u, 1 / s, r, pdf);
+	r *= mat.sssRadius;
+	pdf = 1.0f / pdf; //function returns inverse pdf
+	pdf /= (2.0f * pi * fmaxf(r, 1e-6f)); //convert to area
 
 	//type2
-	SampleBurleyRadius(u, mat, r, pdf);
+	//SampleBurleyRadius(u, mat, r, pdf);
 
 #endif
 }
@@ -252,8 +253,8 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
 	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);
-	float F_o = FresnelSchlick(VdotN, materialData.refractionIndex); //1 - Fo term
-	float F_i = FresnelSchlick(LdotxiN, materialData.refractionIndex); //Sw = 1 - Fi term (BTDF) (add a real one later)
+	float F_o = FresnelSchlick(VdotN, materialData.refractionIndex); //(1 - Fo) term
+	float F_i = FresnelSchlick(LdotxiN, materialData.refractionIndex); //Sw term (BTDF) (add a real one later since this doesnt have the btdf value)
 
 	//Sp * Sw * (1 - Fr)
 	glm::vec3 bssrdfEvaluation = Sp * (1.0f - F_i) * (1.0f - F_o);
