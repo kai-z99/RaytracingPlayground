@@ -10,10 +10,12 @@ extern __managed__ unsigned int clampedPDFs;
 extern __managed__ unsigned int PDFs;
 extern __managed__ float radialSamplesSum;
 extern __managed__ float radialSamplesCount;
-extern __managed__ float respS;
 extern __managed__ float expectedRadialAverage;
-
-
+extern __managed__ float uSum;
+extern __managed__ double sssEnergySumR;
+extern __managed__ double sssEnergySumG;
+extern __managed__ double sssEnergySumB;
+extern __managed__ unsigned long long sssHitCount;
 //
 //----------
 // 
@@ -95,7 +97,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	const HitRecord& rec,
 	glm::vec3& xi, //returned entry point
 	glm::vec3& xiN, //return entry point normal
-	glm::vec3& Sp,
 	float& pdfS);
 
 __device__ bool ScatterSubsurface(const MaterialData& materialData,

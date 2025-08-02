@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 128;
+    c.samplesPerPixel = 4;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -199,8 +199,19 @@ int main()
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
 
     printf("rejected: %i, total: %i, rptcg: %f, no material: %i\n", rejected, total, (float)rejected/(float)total, noIntersection);
-    printf("bssrdf pdfs: %i, clamped bssrdf pdfs: %i, pctg: %f\n", PDFs, clampedPDFs, (float)clampedPDFs / (float)PDFs);
-    printf("total radial samples: %f, total radii: %f, avg: %f, expected: %f", radialSamplesCount, radialSamplesSum, radialSamplesSum / radialSamplesCount, expectedRadialAverage);
+    printf("uSum: %f, uAvg: %f \n", uSum, uSum / radialSamplesCount);
+    printf("total radial samples: %f, total radii: %f, avg: %f, expected: %f\n", radialSamplesCount, radialSamplesSum, radialSamplesSum / radialSamplesCount, expectedRadialAverage);
+    printf("SSS samples: %llu, Avg Energy: (%lf, %lf, %lf)\n", sssHitCount, sssEnergySumR/(double)sssHitCount, sssEnergySumG / (double)sssHitCount, sssEnergySumB / (double)sssHitCount);
+
+    //NOTEL: SSS enrgy expceted is supposed to be == sss.Tint. For some reason, increasing the sssRadius increasees total ebergy and vise versa. Interesetingly, 
+    // A good hint is the energy discrpency is uniform across rgb, for example if tint = (1.0f, 0.4, 0.5) and the R avg was 4.4, dividing G and B by 4.4 should make R,G = 0.4f, 0.4f, and 
+    //obvously dividing R by 4.4 will give 1, recovering (1,0.4,0.4). Note again this energy discrepency increases and decreases based on increasing and decereasing radius.
+    //Some tested Average energy values for each sssradius. for tint = (1, 0.4, 0.4):
+    // 0.1f: (inf, inf, inf)
+    // 0.15f:(inf, inf, inf)
+    // 0.2f: (1.990812, 0.796325, 0.796325)
+    // 0.3f: (2.139567, 0.855827, 0.855827)
+    // 0.4f: (2.274573, 0.909829, 0.909829)
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));

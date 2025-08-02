@@ -180,6 +180,7 @@
     <CudaCompile>
       <AdditionalOptions>--expt-relaxed-constexpr -diag-suppress 20012 -diag-suppress 20013 -Wno-deprecated-gpu-targets --use_fast_math %(AdditionalOptions)</AdditionalOptions>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <CodeGeneration>compute_60,sm_60</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

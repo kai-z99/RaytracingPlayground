@@ -9,8 +9,12 @@ __managed__ unsigned int clampedPDFs = 0;
 __managed__ unsigned int PDFs = 0;
 __managed__ float radialSamplesSum = 0;
 __managed__ float radialSamplesCount = 0;
-__managed__ float respS = 0;
 __managed__ float expectedRadialAverage = 0;
+__managed__ float uSum = 0;
+__managed__ double  sssEnergySumR = 0.0;
+__managed__ double  sssEnergySumG = 0.0;
+__managed__ double  sssEnergySumB = 0.0;
+__managed__ unsigned long long sssHitCount = 0;
 
 __device__ inline float Luminance(const glm::vec3& col)
 {
@@ -114,19 +118,8 @@ __device__ inline void SampleBurleyRadius(float u, float rcpS, float& r, float& 
 	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
-__device__ inline void SampleBurleyRadius(float u, const MaterialData& materialData, float& r, float& pdf)
-{
-	u = fmaxf(u, 1e-6f);
-	float g = 1.f + 4.f * u * (2.f * u + sqrtf(1.f + 4.f * u * u));
-	float c = powf(g, 1.f / 3.f);
-	r = materialData.sssRadius * (c + 1.f / c - 2.f);	
 
-	float Rd = EvaluateDiffusionProfile(r, materialData);
-	pdf = Rd;
-}
-
-
-__device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf)
+__device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf, bool accum = false)
 {
 #ifdef DIPOLE
 	// invoke dipole sample
@@ -136,18 +129,20 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	float A = Luminance(mat.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	SampleBurleyRadius(u, 1 / s, r, pdf); //note that ell = sssRadius is not effecting this
-	atomicAdd(&radialSamplesCount, 1.0f);
-	atomicAdd(&radialSamplesSum, r);
-	respS = 1 / s;
-	expectedRadialAverage = ? ;
+	
+	if (accum)
+	{
+		atomicAdd(&uSum, u);
+		atomicAdd(&radialSamplesCount, 1.0f);
+		atomicAdd(&radialSamplesSum, r);
+		float respS = 1 / s;
+		expectedRadialAverage = 2.5f * respS;
+	}
 
 	r *= mat.sssRadius; //normalized -> radius
 	pdf = 1.0f / pdf; //function returns inverse pdf
 	pdf /= mat.sssRadius; //change of variables
-	pdf /= (fmaxf(r, 1e-6f)); //convert to area
-
-	//type2
-	//SampleBurleyRadius(u, mat, r, pdf);
+	pdf /= (fmaxf(r, 1e-6f)); 
 
 #endif
 }
@@ -184,9 +179,10 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	}
 
 	// 1. importance sample a radius (theta)
-	float u = glm::clamp(RandomFloat(randState), 1e-4f, 1.0f - 1e-4f);
+	float u = RandomFloat(randState);
+	u = fminf(fmaxf(u, 1e-4f), 1.0f - 1e-4f);
 	float r, pdfR;
-	SampleSSSRadius(u, materialData, r, pdfR);
+	SampleSSSRadius(u, materialData, r, pdfR, true);
 
 	// 2. Take uniform azimuthal angle
 	float phi = 2.0f * pi * RandomFloat(randState);
@@ -197,7 +193,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	// 4. Probe to find intersections
 	float rMax, tmp_inv;
-	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv);
+	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv, false);
 	float l = 2.0f * sqrtf(fmaxf(0.0f, rMax*rMax - r*r)); //As in pbrt
 	//printf("rMax: %f, r: %f, l: %f\n", rMax, r, l);
 	Ray probe(rec.p + (axisN * (l * 0.5f)) + offset, -axisN);
@@ -234,7 +230,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	xiN = h.normal;
 
 	float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
-	pdfS = fmaxf(pdfR * pdfAxis  /** pdfPhi*/ * cosTheta / ((float)nHits), 1e-6f);
+	pdfS = fmaxf(pdfR * pdfAxis * cosTheta / ((float)nHits), 1e-6f);
 
 	atomicAdd(&PDFs, 1);
 	if (pdfS == 1e-6f) atomicAdd(&clampedPDFs, 1);
@@ -300,7 +296,6 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	scattered = Ray(xi + xiN * 1e-6f, L);
 	pdf = pdfBssrdf * pdfBsdf;
 	rec.normal = xiN;
-
 	//printf("Sp: %f, %f, %f. PDF: %f\n", Sp.r, Sp.g, Sp.b, pdf);
 	
 	return true;
