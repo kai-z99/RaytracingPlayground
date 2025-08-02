@@ -8,6 +8,11 @@ extern __managed__ unsigned int rejected;
 extern __managed__ unsigned int total;
 extern __managed__ unsigned int clampedPDFs;
 extern __managed__ unsigned int PDFs;
+extern __managed__ float radialSamplesSum;
+extern __managed__ float radialSamplesCount;
+extern __managed__ float respS;
+extern __managed__ float expectedRadialAverage;
+
 
 //
 //----------

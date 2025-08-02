@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 1024;
+    c.samplesPerPixel = 128;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -199,16 +199,14 @@ int main()
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
 
     printf("rejected: %i, total: %i, rptcg: %f, no material: %i\n", rejected, total, (float)rejected/(float)total, noIntersection);
-    printf("bssrdf pdfs: %i, clamped bssrdf pdfs: %i, pctg: %f", PDFs, clampedPDFs, (float)clampedPDFs / (float)PDFs);
+    printf("bssrdf pdfs: %i, clamped bssrdf pdfs: %i, pctg: %f\n", PDFs, clampedPDFs, (float)clampedPDFs / (float)PDFs);
+    printf("total radial samples: %f, total radii: %f, avg: %f, expected: %f", radialSamplesCount, radialSamplesSum, radialSamplesSum / radialSamplesCount, expectedRadialAverage);
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
 
     //display result
     DisplayResult(hPixels);
-
-
-
 
     //free allocated  memory
     CleanUp(uScene, uCamera, dPixels, hPixels);
