@@ -154,6 +154,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             atomicAdd(&sssEnergySumG, (double)contrib.g);
             atomicAdd(&sssEnergySumB, (double)contrib.b);
             atomicAdd(&sssHitCount, 1ull);
+
+            
         }
        /*contrib.r = fminf(contrib.r, 1.5f);
        contrib.g = fminf(contrib.g, 1.5f);

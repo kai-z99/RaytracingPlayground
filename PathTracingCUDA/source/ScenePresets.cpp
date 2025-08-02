@@ -332,7 +332,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
         glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
         glm::vec3(1.0f, 0.4f, 0.4f), //red sss == yellow
         1.0f,
-        0.15f,
+        10.0f,
         1.0f,
         1.0f,
         1.5f,

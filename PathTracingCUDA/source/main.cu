@@ -9,7 +9,7 @@
 #include <chrono>
 #include <random>
 
-//Todo: move pdf out of the scatter funcs and into the raycoloriter>
+//Todo: convert to single axis pdfs for now because its techincally unbiased.
 
 struct Config
 {
@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 4;
+    c.samplesPerPixel = 1024;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -206,12 +206,16 @@ int main()
     //NOTEL: SSS enrgy expceted is supposed to be == sss.Tint. For some reason, increasing the sssRadius increasees total ebergy and vise versa. Interesetingly, 
     // A good hint is the energy discrpency is uniform across rgb, for example if tint = (1.0f, 0.4, 0.5) and the R avg was 4.4, dividing G and B by 4.4 should make R,G = 0.4f, 0.4f, and 
     //obvously dividing R by 4.4 will give 1, recovering (1,0.4,0.4). Note again this energy discrepency increases and decreases based on increasing and decereasing radius.
-    //Some tested Average energy values for each sssradius. for tint = (1, 0.4, 0.4):
+    //Some tested Average energy values for each sssradius. for tint = (1, 0.4, 0.4), therfore expected is (1, 0.4, 0.4) no matter the sssRadius. Note that for this case since 
+    // tint.r = 1, energy.r is exactly the discrepency for all of energy.rgb (uniform).
     // 0.1f: (inf, inf, inf)
     // 0.15f:(inf, inf, inf)
     // 0.2f: (1.990812, 0.796325, 0.796325)
     // 0.3f: (2.139567, 0.855827, 0.855827)
     // 0.4f: (2.274573, 0.909829, 0.909829)
+    // 1.0f: (2.669819, 1.067928, 1.067928)
+    // 5.0f: (3.708132, 1.483253, 1.483253)
+    // 10.0f:(4.235995, 1.694398, 1.694398)
 
     //copy device texture into host texture
     checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
