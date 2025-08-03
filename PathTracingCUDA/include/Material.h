@@ -54,6 +54,21 @@ struct MaterialData
 
 };
 
+__device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT)
+{
+	cosThetaI = fmaxf(fminf(cosThetaI, 1.0f), -1.0f);
+	bool entering = cosThetaI > 0.0f;
+	if (!entering) { float t = etaI; etaI = etaT; etaT = t; cosThetaI = fabsf(cosThetaI); }
+	float sin2I = fmaxf(0.f, 1.f - cosThetaI * cosThetaI);
+	float eta = etaI / etaT, sin2T = eta * eta * sin2I;
+	if (sin2T >= 1.f) return 1.f;
+	float cosT = sqrtf(fmaxf(0.f, 1.f - sin2T));
+	float rPar = ((etaT * cosThetaI) - (etaI * cosT)) / ((etaT * cosThetaI) + (etaI * cosT));
+	float rPer = ((etaI * cosThetaI) - (etaT * cosT)) / ((etaI * cosThetaI) + (etaT * cosT));
+	return 0.5f * (rPar * rPar + rPer * rPer);
+}
+
+
 __device__ inline float FresnelSchlick(float cosT, float eta)
 {
 	float r0 = (1 - eta) / (1 + eta);

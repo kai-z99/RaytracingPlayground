@@ -32,19 +32,7 @@ __device__ inline float FresnelMoment1(float invEta)
 		return -4.61686f + 11.1136f * e - 10.4646f * e2 + 5.11455f * e3 - 1.27198f * e4 + 0.12746f * e5;
 }
 
-__device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT) 
-{
-	cosThetaI = fmaxf(fminf(cosThetaI, 1.0f), -1.0f);
-	bool entering = cosThetaI > 0.0f;
-	if (!entering) { float t = etaI; etaI = etaT; etaT = t; cosThetaI = fabsf(cosThetaI); }
-	float sin2I = fmaxf(0.f, 1.f - cosThetaI * cosThetaI);
-	float eta = etaI / etaT, sin2T = eta * eta * sin2I;
-	if (sin2T >= 1.f) return 1.f;
-	float cosT = sqrtf(fmaxf(0.f, 1.f - sin2T));
-	float rPar = ((etaT * cosThetaI) - (etaI * cosT)) / ((etaT * cosThetaI) + (etaI * cosT));
-	float rPer = ((etaI * cosThetaI) - (etaT * cosT)) / ((etaI * cosThetaI) + (etaT * cosT));
-	return 0.5f * (rPar * rPar + rPer * rPer);
-}
+
 
 //DIFFUSION PROFILES ---------------------------
 //---------------------------------------------
@@ -127,8 +115,10 @@ __device__ __host__ inline float BurleyAreaPdf(float r, float s, float ell)
 	float rho = r / ell;
 	float p_rphi_n = (s * (expf(-s * rho) + expf(-s * rho * (1.0f / 3.0f)))) / (8.0f * kPi);
 	// Convert to per-area in world units: p_area = (p_n / ell) / r
-	return (p_rphi_n / ell) / fmaxf(r, 1e-6f);
+	return ((p_rphi_n) / fmaxf(r, 1e-6f)) / ell;
 }
+
+
 
 
 __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf, bool accum = false)
@@ -153,8 +143,9 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 
 	r *= mat.sssRadius; //normalized -> radius
 	pdf = 1.0f / pdf; //function returns inverse pdf. pdf is in joint polar p(r, phi) for a small slice,
-	pdf /= mat.sssRadius; //scale to match radius
 	pdf /= (fmaxf(r, 1e-6f)); //change varibles -> pdf is per unit area dxdy on disk.
+	pdf /= mat.sssRadius; //scale to match radius
+	
 
 #endif
 }
@@ -252,17 +243,15 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float pB = BurleyAreaPdf(fmaxf(rB, 1e-6f), s, ell) * fabsf(dot(xiN, B));
 	float pN = BurleyAreaPdf(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
 
-	// match yaxis pick probs 0.25, 0.25, 0.5
+	// match axis pick probs 0.25, 0.25, 0.5
 	float pMix = 0.00f * pT + 0.00f * pB + 1.00f * pN;
 
 	// PBRT-style uniform pick among intersections
-	pdfS = fmaxf(pMix / float(nHits), 1e-6f);
-
-	//float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
-	//pdfS = fmaxf(pdfR * pdfAxis * cosTheta / ((float)nHits), 1e-6f);
+	pdfS = (pMix / float(nHits));
+	if (!(pdfS > 0 && isfinite(pdfS))) return false;
 
 	atomicAdd(&PDFs, 1);
-	if (pdfS == 1e-6f) atomicAdd(&clampedPDFs, 1);
+	if (pdfS == 1e-8f) atomicAdd(&clampedPDFs, 1);
 
 	return true;
 }
@@ -326,6 +315,6 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	pdf = pdfBssrdf * pdfBsdf;
 	rec.normal = xiN;
 	//printf("Sp: %f, %f, %f. PDF: %f\n", Sp.r, Sp.g, Sp.b, pdf);
-	
+
 	return true;
 }

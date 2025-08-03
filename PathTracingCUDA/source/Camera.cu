@@ -135,6 +135,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         glm::vec3 evaluation;
         float pdf;
 
+        //float VdotN = fmaxf(glm::dot(-r.direction(), rec.normal), 0.0f);
+        //float F_o = 1.0f - FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
+
         if (!Scatter(materialData, randState, scene, r, rec, evaluation, scattered, pdf, prevSSS))
         {
             //surface has absorbed ray, exit
