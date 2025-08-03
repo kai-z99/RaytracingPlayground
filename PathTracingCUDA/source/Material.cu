@@ -171,25 +171,20 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3 T, B;
 	BuildTBN(T, B, rec.normal);
 	float uA = RandomFloat(randState);
-	float pdfAxis;
 	glm::vec3 axisN, vx, vy;
 	uA = 0.0f;
 	if (uA < 0.5f)
 	{
-		pdfAxis = 0.5f;
 		axisN = rec.normal; vx = T; vy = B;
 	}
 	else if (uA < 0.75f)
 	{
-		pdfAxis = 0.25f;
 		axisN = T;  vx = B;  vy = rec.normal;
 	}
 	else
 	{
-		pdfAxis = 0.25f;
 		axisN = B;  vx = rec.normal;  vy = T;
 	}
-	pdfAxis = 1.0f;
 
 	// 1. importance sample a radius (theta)
 	float u = RandomFloat(randState);
