@@ -81,6 +81,7 @@ __device__ inline float EvaluateDiffusionProfile(float distance, const MaterialD
 #endif
 }
 
+
 //SAMPLERS ---------------------------
 //---------------------------------------------
 
@@ -118,6 +119,17 @@ __device__ inline void SampleBurleyRadius(float u, float rcpS, float& r, float& 
 	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
+__device__ __host__ inline float BurleyAreaPdf(float r, float s, float ell)
+{
+	// normalized joint PDF in rho = r/ell, phi:
+	// p_n(rho,phi) = (s/(8*pi)) * (exp(-s*rho) + exp(-s*rho/3))
+	const float kPi = 3.14159265358979323846f;
+	float rho = r / ell;
+	float p_rphi_n = (s * (expf(-s * rho) + expf(-s * rho * (1.0f / 3.0f)))) / (8.0f * kPi);
+	// Convert to per-area in world units: p_area = (p_n / ell) / r
+	return (p_rphi_n / ell) / fmaxf(r, 1e-6f);
+}
+
 
 __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf, bool accum = false)
 {
@@ -140,9 +152,9 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	}
 
 	r *= mat.sssRadius; //normalized -> radius
-	pdf = 1.0f / pdf; //function returns inverse pdf
-	pdf /= mat.sssRadius; //change of variables
-	pdf /= (fmaxf(r, 1e-6f)); 
+	pdf = 1.0f / pdf; //function returns inverse pdf. pdf is in joint polar p(r, phi) for a small slice,
+	pdf /= mat.sssRadius; //scale to match radius
+	pdf /= (fmaxf(r, 1e-6f)); //change varibles -> pdf is per unit area dxdy on disk.
 
 #endif
 }
@@ -159,10 +171,10 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3 T, B;
 	BuildTBN(T, B, rec.normal);
 	float uA = RandomFloat(randState);
-	uA = 1.0f;
 	float pdfAxis;
 	glm::vec3 axisN, vx, vy;
-
+	//always pick normal axis
+	uA = 0.0f;
 	if (uA < 0.5f)
 	{
 		pdfAxis = 0.5f;
@@ -231,8 +243,20 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	xi = h.p;
 	xiN = h.normal;
 
-	float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
-	pdfS = fmaxf(pdfR * pdfAxis * cosTheta / ((float)nHits), 1e-6f);
+	glm::vec3 N = rec.normal;
+	glm::vec3 d = xi - rec.p;
+	float dx = glm::dot(T, d), dy = glm::dot(B, d), dz = glm::dot(N, d);
+	float rN = sqrtf(dx * dx + dy * dy);
+
+	float A = Luminance(materialData.sssTint);
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	float ell = materialData.sssRadius;
+	float pN = BurleyAreaPdf(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
+
+	pdfS = fmaxf(pN / float(nHits), 1e-6f);
+
+	//float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
+	//pdfS = fmaxf(pdfR * pdfAxis * cosTheta / ((float)nHits), 1e-6f);
 
 	atomicAdd(&PDFs, 1);
 	if (pdfS == 1e-6f) atomicAdd(&clampedPDFs, 1);
