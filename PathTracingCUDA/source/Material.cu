@@ -173,7 +173,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float uA = RandomFloat(randState);
 	float pdfAxis;
 	glm::vec3 axisN, vx, vy;
-	//always pick normal axis
 	uA = 0.0f;
 	if (uA < 0.5f)
 	{
@@ -246,14 +245,23 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	glm::vec3 N = rec.normal;
 	glm::vec3 d = xi - rec.p;
 	float dx = glm::dot(T, d), dy = glm::dot(B, d), dz = glm::dot(N, d);
+	float rT = sqrtf(dy * dy + dz * dz);
+	float rB = sqrtf(dz * dz + dx * dx);
 	float rN = sqrtf(dx * dx + dy * dy);
 
 	float A = Luminance(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	float ell = materialData.sssRadius;
+
+	float pT = BurleyAreaPdf(fmaxf(rT, 1e-6f), s, ell) * fabsf(dot(xiN, T));
+	float pB = BurleyAreaPdf(fmaxf(rB, 1e-6f), s, ell) * fabsf(dot(xiN, B));
 	float pN = BurleyAreaPdf(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
 
-	pdfS = fmaxf(pN / float(nHits), 1e-6f);
+	// match yaxis pick probs 0.25, 0.25, 0.5
+	float pMix = 0.00f * pT + 0.00f * pB + 1.00f * pN;
+
+	// PBRT-style uniform pick among intersections
+	pdfS = fmaxf(pMix / float(nHits), 1e-6f);
 
 	//float cosTheta = fmaxf(fabsf(glm::dot(h.normal, axisN)), 1e-6f);
 	//pdfS = fmaxf(pdfR * pdfAxis * cosTheta / ((float)nHits), 1e-6f);
