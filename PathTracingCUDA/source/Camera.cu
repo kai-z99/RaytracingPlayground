@@ -173,19 +173,18 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
+        //contrib.r = fminf(contrib.r, 5.5f);
+        //contrib.g = fminf(contrib.g, 5.5f);
+        //contrib.b = fminf(contrib.b, 5.5f);
+
         if (prevSSS) 
         {
             // measure “energy” as luma(contrib), or you could sum channels individually
             atomicAdd(&sssEnergySumR, (double)contrib.r);
             atomicAdd(&sssEnergySumG, (double)contrib.g);
             atomicAdd(&sssEnergySumB, (double)contrib.b);
-            atomicAdd(&sssHitCount, 1ull);
-
-            
+            atomicAdd(&sssHitCount, 1ull);  
         }
-       /*contrib.r = fminf(contrib.r, 1.5f);
-       contrib.g = fminf(contrib.g, 1.5f);
-       contrib.b = fminf(contrib.b, 1.5f);*/
 
         totalAttenuation *= contrib;
 

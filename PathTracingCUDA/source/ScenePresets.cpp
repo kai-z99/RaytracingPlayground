@@ -236,16 +236,20 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
-        1.0f,
+        glm::vec3(1.0f, 1.0f, 1.0f), //green albedo
+        glm::vec3(0.4f, 0, 0), //red sss == yellow
+        1.f,
         10.0f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.5f
+        0.135f
+
+        //0.765f, 0.992f, 0.722f
     );
+
+    PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.5f, 0.1f);
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
@@ -330,7 +334,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
-    LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    //LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
     //SubsurfaceMaterial sm = SubsurfaceMaterial(
     //    glm::vec3(0.7f, 0.7f, 0.7f),
     //    glm::vec3(0.7f, 0.7f, 0.7f), //
@@ -345,7 +349,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
@@ -356,7 +360,150 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
 
     //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
-    sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
+    //sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
+
+    return sb.Build();
+}
+
+Scene* Scenes::SlabScene(int seed, Camera*& cam)
+{
+    // --- Camera setup ---
+    cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 50.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
+
+    SceneBuilder sb;
+
+    // --- Materials ---
+    LambertianMaterial white(glm::vec3(0.73f));
+    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseLightMaterial light(glm::vec3(15.0f));
+
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
+        glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.5f
+    );
+
+    // --- Cornell box dimensions ---
+    const float W = 555.0f;   // box width, height, depth
+
+    // Floor (y = 0)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Ceiling (y = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, W, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, -W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Back wall (z = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    white
+    //);
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white);
+
+
+    // Left wall (x = 0), red
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    red
+    //);
+    sb.AddQuad(glm::vec3(-W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);
+
+    // Right wall (x = W), green
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(W, 0.0f, W),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, -W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    green
+    //);
+
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
+
+    // --- Area light on the ceiling ---
+    sb.AddQuad(
+        glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1, 0, 0, 0),  // positive Z
+        light
+    );
+
+
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
+    //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //
+
+    std::string objName = "dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.700f;
+    float rotDeg = 90.0f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    //M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    M = glm::scale(M, glm::vec3(scale));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
+
+    LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    //SubsurfaceMaterial sm = SubsurfaceMaterial(
+    //    glm::vec3(0.7f, 0.7f, 0.7f),
+    //    glm::vec3(0.7f, 0.7f, 0.7f), //
+    //    1.0f,
+    //    5.6f,
+    //    1.5f,
+    //    1.0f
+    //);
+
+
+
+    //glm::vec3(1.0f, 0.4f, 0.4f),
+    //glm::vec3(0.4f, 0.4f, 1.0f), 
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    M = glm::scale(M, glm::vec3(scale));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
+
+    //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
+    sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0, 1, 1, 45), sm);
 
     return sb.Build();
 }
@@ -506,13 +653,14 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
         glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
         glm::vec3(0.906f, 0.737f, 0.569f), 
         1.0f,
-        0.05f,
+        0.3f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
         0.5f
     );
+    LambertianMaterial skinDiffuse(glm::vec3(0.906f, 0.737f, 0.569f));
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
@@ -589,8 +737,122 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     float rotDeg = 30.0f;
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 100, 50));
-    M = glm::rotate(M, glm::radians(rotDeg + 15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skinDiffuse);
+
+    return sb.Build();
+}
+
+Scene* Scenes::HandScene(int seed, Camera*& cam)
+{
+    // --- Camera setup ---
+    cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 23.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
+
+    SceneBuilder sb;
+
+    // --- Materials ---
+    LambertianMaterial white(glm::vec3(0.73f));
+    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseLightMaterial light(glm::vec3(8.0f));
+    SubsurfaceMaterial skin = SubsurfaceMaterial(
+        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
+        glm::vec3(1.0f, 0.788f, 0.667f),
+        1.0f,
+        3.0f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.5f
+    );
+    LambertianMaterial skinLambert(glm::vec3(1.0f, 0.788f, 0.667f));
+
+
+    // --- Cornell box dimensions ---
+    const float W = 555.0f;   // box width, height, depth
+
+    // Floor (y = 0)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Ceiling (y = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, W, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, -W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Back wall (z = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    white
+    //);
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white);
+
+
+    // Left wall (x = 0), red
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    red
+    //);
+    sb.AddQuad(glm::vec3(-W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);
+
+    // Right wall (x = W), green
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(W, 0.0f, W),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, -W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    green
+    //);
+
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
+
+    // --- Area light on the ceiling ---
+    sb.AddQuad(
+        glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1, 0, 0, 0),  // positive Z
+        light
+    );
+
+
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
+    //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //
+
+    std::string objName = "hand.OBJ";
+    float scale = 300.00f;
+    float yExtent = 1.0;
+    float rotDeg = -115.0f;
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 150, 50));
+    M = glm::rotate(M, -glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f)); //1
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f)); //2
+    
     M = glm::scale(M, glm::vec3(scale));
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skin);
 

@@ -150,18 +150,29 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
 		float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
 
-		if (!prevSSS && r < (1.0f - F_o))
+		if (r < (1.0f - F_o))
 		{
-			bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = true;
-			return ok;
+			if (prevSSS)
+			{
+				bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+				if (ok) prevSSS = false;
+				return ok;
+			}
+			else
+			{
+				bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+				if (ok) prevSSS = true;
+				return ok;
+			}
+			
 		}
 		else
 		{
-			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = false;
+			prevSSS = false;
+			bool ok = ScatterGGX(materialData, randState, ray, rec, attenuation, scattered, pdf);
 			return ok;
 		}
+		//gofall though
 	}
 
 	prevSSS = false;

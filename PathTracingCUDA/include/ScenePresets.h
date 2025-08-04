@@ -13,9 +13,13 @@ namespace Scenes
 
 	Scene* CornellBoxScene(int seed, Camera*& cam);
 
+	Scene* SlabScene(int seed, Camera*& cam);
+
 	Scene* MetalHeadScene(int seed, Camera*& cam);
 
 	Scene* HeadScene(int seed, Camera*& cam);
+
+	Scene* HandScene(int seed, Camera*& cam);
 
 	Scene* ModelTest(int seed, Camera*& cam);
 
