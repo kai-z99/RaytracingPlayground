@@ -112,7 +112,8 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	const HitRecord& rec,
 	glm::vec3& xi, //returned entry point
 	glm::vec3& xiN, //return entry point normal
-	float& pdfS);
+	float& pdfS,
+	float& rnOut);
 
 __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	curandState& randState,
@@ -143,18 +144,22 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 
 	//SSS
 	float wSSS = materialData.subsurface;
-	if (materialData.type == MAT_SUBSURFACE && r < wSSS)
+	if (materialData.type == MAT_SUBSURFACE && RandomFloat(randState) < wSSS)
 	{
-		if (prevSSS)
+		//build first fresnel term
+		float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+		float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
+
+		if (!prevSSS && r < (1.0f - F_o))
 		{
-			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = false;
+			bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
+			if (ok) prevSSS = true;
 			return ok;
 		}
 		else
 		{
-			bool ok = ScatterSubsurface(materialData, randState, scene, ray, rec, attenuation, scattered, pdf);
-			if (ok) prevSSS = true;
+			bool ok = ScatterLambertian(materialData, randState, ray, rec, attenuation, scattered, pdf);
+			if (ok) prevSSS = false;
 			return ok;
 		}
 	}

@@ -115,11 +115,8 @@ __device__ __host__ inline float BurleyAreaPdf(float r, float s, float ell)
 	float rho = r / ell;
 	float p_rphi_n = (s * (expf(-s * rho) + expf(-s * rho * (1.0f / 3.0f)))) / (8.0f * kPi);
 	// Convert to per-area in world units: p_area = (p_n / ell) / r
-	return ((p_rphi_n) / fmaxf(r, 1e-6f)) / ell;
+	return ((p_rphi_n) / fmaxf(r, 1e-6f)) / (ell);
 }
-
-
-
 
 __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf, bool accum = false)
 {
@@ -141,11 +138,7 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 		expectedRadialAverage = 2.5f * respS;
 	}
 
-	r *= mat.sssRadius; //normalized -> radius
-	pdf = 1.0f / pdf; //function returns inverse pdf. pdf is in joint polar p(r, phi) for a small slice,
-	pdf /= (fmaxf(r, 1e-6f)); //change varibles -> pdf is per unit area dxdy on disk.
-	pdf /= mat.sssRadius; //scale to match radius
-	
+	r *= mat.sssRadius; //normalized -> radius 
 
 #endif
 }
@@ -156,7 +149,8 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	const HitRecord& rec,
 	glm::vec3& xi, //returned entry point
 	glm::vec3& xiN, //return entry point normal
-	float& pdfS)
+	float& pdfS,
+	float& rnOut)
 {
 	// 0. pick an axis
 	glm::vec3 T, B;
@@ -234,6 +228,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float rT = sqrtf(dy * dy + dz * dz);
 	float rB = sqrtf(dz * dz + dx * dx);
 	float rN = sqrtf(dx * dx + dy * dy);
+	rnOut = rN;
 
 	float A = Luminance(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
@@ -244,7 +239,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float pN = BurleyAreaPdf(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
 
 	// match axis pick probs 0.25, 0.25, 0.5
-	float pMix = 0.00f * pT + 0.00f * pB + 1.00f * pN;
+	float pMix = 0.0f * pT + 0.0f * pB + 1.00f * pN;
 
 	// PBRT-style uniform pick among intersections
 	pdfS = (pMix / float(nHits));
@@ -269,6 +264,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	glm::vec3 xi;
 	glm::vec3 xiN;
 	float pdfBssrdf;
+	float rn;
 
 	//do some rejection sampling to reduce variance
 	atomicAdd(&total, 1);
@@ -286,7 +282,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 		return false;
 	}
 #else
-	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, pdfBssrdf)) return false;
+	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, pdfBssrdf, rn)) return false;
 #endif 
 	//exit brdf
 	float pdfBsdf;
@@ -294,21 +290,23 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	if (pdfBsdf < 1e-6f) return false;
 
 	//build first fresnel term
-	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
-	float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
+	//float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+	//float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
 	
 	//build Sw
 	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);
 	float F_i = FrDielectricExact(LdotxiN, 1.0f, materialData.refractionIndex);
 	float c = 1 - 2 * FresnelMoment1(1 / materialData.refractionIndex);
 	float Sw = (1 - F_i) / (c * pi);
+	if (!isfinite(Sw)) return false;
 
 	//we need Sp, sample our diffusion profile.
 	float distance = glm::length(xi - rec.p);
 	glm::vec3 Sp = EvaluateDiffusionProfile(distance, materialData) * materialData.sssTint;
+	if (!isfinite(Sp.r) || !isfinite(Sp.g) || !isfinite(Sp.b)) return false;
 
 	//Sp * Sw * (1 - Fr)
-	glm::vec3 bssrdfEvaluation = (1.0f - F_o) * Sp * Sw;
+	glm::vec3 bssrdfEvaluation = Sp * Sw;
 
 	attenuation = bssrdfEvaluation;
 	scattered = Ray(xi + xiN * 1e-6f, L);

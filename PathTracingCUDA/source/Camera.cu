@@ -150,23 +150,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //Note: if its a sss surface, we evaluate the seperable bssrdf instead where evaluation is bssrdf * bsdf of initial hit
         float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
         glm::vec3 contrib = evaluation * cosine / pdf;
-        if (prevSSS) 
-        {
-            // measure “energy” as luma(contrib), or you could sum channels individually
-            atomicAdd(&sssEnergySumR, (double)contrib.r);
-            atomicAdd(&sssEnergySumG, (double)contrib.g);
-            atomicAdd(&sssEnergySumB, (double)contrib.b);
-            atomicAdd(&sssHitCount, 1ull);
 
-            
-        }
-       /*contrib.r = fminf(contrib.r, 1.5f);
-       contrib.g = fminf(contrib.g, 1.5f);
-       contrib.b = fminf(contrib.b, 1.5f);*/
-
-        totalAttenuation *= contrib;
-
-        
         if (!isfinite(pdf))
         {
             printf("warning: pdf\n");
@@ -189,8 +173,23 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
-        
+        if (prevSSS) 
+        {
+            // measure “energy” as luma(contrib), or you could sum channels individually
+            atomicAdd(&sssEnergySumR, (double)contrib.r);
+            atomicAdd(&sssEnergySumG, (double)contrib.g);
+            atomicAdd(&sssEnergySumB, (double)contrib.b);
+            atomicAdd(&sssHitCount, 1ull);
 
+            
+        }
+       /*contrib.r = fminf(contrib.r, 1.5f);
+       contrib.g = fminf(contrib.g, 1.5f);
+       contrib.b = fminf(contrib.b, 1.5f);*/
+
+        totalAttenuation *= contrib;
+
+       
         if (this->russianroulette && depth >= 3)
         {
             //the max compoenent of total attenution

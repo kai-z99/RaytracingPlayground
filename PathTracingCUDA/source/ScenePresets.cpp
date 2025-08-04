@@ -235,6 +235,18 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
+        glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
+        1.0f,
+        10.0f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.5f
+    );
+
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
 
@@ -304,15 +316,15 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "head.obj";
-    float scale = 450.00f;
-    float yExtent = 1.000f;
-    float rotDeg = 180.0f;
+    std::string objName = "dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.700f;
+    float rotDeg = 90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(110, (yExtent / 2.0f) * scale, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    //M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
@@ -328,30 +340,23 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //    1.0f
     //);
 
-    SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(1.0f, 0.4, 0.4f), //red sss == yellow
-        1.0f,
-        20.0f,
-        1.0f,
-        1.0f,
-        1.5f,
-        1.0f,
-        0.5f
-    );
+    
 
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+   // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
+
+    //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
+    sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
 
     return sb.Build();
 }
@@ -499,9 +504,9 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
         glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
+        glm::vec3(0.906f, 0.737f, 0.569f), 
         1.0f,
-        20.5f,
+        0.05f,
         1.0f,
         1.0f,
         1.5f,
@@ -584,7 +589,7 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     float rotDeg = 30.0f;
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 100, 50));
-    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::rotate(M, glm::radians(rotDeg + 15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skin);
@@ -822,6 +827,17 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     PBRMaterial metal(glm::vec3(1.0f), 1.0f, 0.0f);
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
+        glm::vec3(1.0f, 0.3f, 0.3f), //red sss == yellow
+        1.0f,
+        5.0f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.5f
+    );
 
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
@@ -849,7 +865,7 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     sb.AddBox(glm::vec3(70.0f, 82.5f, 100.0f),          // centre
         glm::vec3(165.0f, 165.0f, 165.0f),          // size
         glm::vec4(0, 1, 0, -18.0f),                 // rotation
-        white);
+        sm);
 
     // ---------------------------------------------------------------------
     // ---------------------------------------------------------------------
