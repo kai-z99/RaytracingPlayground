@@ -22,6 +22,12 @@ __device__ inline float Luminance(const glm::vec3& col)
 	return glm::dot(col, lumaWeights);
 }
 
+__device__ inline float AverageColor(const glm::vec3& col)
+{
+	float sum = col.r + col.g + col.b;
+	return sum / 3.0f;
+}
+
 __device__ inline float FresnelMoment1(float invEta)
 {
 	float e = invEta;
@@ -60,7 +66,7 @@ __device__ inline float EvaluateDiffusionProfile(float distance, const MaterialD
 	return DipoleRd(r, mat.sigmaS, mat.sigmaA, mat.refractionIndex);
 #else
 	// Burley path
-	float A = Luminance(mat.sssTint);
+	float A = AverageColor(mat.sssTint);
 	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
 	float l = mat.sssRadius;
 	float Rd = BurleyRd(distance, s, l);
@@ -125,7 +131,7 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	//SampleDipoleRadius(u, mat, r, pdf);
 #else
 	//type1
-	float A = Luminance(mat.sssTint);
+	float A = AverageColor(mat.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	SampleBurleyRadius(u, 1 / s, r, pdf); //note that ell = sssRadius is not effecting this
 	
@@ -230,13 +236,13 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float rN = sqrtf(dx * dx + dy * dy);
 	rnOut = rN;
 
-	float A = Luminance(materialData.sssTint);
+	float A = AverageColor(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	float ell = materialData.sssRadius;
 
-	float pT = BurleyAreaPdf(fmaxf(rT, 1e-6f), s, ell) * fabsf(dot(xiN, T));
-	float pB = BurleyAreaPdf(fmaxf(rB, 1e-6f), s, ell) * fabsf(dot(xiN, B));
-	float pN = BurleyAreaPdf(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
+	float pT = BurleyRd(fmaxf(rT, 1e-6f), s, ell) * fabsf(dot(xiN, T));
+	float pB = BurleyRd(fmaxf(rB, 1e-6f), s, ell) * fabsf(dot(xiN, B));
+	float pN = BurleyRd(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
 
 	// match axis pick probs 0.25, 0.25, 0.5
 	float pMix = 0.0f * pT + 0.0f * pB + 1.00f * pN;

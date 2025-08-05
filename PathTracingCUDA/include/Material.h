@@ -446,6 +446,7 @@ __device__ inline bool ScatterGGX(const MaterialData& materialData,
 	float D = D_GGX(NdotH, materialData.roughness * materialData.roughness);
 	float G = G_SmithHeightCorrelated(NdotV, NdotL, materialData.roughness * materialData.roughness);
 
+	//TEMP
 	glm::vec3 F0 = mix(glm::vec3(0.04f), materialData.albedo, materialData.metallic); //still hack
 	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
 	glm::vec3 F = FresnelSchlick(VdotH, F0);

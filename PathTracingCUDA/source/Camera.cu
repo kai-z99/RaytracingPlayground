@@ -173,9 +173,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
-        //contrib.r = fminf(contrib.r, 5.5f);
-        //contrib.g = fminf(contrib.g, 5.5f);
-        //contrib.b = fminf(contrib.b, 5.5f);
+        contrib.r = fminf(contrib.r, 5.5f);
+        contrib.g = fminf(contrib.g, 5.5f);
+        contrib.b = fminf(contrib.b, 5.5f);
 
         if (prevSSS) 
         {

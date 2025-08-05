@@ -237,19 +237,19 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), //green albedo
-        glm::vec3(0.4f, 0, 0), //red sss == yellow
+        glm::vec3(0.375f, 0.0f, 0.0f), //red sss == yellow
         1.f,
-        10.0f,
+        50.0f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.135f
+        0.1f
 
         //0.765f, 0.992f, 0.722f
     );
 
-    PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.5f, 0.1f);
+    PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.0f, 0.1f);
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
