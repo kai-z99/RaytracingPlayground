@@ -237,7 +237,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), //green albedo
-        glm::vec3(0.375, 0, 0.0f), //red sss == yellow
+        glm::vec3(1.0f, 0.733f, 0.467f), //red sss == yellow
         1.f,
         50.0f,
         1.0f,
@@ -246,7 +246,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
         1.0f,
         0.1f
 
-        //0.765f, 0.992f, 0.722f
+        //jade: 0.0f, 0.733f, 0.467f
     );
 
     PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.0f, 0.1f);
@@ -361,6 +361,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
     //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
     //sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
+    //sb.AddTriangle({ 0.0f, 250, 0.0f }, { 130.0f, 150, 0 }, {0,0, 200}, sm);
 
     return sb.Build();
 }

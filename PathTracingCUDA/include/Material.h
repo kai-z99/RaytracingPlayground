@@ -112,8 +112,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	const HitRecord& rec,
 	glm::vec3& xi, //returned entry point
 	glm::vec3& xiN, //return entry point normal
-	float& pdfS,
-	float& rnOut);
+	float& pdfS);
 
 __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	curandState& randState,

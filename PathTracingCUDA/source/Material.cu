@@ -157,24 +157,24 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	const HitRecord& rec,
 	glm::vec3& xi, //returned entry point
 	glm::vec3& xiN, //return entry point normal
-	float& pdfS,
-	float& rnOut)
+	float& pdfS)
 {
 	// 0. pick an axis
 	glm::vec3 T, B;
 	BuildTBN(T, B, rec.normal);
+
 	float uA = RandomFloat(randState);
 	glm::vec3 axisN, vx, vy;
 	uA = 0.0f;
-	if (uA < 0.5f)
+	if (uA < 0.5f) //N
 	{
 		axisN = rec.normal; vx = T; vy = B;
 	}
-	else if (uA < 0.75f)
+	else if (uA < 0.75f) //T
 	{
 		axisN = T;  vx = B;  vy = rec.normal;
 	}
-	else
+	else //B
 	{
 		axisN = B;  vx = rec.normal;  vy = T;
 	}
@@ -204,6 +204,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	{
 		return false;
 	}
+
 	//if (hList.count > 1) printf("inital hits: %d\n", hList.count);
 	//only keep intesection with same material
 	int keep = 0;
@@ -237,21 +238,20 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float u3 = fmaxf(RandomFloat(randState), 1e-6f);
 	int channel = fminf(int(u3 * 3), 3 - 1);
 
-	glm::vec3 N = rec.normal;
+	glm::vec3 N = axisN;
 	glm::vec3 d = xi - rec.p;
-	float dx = glm::dot(T, d), dy = glm::dot(B, d), dz = glm::dot(N, d);
+	float dx = glm::dot(vx, d), dy = glm::dot(vy, d), dz = glm::dot(axisN, d);
 	float rT = sqrtf(dy * dy + dz * dz);
 	float rB = sqrtf(dz * dz + dx * dx);
 	float rN = sqrtf(dx * dx + dy * dy);
-	rnOut = rN;
 
 	float A = Luminance(materialData.sssTint);
-	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f); //note this is artistic
 	float ell = materialData.sssRadius;
 
 	float rProj[3] = {rT, rB, rN};
 	float nLocal[3] = { fabsf(dot(xiN, T)), fabsf(dot(xiN, B)) , fabsf(dot(xiN, N))};
-	float axisPdfs[3] = {0.0f, 0.0f, 1.0f};
+	float axisPdfs[3] = {0.f, 0.f, 1.f}; // T , B , N
 	float channelPdf = 1.0f / 3.0f;
 
 	float pMix = 0.0f;
@@ -259,13 +259,14 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	{
 		for (int ch = 0; ch < 3; ch++)
 		{
-			pMix += BurleyDiskPdf(fmaxf(rProj[axis], 1e-6f), s, ell) * nLocal[axis] * axisPdfs[axis] * channelPdf;
+			float contrib = BurleyDiskPdf(fmaxf(rProj[axis], 1e-6f), s, ell) * nLocal[axis] * axisPdfs[axis] * channelPdf;
+			pMix += contrib;
 		}
 	}
+	//61 39
+	//63 40
 
-	nHits = 1;
-	// PBRT-style uniform pick among intersections
-	pdfS = (pMix / float(nHits));
+	pdfS = pMix / (float)nHits;
 	if (!(pdfS > 0 && isfinite(pdfS))) return false;
 
 	atomicAdd(&PDFs, 1);
@@ -287,7 +288,6 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	glm::vec3 xi;
 	glm::vec3 xiN;
 	float pdfBssrdf;
-	float rn;
 
 	//do some rejection sampling to reduce variance
 	atomicAdd(&total, 1);
@@ -305,7 +305,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 		return false;
 	}
 #else
-	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, pdfBssrdf, rn)) return false;
+	if (!SampleSubsurfaceDisk(materialData, randState, scene, rec, xi, xiN, pdfBssrdf)) return false;
 #endif 
 	//exit brdf
 	float pdfBsdf;
