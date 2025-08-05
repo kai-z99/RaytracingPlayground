@@ -51,26 +51,34 @@ __device__ inline float DipoleRd(float r, float sigmaS, float sigmaA, float eta)
 
 //Burley et al (2015)
 //range: (0, inf)
-__device__ inline float BurleyRd(float r, float s, float l) {
-	float sl = s * r / l;
-	float e1 = std::exp(-sl);
-	float e3 = std::exp(-sl * (1.0f / 3.0f));
-	return (s * (e1 + e3)) / (8.0f * pi * l * r);
+
+__device__ inline float BurleyRd(float r, float d) 
+{
+	float e1 = std::exp(-r / d);
+	float e3 = std::exp(-r / d * (1.0f / 3.0f));
+	return ((e1 + e3)) / (8.0f * pi * d * r);
 }
 
+__device__ inline float BurleyRd(float r, float s, float l) 
+{
+	float d = l / s;
+	return BurleyRd(r, d);
+}
+
+
 //evaluate diffusion profiles
-__device__ inline float EvaluateDiffusionProfile(float distance, const MaterialData& mat)
+__device__ inline glm::vec3 EvaluateDiffusionProfile(float distance, const MaterialData& mat)
 {
 #ifdef DIPOLE
 	// Dipole path
 	return DipoleRd(r, mat.sigmaS, mat.sigmaA, mat.refractionIndex);
 #else
 	// Burley path
-	float A = AverageColor(mat.sssTint);
+	float A = Luminance(mat.sssTint);
 	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
 	float l = mat.sssRadius;
 	float Rd = BurleyRd(distance, s, l);
-	return Rd;
+	return Rd * mat.sssTint;
 
 #endif
 }
@@ -113,15 +121,9 @@ __device__ inline void SampleBurleyRadius(float u, float rcpS, float& r, float& 
 	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
 
-__device__ __host__ inline float BurleyAreaPdf(float r, float s, float ell)
+__device__ inline float BurleyDiskPdf(float r, float s, float ell)
 {
-	// normalized joint PDF in rho = r/ell, phi:
-	// p_n(rho,phi) = (s/(8*pi)) * (exp(-s*rho) + exp(-s*rho/3))
-	const float kPi = 3.14159265358979323846f;
-	float rho = r / ell;
-	float p_rphi_n = (s * (expf(-s * rho) + expf(-s * rho * (1.0f / 3.0f)))) / (8.0f * kPi);
-	// Convert to per-area in world units: p_area = (p_n / ell) / r
-	return ((p_rphi_n) / fmaxf(r, 1e-6f)) / (ell);
+	return BurleyRd(r, s, ell);
 }
 
 __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& r, float& pdf, bool accum = false)
@@ -131,7 +133,7 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 	//SampleDipoleRadius(u, mat, r, pdf);
 #else
 	//type1
-	float A = AverageColor(mat.sssTint);
+	float A = Luminance(mat.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	SampleBurleyRadius(u, 1 / s, r, pdf); //note that ell = sssRadius is not effecting this
 	
@@ -193,6 +195,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	// 4. Probe to find intersections
 	float rMax, tmp_inv;
 	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv, false);
+	//printf("max:%f\n", rMax);
 	float l = 2.0f * sqrtf(fmaxf(0.0f, rMax*rMax - r*r)); //As in pbrt
 	//printf("rMax: %f, r: %f, l: %f\n", rMax, r, l);
 	Ray probe(rec.p + (axisN * (l * 0.5f)) + offset, -axisN);
@@ -201,7 +204,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	{
 		return false;
 	}
-		
+	//if (hList.count > 1) printf("inital hits: %d\n", hList.count);
 	//only keep intesection with same material
 	int keep = 0;
 	for (int i = 0; i < hList.count; ++i)
@@ -228,6 +231,12 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	xi = h.p;
 	xiN = h.normal;
 
+	//printf("nHits: %d\n", nHits);
+	
+	//choose a channel [0,1,2] = [r,g,b]
+	float u3 = fmaxf(RandomFloat(randState), 1e-6f);
+	int channel = fminf(int(u3 * 3), 3 - 1);
+
 	glm::vec3 N = rec.normal;
 	glm::vec3 d = xi - rec.p;
 	float dx = glm::dot(T, d), dy = glm::dot(B, d), dz = glm::dot(N, d);
@@ -236,17 +245,25 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float rN = sqrtf(dx * dx + dy * dy);
 	rnOut = rN;
 
-	float A = AverageColor(materialData.sssTint);
+	float A = Luminance(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	float ell = materialData.sssRadius;
 
-	float pT = BurleyRd(fmaxf(rT, 1e-6f), s, ell) * fabsf(dot(xiN, T));
-	float pB = BurleyRd(fmaxf(rB, 1e-6f), s, ell) * fabsf(dot(xiN, B));
-	float pN = BurleyRd(fmaxf(rN, 1e-6f), s, ell) * fabsf(dot(xiN, N));
+	float rProj[3] = {rT, rB, rN};
+	float nLocal[3] = { fabsf(dot(xiN, T)), fabsf(dot(xiN, B)) , fabsf(dot(xiN, N))};
+	float axisPdfs[3] = {0.0f, 0.0f, 1.0f};
+	float channelPdf = 1.0f / 3.0f;
 
-	// match axis pick probs 0.25, 0.25, 0.5
-	float pMix = 0.0f * pT + 0.0f * pB + 1.00f * pN;
+	float pMix = 0.0f;
+	for (int axis = 0; axis < 3; axis++)
+	{
+		for (int ch = 0; ch < 3; ch++)
+		{
+			pMix += BurleyDiskPdf(fmaxf(rProj[axis], 1e-6f), s, ell) * nLocal[axis] * axisPdfs[axis] * channelPdf;
+		}
+	}
 
+	nHits = 1;
 	// PBRT-style uniform pick among intersections
 	pdfS = (pMix / float(nHits));
 	if (!(pdfS > 0 && isfinite(pdfS))) return false;
@@ -308,7 +325,7 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 
 	//we need Sp, sample our diffusion profile.
 	float distance = glm::length(xi - rec.p);
-	glm::vec3 Sp = EvaluateDiffusionProfile(distance, materialData) * materialData.sssTint;
+	glm::vec3 Sp = EvaluateDiffusionProfile(distance, materialData);
 	if (!isfinite(Sp.r) || !isfinite(Sp.g) || !isfinite(Sp.b)) return false;
 
 	//Sp * Sw * (1 - Fr)
