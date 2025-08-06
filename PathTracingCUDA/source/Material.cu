@@ -195,6 +195,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	// 4. Probe to find intersections
 	float rMax, tmp_inv;
 	SampleSSSRadius(0.999f, materialData, rMax, tmp_inv, false);
+	//printf("Rmax: %f\n", rMax);
 	//printf("max:%f\n", rMax);
 	float l = 2.0f * sqrtf(fmaxf(0.0f, rMax*rMax - r*r)); //As in pbrt
 	//printf("rMax: %f, r: %f, l: %f\n", rMax, r, l);
@@ -229,6 +230,12 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	int pick = fminf(int(u2 * nHits), nHits - 1);
 
 	const HitRecord& h = hList.hits[pick];
+	//HitRecord h;
+	//if (!HitScene(scene, probe, Interval(0.0f, l), h))
+	//{
+	//	return false;
+	//}
+
 	xi = h.p;
 	xiN = h.normal;
 
@@ -240,33 +247,40 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	glm::vec3 N = axisN;
 	glm::vec3 d = xi - rec.p;
-	float dx = glm::dot(vx, d), dy = glm::dot(vy, d), dz = glm::dot(axisN, d);
-	float rT = sqrtf(dy * dy + dz * dz);
-	float rB = sqrtf(dz * dz + dx * dx);
-	float rN = sqrtf(dx * dx + dy * dy);
+	
+	float dLocal[3] = { fabsf(dot(T, d)),	fabsf(dot(B, d)),	 fabsf(dot(N, d))	 }; //d in exit space
+	float nLocal[3] = { fabsf(dot(T, xiN)), fabsf(dot(B, xiN)),  fabsf(dot(N, xiN))  }; //xiN in exit space
+
+	//printf("xiN: %f,%f,%f   T: %f,%f,%f    B: %f,%f,%f  N: %f,%f,%f\n", xiN.x, xiN.y, xiN.z, T.x, T.y, T.z, B.x, B.y, B.z, N.x, N.y, N.z );
+	//printf("dLocal: %f,%f,%f\n", dLocal[0], dLocal[1], dLocal[2]);
+
+	float rProj[3] = { std::sqrt(dLocal[1] * dLocal[1] + dLocal[2] * dLocal[2]),
+				   std::sqrt(dLocal[2] * dLocal[2] + dLocal[0] * dLocal[0]),
+				   std::sqrt(dLocal[0] * dLocal[0] + dLocal[1] * dLocal[1])};
 
 	float A = Luminance(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f); //note this is artistic
 	float ell = materialData.sssRadius;
-
-	float rProj[3] = {rT, rB, rN};
-	float nLocal[3] = { fabsf(dot(xiN, T)), fabsf(dot(xiN, B)) , fabsf(dot(xiN, N))};
-	float axisPdfs[3] = {0.f, 0.f, 1.f}; // T , B , N
+	
+	float axisPdfs[3] = {0.f, 0.f, 1.0f}; // T , B , N
 	float channelPdf = 1.0f / 3.0f;
 
 	float pMix = 0.0f;
+
+	//printf("x: %f, y: %f, z: %f\n", rProj[0], rProj[1], rProj[2]);
+
 	for (int axis = 0; axis < 3; axis++)
 	{
 		for (int ch = 0; ch < 3; ch++)
 		{
-			float contrib = BurleyDiskPdf(fmaxf(rProj[axis], 1e-6f), s, ell) * nLocal[axis] * axisPdfs[axis] * channelPdf;
+			float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /** nLocal[axis]*/ * axisPdfs[axis] * channelPdf;
 			pMix += contrib;
 		}
 	}
 	//61 39
 	//63 40
 
-	pdfS = pMix / (float)nHits;
+	pdfS = pMix;
 	if (!(pdfS > 0 && isfinite(pdfS))) return false;
 
 	atomicAdd(&PDFs, 1);
