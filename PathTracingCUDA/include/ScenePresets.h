@@ -15,6 +15,8 @@ namespace Scenes
 
 	Scene* SlabScene(int seed, Camera*& cam);
 
+	Scene* SkyScene(int seed, Camera*& cam);
+
 	Scene* MetalHeadScene(int seed, Camera*& cam);
 
 	Scene* HeadScene(int seed, Camera*& cam);

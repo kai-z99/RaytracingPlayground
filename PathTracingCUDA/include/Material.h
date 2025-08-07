@@ -372,7 +372,7 @@ __device__ inline glm::vec3 SampleLambertian(const glm::vec3& N, curandState& ra
 	float zeta1 = RandomFloat(randState);
 	float zeta2 = RandomFloat(randState);
 
-	float r = sqrtf(zeta1); //sin theta
+	float r = sqrtf(zeta1);
 	float phi = 2.0f * pi * zeta2;
 	float x = r * cosf(phi);
 	float y = r * sinf(phi);

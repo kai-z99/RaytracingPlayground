@@ -165,7 +165,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	float uA = RandomFloat(randState);
 	glm::vec3 axisN, vx, vy;
-	uA = 0.0f;
 	if (uA < 0.5f) //N
 	{
 		axisN = rec.normal; vx = T; vy = B;
@@ -189,7 +188,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	float phi = 2.0f * pi * RandomFloat(randState);
 	float pdfPhi = 1.0f / (2.0f * pi); //no need, included in samplessradius
 
-	// 3. tangent -> world space
+	// 3. polar to cartesian
 	glm::vec3 offset = r * (cosf(phi)*vx + sinf(phi)*vy);
 
 	// 4. Probe to find intersections
@@ -269,14 +268,17 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 
 	//printf("x: %f, y: %f, z: %f\n", rProj[0], rProj[1], rProj[2]);
 
-	for (int axis = 0; axis < 3; axis++)
-	{
-		for (int ch = 0; ch < 3; ch++)
-		{
-			float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /** nLocal[axis]*/ * axisPdfs[axis] * channelPdf;
-			pMix += contrib;
-		}
-	}
+	//for (int axis = 0; axis < 3; axis++)
+	//{
+	//	for (int ch = 0; ch < 3; ch++)
+	//	{
+	//		float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /* nLocal[axis]*/ * axisPdfs[axis] * channelPdf;
+	//		pMix += contrib;
+	//	}
+	//}
+
+	float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /* nLocal[axis]*/;
+	pMix += contrib;
 	//61 39
 	//63 40
 
@@ -327,8 +329,8 @@ __device__ bool ScatterSubsurface(const MaterialData& materialData,
 	if (pdfBsdf < 1e-6f) return false;
 
 	//build first fresnel term
-	//float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
-	//float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
+	float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
+	float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
 	
 	//build Sw
 	float LdotxiN = fmaxf(glm::dot(L, xiN), 0.0f);

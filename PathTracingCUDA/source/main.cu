@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 1024;
+    c.samplesPerPixel = 512;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -98,9 +98,26 @@ void BuildCamera(Camera*& uCamera, unsigned char* pixelBuffer, const Config& con
 
 void DestroySceneCPU(Scene*& uScene)
 {
+    //sph
     checkCudaErrors(cudaFree(uScene->spheres->centerRadius));
     checkCudaErrors(cudaFree(uScene->spheres->materialID));
     checkCudaErrors(cudaFree(uScene->spheres));
+
+    //tri
+    checkCudaErrors(cudaFree(uScene->tris->p0));
+    checkCudaErrors(cudaFree(uScene->tris->p1));
+    checkCudaErrors(cudaFree(uScene->tris->p2));
+    checkCudaErrors(cudaFree(uScene->tris->materialID));
+    checkCudaErrors(cudaFree(uScene->tris));
+
+    //quads
+    checkCudaErrors(cudaFree(uScene->quads->Q));
+    checkCudaErrors(cudaFree(uScene->quads->u));
+    checkCudaErrors(cudaFree(uScene->quads->v));
+    checkCudaErrors(cudaFree(uScene->quads->materialID));
+    checkCudaErrors(cudaFree(uScene->quads));
+
+    //misc
     checkCudaErrors(cudaFree(uScene->materials));
     checkCudaErrors(cudaFree(uScene->BVHNodes));
     checkCudaErrors(cudaFree(uScene->primTypes));
@@ -193,7 +210,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
+    Scene* uScene = Scenes::SkyScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

@@ -237,14 +237,14 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), //green albedo
-        glm::vec3(0.0f, 0.733f, 0.467f), //red sss == yellow
+        glm::vec3(0.3, 0.757, 0.463f), //red sss == yellow
         1.f,
-        50.1f,
+        4.1f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.8f
+        0.15f
 
         //jade: 0.0f, 0.733f, 0.467f
     );
@@ -507,6 +507,67 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0, 1, 1, 45), sm);
 
     return sb.Build();
+}
+
+Scene* Scenes::SkyScene(int seed, Camera*& cam)
+{
+    cam->center = glm::vec3(1300, 600, 300);
+    cam->vfov = 12;
+    cam->lookAt = glm::vec3(0, 100, 0); //50
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.7f;
+    cam->Init();
+
+    SceneBuilder wb;
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+
+    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    wb.AddQuad(
+        glm::vec3(-3000.0f, 0.0f, -3000.0f),
+        glm::vec3(0.0f, 0.0f, 6000.0f),
+        glm::vec3(6000.0f, 0.0f, 0.0f),
+        groundMat);
+
+    DiffuseLightMaterial light(glm::vec3(10.0f));
+    wb.AddQuad(
+        glm::vec3(100.0f, 500.0f, -100.0f),
+        glm::vec3(0.0f, 0.0f, 200.0f),
+        glm::vec3(200.0f, 0.0f, 0.0f),
+        light);
+
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(1.f, 1.f, 1.f), //green albedo
+        glm::vec3(0.16, 0.837, 0.25), //0.9, 0.365, 0.216
+        1.0f,
+        1.1f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.25f
+    );
+
+    PBRMaterial pm = PBRMaterial
+    (
+        { 0.9, 0.365, 0.216 },
+        0.0f,
+        0.0f
+    );
+
+    std::string objName = "dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.705f; //0.55
+    float rotDeg = -60.0f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale /* - 40*/, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    
+
+    return wb.Build();
 }
 
 Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
