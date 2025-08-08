@@ -512,8 +512,8 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
 Scene* Scenes::SkyScene(int seed, Camera*& cam)
 {
     cam->center = glm::vec3(1300, 600, 300);
-    cam->vfov = 12;
-    cam->lookAt = glm::vec3(0, 100, 0); //50
+    cam->vfov = 10;
+    cam->lookAt = glm::vec3(0, 50, 0); //xyz: 50 s: 100
     cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.7f;
     cam->Init();
 
@@ -528,23 +528,23 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
-    DiffuseLightMaterial light(glm::vec3(10.0f));
+    DiffuseLightMaterial light(glm::vec3(8.0f));
     wb.AddQuad(
-        glm::vec3(100.0f, 500.0f, -100.0f),
-        glm::vec3(0.0f, 0.0f, 200.0f),
-        glm::vec3(200.0f, 0.0f, 0.0f),
+        glm::vec3(-100.0f, 300.0f, -100.0f),
+        glm::vec3(0.0f, 0.0f, 250.0f),
+        glm::vec3(250.0f, 0.0f, 0.0f),
         light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.f, 1.f, 1.f), //green albedo
-        glm::vec3(0.16, 0.837, 0.25), //0.9, 0.365, 0.216
+        glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        1.1f,
+        10.1f, 
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.25f
+        0.2f //xyz: 0.2 s: 0.25
     );
 
     PBRMaterial pm = PBRMaterial
@@ -554,13 +554,13 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         0.0f
     );
 
-    std::string objName = "dragon.obj";
+    std::string objName = "xyzrgb_dragon.obj";
     float scale = 350.00f;
-    float yExtent = 0.705f; //0.55
-    float rotDeg = -60.0f;
+    float yExtent = 0.55f; //xyz: 0.55 s: 0.705
+    float rotDeg = -60.0f; //xyz: -60 s: -50
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale /* - 40*/, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale  - 40, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
