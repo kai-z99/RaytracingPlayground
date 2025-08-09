@@ -30,4 +30,6 @@ namespace Scenes
 	Scene* PBRTest(int seed, Camera*& cam);
 
 	Scene* CornellBoxOGScene(int seed, Camera*& cam);
+
+	Scene* PassthroughScene(int seed, Camera*& cam);
 }

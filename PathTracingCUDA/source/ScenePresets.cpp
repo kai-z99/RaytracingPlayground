@@ -539,7 +539,7 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(1.f, 1.f, 1.f), //green albedo
         glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        10.1f, 
+        5.0f, 
         1.0f,
         1.0f,
         1.5f,
@@ -566,6 +566,64 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
 
     wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
     
+
+    return wb.Build();
+}
+
+Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
+{
+    cam->center = glm::vec3(0, 600, 1300);
+    cam->vfov = 10;
+    cam->lookAt = glm::vec3(0, 50, 0); //xyz: 50 s: 100
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.0f;
+    cam->Init();
+
+    SceneBuilder wb;
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+
+    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    wb.AddQuad(
+        glm::vec3(-3000.0f, 0.0f, -3000.0f),
+        glm::vec3(0.0f, 0.0f, 6000.0f),
+        glm::vec3(6000.0f, 0.0f, 0.0f),
+        groundMat);
+
+    DiffuseLightMaterial light(glm::vec3(17.0f));
+
+    wb.AddQuad(glm::vec3(0.0f, 150.0f, -170.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, -70.0f), light);
+
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(1.f, 1.f, 1.f),
+        glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
+        1.0f,
+        1.00f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.2f //xyz: 0.2 s: 0.25
+    );
+
+    PBRMaterial pm = PBRMaterial
+    (
+        { 0.9, 0.365, 0.216 },
+        0.0f,
+        0.0f
+    );
+
+    std::string objName = "xyzrgb_dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.55f; //xyz: 0.55 s: 0.705
+    float rotDeg = -60.0f - 70; //xyz: -60 s: -50
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale - 40, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+
 
     return wb.Build();
 }

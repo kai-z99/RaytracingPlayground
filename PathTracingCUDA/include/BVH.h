@@ -194,12 +194,14 @@ inline uint32_t BuildNode(std::vector<PrimRef>& prims,
 		cMax = glm::max(cMax, prims[i].centroid);
 	}
 	int axis = 0;
+	//choose the longest axis
 	glm::vec3 extent = cMax - cMin;
 	if (extent.y > extent.x && extent.y > extent.z) axis = 1;
 	if (extent.z > extent.x && extent.z > extent.y) axis = 2;
 	if (extent[axis] < 1e-6f) axis = -1;
 
-	if (axis < 0) {                      // fall-back leaf
+	//If the longest axis is too small, fall back to a leaf
+	if (axis < 0) {         
 		node.leftFirst = static_cast<uint32_t>(leafIdx.size());
 		node.rightFirst = UINT32_MAX; //wasted
 		node.primCount = count;
