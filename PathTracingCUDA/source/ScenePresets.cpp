@@ -236,17 +236,17 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(1.0f, 1.0f, 1.0f), //green albedo
-        glm::vec3(0.3, 0.757, 0.463f), //red sss == yellow
+        glm::vec3(1.0f, 1.0f, 1.0f), 
+        glm::vec3(0.0f, 0.659f, 0.42f),
         1.f,
-        4.1f,
+        10.0f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.15f
+        0.2f
 
-        //jade: 0.0f, 0.733f, 0.467f
+        //jade: 0.0f, 0.659f, 0.42f
     );
 
     PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.0f, 0.1f);
@@ -511,10 +511,10 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
 
 Scene* Scenes::SkyScene(int seed, Camera*& cam)
 {
-    cam->center = glm::vec3(1300, 600, 300);
+    cam->center = glm::vec3(0, 600, 1300);
     cam->vfov = 10;
     cam->lookAt = glm::vec3(0, 50, 0); //xyz: 50 s: 100
-    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.7f;
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.5f;
     cam->Init();
 
     SceneBuilder wb;
@@ -528,18 +528,15 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
-    DiffuseLightMaterial light(glm::vec3(8.0f));
-    wb.AddQuad(
-        glm::vec3(-100.0f, 300.0f, -100.0f),
-        glm::vec3(0.0f, 0.0f, 250.0f),
-        glm::vec3(250.0f, 0.0f, 0.0f),
-        light);
+    DiffuseLightMaterial light(glm::vec3(10.0f));
+
+    wb.AddQuad(glm::vec3(0.0f, 300.0f, -0.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f), //green albedo
+        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        5.0f, 
+        1.00f,
         1.0f,
         1.0f,
         1.5f,
@@ -557,15 +554,15 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     std::string objName = "xyzrgb_dragon.obj";
     float scale = 350.00f;
     float yExtent = 0.55f; //xyz: 0.55 s: 0.705
-    float rotDeg = -60.0f; //xyz: -60 s: -50
+    float rotDeg = -60.0f - 70; //xyz: -60 s: -50
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale  - 40, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale - 40, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
-    
+
 
     return wb.Build();
 }
@@ -623,6 +620,108 @@ Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
     M = glm::scale(M, glm::vec3(scale));
 
     wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+
+
+    return wb.Build();
+}
+
+Scene* Scenes::DragonScene(int seed, Camera*& cam)
+{
+    cam->center = glm::vec3(0, 600, 1300);
+    cam->vfov = 17.5f;
+    cam->lookAt = glm::vec3(0, 175, 0); //xyz: 50 s: 100
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.0f;
+    cam->Init();
+
+    SceneBuilder wb;
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<float> U(0.0f, 1.0f);
+
+    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    wb.AddQuad(
+        glm::vec3(-3000.0f, 0.0f, -3000.0f),
+        glm::vec3(0.0f, 0.0f, 6000.0f),
+        glm::vec3(6000.0f, 0.0f, 0.0f),
+        groundMat);
+
+    DiffuseLightMaterial light(glm::vec3(50.0f));
+
+    //wb.AddQuad(glm::vec3(0.0f, 150.0f, -170.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, -70.0f), light);
+    wb.AddSphere(glm::vec3(0.0f, 100.0f, -150.0f), 35.0f, light);
+
+    SubsurfaceMaterial dragonMat = SubsurfaceMaterial(
+        glm::vec3(1.f, 1.f, 1.f),
+        glm::vec3(0.0f, 0.659f, 0.42f), //xyz:  s: 0.16, 0.837, 0.25
+        1.0f,
+        10.00f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.2f //xyz: 0.2 s: 0.25
+    );
+
+    SubsurfaceMaterial lucyMat = SubsurfaceMaterial(
+        glm::vec3(1.f, 1.f, 1.f),
+        glm::vec3(1.0f, 0.659f, 0.42f), //xyz:  s: 0.16, 0.837, 0.25
+        1.0f,
+        6.00f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.1f //xyz: 0.2 s: 0.25
+    );
+
+    SubsurfaceMaterial buddhaMat = SubsurfaceMaterial(
+        glm::vec3(1.f, 1.f, 1.f),
+        glm::vec3(0.2f, 0.259f, 0.82f), //xyz:  s: 0.16, 0.837, 0.25
+        1.0f,
+        1.00f,
+        1.0f,
+        1.0f,
+        1.5f,
+        1.0f,
+        0.5f //xyz: 0.2 s: 0.25
+    );
+
+    std::string objName = "dragon.obj";
+    float scale = 350.00f;
+    float yExtent = 0.705f;
+    float rotDeg = 90; //xyz: -60 s: -50
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, dragonMat);
+
+
+    objName = "lucy.obj";
+    scale = 350.00f;
+    yExtent = 1.0f;
+    rotDeg = 180 - 30; 
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(200, (yExtent / 2.0f) * scale, -100));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    M = glm::scale(M, glm::vec3(scale));
+
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, lucyMat);
+
+    objName = "buddha.obj";
+    scale = 350.00f;
+    yExtent = 1.0f;
+    rotDeg = 180 + 45;
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(-200, (yExtent / 2.0f) * scale, -100));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, buddhaMat);
 
 
     return wb.Build();

@@ -150,6 +150,7 @@ __device__ inline bool Scatter(const MaterialData& materialData,
 		float VdotN = fmaxf(glm::dot(-ray.direction(), rec.normal), 0.0f);
 		float F_o = FrDielectricExact(VdotN, 1.0f, materialData.refractionIndex); //(1 - Fo) term. for light leaving surface
 
+		//did light enter
 		if (r < (1.0f - F_o))
 		{
 			if (prevSSS)
@@ -225,7 +226,7 @@ __device__ inline bool ScatterDielectric(const MaterialData& materialData,
 	}
 	else
 	{
-		direction = glm::refract(ray.direction(), N, eta);
+		direction = glm::refract(ray.direction(), N, eta); //specular transmission
 		pdf = 1.0f - F;
 		attenuation = glm::vec3((1.0f - F) / pdf); //* ((1.0f - F) / pdf) = pdf/pdf = 1
 	}

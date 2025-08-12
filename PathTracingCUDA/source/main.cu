@@ -210,7 +210,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::PassthroughScene(seed, uCamera);
+    Scene* uScene = Scenes::DragonScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

@@ -32,4 +32,6 @@ namespace Scenes
 	Scene* CornellBoxOGScene(int seed, Camera*& cam);
 
 	Scene* PassthroughScene(int seed, Camera*& cam);
+
+	Scene* DragonScene(int seed, Camera*& cam);
 }
