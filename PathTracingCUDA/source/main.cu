@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10000;
+    c.samplesPerPixel = 100;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -210,7 +210,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::DragonScene(seed, uCamera);
+    Scene* uScene = Scenes::SkyScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

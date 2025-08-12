@@ -41,6 +41,7 @@ __device__ inline bool HitQuad(const QuadsPacked& quads, int i, const Ray& r, In
 		rec.t = t;
 		rec.p = intersection;
 		n = glm::normalize(n);
+		rec.geoNormal = n;
 		rec.normal = (denom < 0.0f)? n : -n;
 		rec.matDataID = quads.materialID[i];
 		return true;

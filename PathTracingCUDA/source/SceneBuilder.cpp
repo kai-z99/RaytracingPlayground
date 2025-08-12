@@ -231,6 +231,9 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 	glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scale)); //that way we can uniformally scale it like this.
 	glm::mat4 M = transform * S * T;
 
+	size_t triStart = this->triP0s.size();
+	double signedVolume6 = 0.0;
+
 	//triangulate and add
 	for (const tinyobj::shape_t& shape : shapes)
 	{
@@ -260,7 +263,8 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 				glm::vec3 p0 = glm::vec3(M * glm::vec4(tri[0], 1.0f));
 				glm::vec3 p1 = glm::vec3(M * glm::vec4(tri[1], 1.0f));
 				glm::vec3 p2 = glm::vec3(M * glm::vec4(tri[2], 1.0f));
-
+				signedVolume6 += glm::dot(p0, glm::cross(p1, p2));
+				
 				this->triP0s.push_back(p0);
 				this->triP1s.push_back(p1);
 				this->triP2s.push_back(p2);
@@ -272,6 +276,17 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 			offset += fv;
 		}
 	}
+
+	// Flip winding for the whole model if volume is negative
+	if (std::abs(signedVolume6) > 1e-12 && signedVolume6 < 0.0) 
+	{
+		std::cout << "SIGNED VOLUME IS NEGATIVE. FLIPPING.\n";
+		for (size_t i = triStart; i < this->triP0s.size(); ++i) 
+		{
+			std::swap(this->triP1s[i], this->triP2s[i]);
+		}
+	}
+
 
 	std::cout << "MODEL LOADED. TRIANGLES: " << tris << '\n';
 }

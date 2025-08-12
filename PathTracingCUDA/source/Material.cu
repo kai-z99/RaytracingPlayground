@@ -247,7 +247,7 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 	//}
 
 	xi = h.p;
-	xiN = h.normal;
+	xiN = h.geoNormal;
 
 	//printf("nHits: %d\n", nHits);
 

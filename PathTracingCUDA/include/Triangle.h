@@ -114,6 +114,7 @@ __device__ inline bool HitTriangle(const TrianglesPacked& tris, int i, const Ray
 	else
 	{
 		glm::vec3 n = glm::normalize(glm::cross(edge1, edge2));
+		rec.geoNormal = n;
 		rec.normal = (glm::dot(n, r.direction()) < 0.0f) ? n : -n;
 		rec.t = t;
 		rec.p = r.at(rec.t);
