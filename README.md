@@ -1,3 +1,6 @@
+<img width="1918" height="1111" alt="sssAssorted50000spp" src="https://github.com/user-attachments/assets/b87eb332-6a88-4b88-9769-24bb87330450" />
+
+
 ## Notes
 - BVH = Bounding Volume Hierarchy (used for acceleration)
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
@@ -62,6 +65,7 @@
 <br/>
 
 ## Other Images Gallery
+<img width="1918" height="1110" alt="skylight2048spp-10 0" src="https://github.com/user-attachments/assets/0cf81441-3dbc-4222-8789-1b7946781423" />
 <img width="1231" height="1108" alt="image" src="https://github.com/user-attachments/assets/4f89f2c6-73ef-4ee1-8eaa-3ea073080534" />
 <img width="1918" height="1107" alt="rayShowCUDA30" src="https://github.com/user-attachments/assets/871cfc7e-5263-4f38-ab95-1df0f650a051" />
 <img width="1227" height="1111" alt="rayShowCUDA24" src="https://github.com/user-attachments/assets/9a160bc1-a052-4ba3-8c54-490bcffb7d94" />
