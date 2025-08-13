@@ -528,15 +528,15 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
-    DiffuseLightMaterial light(glm::vec3(10.0f));
+    DiffuseLightMaterial light(glm::vec3(7.0f));
 
     wb.AddQuad(glm::vec3(0.0f, 300.0f, -0.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.f, 1.f, 1.f),
-        glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
+        glm::vec3(1.0, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        1.00f,
+        0.10f,
         1.0f,
         1.0f,
         1.5f,
@@ -586,15 +586,15 @@ Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
-    DiffuseLightMaterial light(glm::vec3(17.0f));
+    DiffuseLightMaterial light(glm::vec3(7.0f));
 
-    wb.AddQuad(glm::vec3(0.0f, 150.0f, -170.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, -70.0f), light);
+    wb.AddQuad(glm::vec3(0.0f, 150.0f, -200.0f), glm::vec2(250), glm::vec4(1.0f, 0.0f, 0.0f, -70.0f), light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.f, 1.f, 1.f),
-        glm::vec3(0.9, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
+        glm::vec3(1.0, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        1.00f,
+        0.1f,
         1.0f,
         1.0f,
         1.5f,
@@ -663,9 +663,9 @@ Scene* Scenes::DragonScene(int seed, Camera*& cam)
 
     SubsurfaceMaterial lucyMat = SubsurfaceMaterial(
         glm::vec3(1.f, 1.f, 1.f),
-        glm::vec3(1.0f, 0.659f, 0.42f), //xyz:  s: 0.16, 0.837, 0.25
+        glm::vec3(1.0f, 0.25f, 0.35f), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        6.00f,
+        3.50f,
         1.0f,
         1.0f,
         1.5f,

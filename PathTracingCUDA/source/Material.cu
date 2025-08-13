@@ -16,12 +16,6 @@ __managed__ double  sssEnergySumG = 0.0;
 __managed__ double  sssEnergySumB = 0.0;
 __managed__ unsigned long long sssHitCount = 0;
 
-__device__ inline float Luminance(const glm::vec3& col)
-{
-	const glm::vec3 lumaWeights(0.2126f, 0.7152f, 0.0722f);
-	return glm::dot(col, lumaWeights);
-}
-
 __device__ inline float AverageColor(const glm::vec3& col)
 {
 	float sum = col.r + col.g + col.b;
@@ -37,7 +31,6 @@ __device__ inline float FresnelMoment1(float invEta)
 	else
 		return -4.61686f + 11.1136f * e - 10.4646f * e2 + 5.11455f * e3 - 1.27198f * e4 + 0.12746f * e5;
 }
-
 
 
 //DIFFUSION PROFILES ---------------------------
@@ -75,7 +68,6 @@ __device__ inline glm::vec3 EvaluateDiffusionProfile(float distance, const Mater
 #else
 	// Burley path
 	float A = mat.sssTint[channel];
-	//A = Luminance(mat.sssTint);
 	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
 	float l = mat.sssRadius;
 	float Rd = BurleyRd(distance, s, l);
@@ -135,7 +127,6 @@ __device__ inline void SampleSSSRadius(float u, const MaterialData& mat, float& 
 #else
 	//type1
 	float A = mat.sssTint[channel];
-	//A = Luminance(mat.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
 	SampleBurleyRadius(u, 1 / s, r, pdf); //note that ell = sssRadius is not effecting this
 	
@@ -265,7 +256,6 @@ __device__ bool SampleSubsurfaceDisk(const MaterialData& materialData,
 				   std::sqrtf(dLocal[0] * dLocal[0] + dLocal[1] * dLocal[1])};
 
 	float A = materialData.sssTint[channel];
-	//A = Luminance(materialData.sssTint);
 	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f); //note this is artistic
 	float ell = materialData.sssRadius;
 	
