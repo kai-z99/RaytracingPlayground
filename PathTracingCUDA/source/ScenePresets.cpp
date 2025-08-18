@@ -1274,11 +1274,11 @@ Scene* Scenes::PBRTest(int seed, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, PBRMaterial({ 1.0,1.0,1.0 }, 1.0f, 0.5f));
     //
     
-    sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.0f, 0.5f));
-    sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.2f, 0.5f));
-    sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.5f, 0.5f));
-    sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 0.7f, 0.5f));
-    sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.5f));
+    sb.AddSphere({ -2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.0f));
+    sb.AddSphere({ -1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.2f));
+    sb.AddSphere({ -0, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.5f));
+    sb.AddSphere({  1, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 0.7f));
+    sb.AddSphere({  2, r,0 }, r, PBRMaterial({ 1.0,0.8,0.8 }, 1.0f, 1.0f));
     
     sb.AddQuad(glm::vec3(-2, 3, 0), {1,1},  { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
     sb.AddQuad(glm::vec3(-1, 3, 0), { 1,1 }, { 1, 1, 1, 0 }, DiffuseLightMaterial(glm::vec3(10.0f)));
