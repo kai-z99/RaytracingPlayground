@@ -138,7 +138,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         if (!sample.good) break;
 
         //integrate the sample
-        float cosine = glm::dot(sample.wi, no);
+        float cosine = fmaxf(glm::dot(sample.wi, no), 0.0f);
         totalAttenuation *= sample.f * cosine / sample.pdf;
 
         //update ray
@@ -150,7 +150,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             //sample bssrdf
             glm::vec3 po = rec.p;
             glm::vec3 no = rec.normal;
-            BSSRDFSample bss = SampleSubsurfaceBSSRDF(m.subsurface, po, no, randState);
+            BSSRDFSample bss = ConstructAndSampleBSSRDF(m, po, no, randState);
             if (!bss.good) break;
 
             //update throughput
@@ -163,7 +163,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             if (!exit.good) break;
             
             //update throughput
-            float exitCosine = glm::dot(bss.ni, exit.wi);
+            float exitCosine = fmaxf(glm::dot(bss.ni, exit.wi), 0.0f);
             totalAttenuation *= exit.f * exitCosine / exit.pdf;
 
             //update scattered ray

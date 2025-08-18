@@ -78,7 +78,7 @@ struct MetalMaterial : public Material
 
 		mat.tag = MICROFACET;
 		mat.microfacet.albedo = albedo;
-		mat.microfacet.roughness = 1.0f;
+		mat.microfacet.roughness = fuzz;
 		mat.microfacet.metallic = 1.0f;
 	}
 
@@ -125,6 +125,9 @@ struct DiffuseLightMaterial : public Material
 		this->tag = MAT_LIGHT_DIFFUSE;
 		this->albedo = glm::vec3(0.0f);
 		this->emissive = emissive;
+
+		mat.tag = EMISSIVE;
+		mat.emissive.emission = emissive;
 	}
 
 	MaterialData ToMaterialData() const override

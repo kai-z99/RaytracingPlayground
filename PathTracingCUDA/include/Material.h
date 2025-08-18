@@ -197,12 +197,14 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 	glm::vec3 N = no;
 	glm::vec3 V = glm::normalize(wo);
 
-	if (params.roughness < 0.04f) //fall back to mirror
+	if (params.roughness < 0.04f) //fall back to mirror, temp
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0);
+		sample.f = glm::vec3(1.0f);
 		sample.pdf = 1.0f;
+		sample.isTransmission = false;
+		sample.good = true;
 		return sample;
 	}
 
@@ -210,8 +212,8 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 	float pdfHalf;
 	glm::vec3 halfway;
 
-	//halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdfHalf);
-	halfway = SampleGGX(N, params.roughness, RNG, pdfHalf);
+	halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdfHalf);
+	//halfway = SampleGGX(N, params.roughness, RNG, pdfHalf);
 
 	//reflect on the haldway vector to get sample vector
 	glm::vec3 L = glm::reflect(-V, halfway);
@@ -222,24 +224,7 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 		return sample;
 	};
 
-	//while (glm::dot(L, N) <= 0.0f)
-	//{
-	//	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
-	//	L = glm::reflect(-V, halfway);
-	//}
-	//if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
-
 	sample.pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobian factor to pdf
-	if (sample.pdf < 1e-6f)
-	{
-		sample.good = false;
-		return sample;
-	}
-
-	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
-	//if (pdf < 1e-6f || glm::dot(L, N) <= 0.0f)           
-	//	return false;
-	//glm::vec3 halfway = glm::normalize(V + L);
 
 	//evalyate BRDF to find attenuation
 	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
