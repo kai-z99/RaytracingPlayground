@@ -140,6 +140,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         //integrate the sample
         float cosine = fabsf(glm::dot(sample.wi, no));
+        //if (m.tag == DIELECTRIC) cosine = 1;
         //make sure the sample is finite
         if (!isfinite((sample.f * cosine / sample.pdf).r) || !isfinite((sample.f * cosine / sample.pdf).g) || !isfinite((sample.f * cosine / sample.pdf).b)) break;
         totalAttenuation *= sample.f * cosine / sample.pdf;

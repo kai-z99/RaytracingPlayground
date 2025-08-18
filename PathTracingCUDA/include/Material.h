@@ -201,7 +201,7 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f);
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = false;
 		sample.good = true;
@@ -261,24 +261,27 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 	float cosTheta = std::fmin(glm::dot(wo, N), 1.0f);
 	float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
 
+	//cosTheta = fmaxf(glm::dot(wo, no), 0.0f);
 	float R = FresnelSchlick(cosTheta, params.eta);
 	float T = 1 - R;
 	bool TIR = eta * sinTheta > 1.0f;
+
 	//must reflect
 	glm::vec3 direction;
 	float u = RandomFloat(RNG);
+
 	if (TIR || u < R)
 	{
 		direction = glm::reflect(-wo, N);
 		sample.pdf = 1;
-		sample.f = glm::vec3(1.0f);
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //delta has no cosine
 		sample.isTransmission = false;
 	}
 	else
 	{
 		direction = glm::refract(-wo, N, eta); //specular transmission
 		sample.pdf = 1;
-		sample.f = glm::vec3(1.0f);
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //delta has no cosine
 		sample.isTransmission = true;
 	}
 
