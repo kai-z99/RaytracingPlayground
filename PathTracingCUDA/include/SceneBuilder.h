@@ -103,7 +103,9 @@ struct DielectricMaterial : public Material
 		this->tag = MAT_DIALECTRIC;
 		this->albedo = albedo;
 		this->eta = eta;
-		
+
+		mat.tag = DIELECTRIC;
+		mat.dielectric.eta = eta;
 	}
 
 	MaterialData ToMaterialData() const override

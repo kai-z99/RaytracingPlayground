@@ -250,8 +250,45 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 
 __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
-	return BSDFSample();
+	BSDFSample sample;
+	//n1/n2 where n1 = refractive index of air = 1.0
+	//ff: air into dialectric, 1/n2
+	//bf: dialectric into air, n2/1
+	bool frontFace = glm::dot(-wo, no) < 0.0f;
+	glm::vec3 N = frontFace ? no : -no;
+
+	float eta = frontFace ? (1.0f / params.eta) : params.eta;
+	float cosTheta = std::fmin(glm::dot(wo, N), 1.0f);
+	float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
+
+	float R = FresnelSchlick(cosTheta, params.eta);
+	float T = 1 - R;
+	bool TIR = eta * sinTheta > 1.0f;
+	//must reflect
+	glm::vec3 direction;
+	float u = RandomFloat(RNG);
+	if (TIR || u < R)
+	{
+		direction = glm::reflect(-wo, N);
+		sample.pdf = 1;
+		sample.f = glm::vec3(1.0f);
+		sample.isTransmission = false;
+	}
+	else
+	{
+		direction = glm::refract(-wo, N, eta); //specular transmission
+		sample.pdf = 1;
+		sample.f = glm::vec3(1.0f);
+		sample.isTransmission = true;
+	}
+
+	sample.wi = direction;
+	sample.good = true;
+	
+	return sample;
 }
+
+
 
 __device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {

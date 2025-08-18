@@ -29,7 +29,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     {
         for (int b = -11; b < 11; ++b)
         {
-            float choose = 0.85;
+            float choose = U(rng);
             glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
             if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
 
@@ -56,14 +56,14 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     }
 
     //3 large spheres
-    //DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
-    //wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
+    DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
+    wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
 
-    //LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
-    //wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
+    LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
+    wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
 
-    //MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f));
-    //wb.AddSphere(glm::vec3(4, 1, 0), 1.0f, metal);
+    MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f), 0.05f);
+    wb.AddSphere(glm::vec3(4, 1, 0), 1.0f, metal);
 
     return wb.Build();
 }
@@ -235,6 +235,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     MetalMaterial metal(glm::vec3(1.0f), 0.25f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), 
@@ -350,7 +351,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, metal);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, die);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
@@ -529,6 +530,8 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
+    DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
+
     DiffuseLightMaterial light(glm::vec3(7.0f));
 
     wb.AddQuad(glm::vec3(0.0f, 300.0f, -0.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), light);
@@ -562,7 +565,7 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
-    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, glass);
 
 
     return wb.Build();
@@ -833,7 +836,7 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale * 1.3f + 100, 50));
     M = glm::rotate(M, -glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale * 1.3f));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skin);
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skin);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(-170, (yExtent / 2.0f) * scale, -30));
