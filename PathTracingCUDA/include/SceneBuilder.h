@@ -9,6 +9,7 @@
 
 struct Material
 {
+	MaterialGPU mat;
 	glm::vec3 albedo;
 	
 	virtual ~Material() = default;
@@ -49,6 +50,9 @@ struct LambertianMaterial : public Material
 	{
 		this->tag = MAT_PBR;
 		this->albedo = albedo;
+
+		mat.tag = LAMBERT;
+		mat.lambert.albedo = albedo;
 	}
 
 	MaterialData ToMaterialData() const override
@@ -71,6 +75,11 @@ struct MetalMaterial : public Material
 		this->tag = MAT_PBR;
 		this->albedo = albedo;
 		this->fuzz = fuzz;
+
+		mat.tag = MICROFACET;
+		mat.microfacet.albedo = albedo;
+		mat.microfacet.roughness = 1.0f;
+		mat.microfacet.metallic = 1.0f;
 	}
 
 	MaterialData ToMaterialData() const override
@@ -207,8 +216,8 @@ public:
 
 private:
 	void UploadMaterialDataToScene(Scene*& scene);
-	std::vector<MaterialData> materials;
-	int PushMaterialAndGetID(MaterialData m);
+	std::vector<MaterialGPU> materials;
+	int PushMaterialAndGetID(MaterialGPU m);
 
 	//sphere
 	void UploadSphereDataToScene(Scene*& scene);

@@ -29,7 +29,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     {
         for (int b = -11; b < 11; ++b)
         {
-            float choose = U(rng);
+            float choose = 0.85;
             glm::vec3 center = glm::vec3(a + 0.9f * U(rng), 0.2f, b + 0.9f * U(rng));
             if (glm::length(center - glm::vec3(4, 0.2f, 0)) < .9f) continue;
 
@@ -56,14 +56,14 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     }
 
     //3 large spheres
-    DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
-    wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
+    //DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
+    //wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
 
-    LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
-    wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
+    //LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
+    //wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
 
-    MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f));
-    wb.AddSphere(glm::vec3(4, 1, 0), 1.0f, metal);
+    //MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f));
+    //wb.AddSphere(glm::vec3(4, 1, 0), 1.0f, metal);
 
     return wb.Build();
 }

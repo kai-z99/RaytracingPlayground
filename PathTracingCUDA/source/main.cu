@@ -210,7 +210,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
+    Scene* uScene = Scenes::RayTracingInOneWeekend(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);

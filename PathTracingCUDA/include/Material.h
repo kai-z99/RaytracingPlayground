@@ -2,6 +2,7 @@
 
 #include "Hittable.h"
 #include "Scene.h"
+#include "CudaHelper.h"
 
 extern __managed__ unsigned int noIntersection;
 extern __managed__ unsigned int rejected;
@@ -53,6 +54,258 @@ struct MaterialData
 	float sigmaA;
 
 };
+
+
+//NEW
+
+
+enum MaterialTag
+{
+	LAMBERT,
+	MICROFACET,
+	DIELECTRIC,
+	SUBSURFACE,
+	EMISSIVE,
+};
+
+struct LambertParams
+{
+	glm::vec3 albedo;
+};
+
+struct MicrofacetParams
+{
+	glm::vec3 albedo;
+	float metallic;
+	float roughness;
+};
+
+struct DielectricParams
+{
+	float eta;
+};
+
+struct SubsurfaceParams
+{
+	glm::vec3 albedo;
+	float ell;
+	float eta;
+};
+
+struct EmissiveParams
+{
+	glm::vec3 emission;
+};
+
+struct MaterialGPU
+{
+	MaterialTag tag;
+
+	union
+	{
+		LambertParams lambert;
+		MicrofacetParams microfacet;
+		DielectricParams dielectric;
+		SubsurfaceParams subsurface;
+		EmissiveParams emissive;
+	};
+};
+
+struct BSDFSample
+{
+	glm::vec3 f;
+	glm::vec3 wi;
+	float pdf;
+	bool isTransmission;
+	bool good;
+};
+
+struct BSSRDFSample
+{
+	glm::vec3 f;
+	glm::vec3 pi;
+	glm::vec3 ni;
+	float pdf;
+
+	MaterialGPU exitBSDF;
+	bool good;
+};
+
+//Tangent -> World
+__device__ inline void BuildTBN(glm::vec3& T, glm::vec3& B, const glm::vec3 N)
+{
+	if (fabsf(N.x) > fabsf(N.z))
+	{
+		T = glm::normalize(glm::vec3(-N.y, N.x, 0.0f));
+	}
+	else
+	{
+		T = glm::normalize(glm::vec3(0.0f, -N.z, N.y));
+	}
+
+	B = glm::cross(N, T);
+}
+
+__device__ inline BSDFSample SampleLambertBSDF(const LambertParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	BSDFSample sample;
+
+	//bxdf -> bsdf local frame
+	glm::vec3 T, B;
+	BuildTBN(T, B, no);
+
+	float zeta1 = RandomFloat(RNG);
+	float zeta2 = RandomFloat(RNG);
+
+	float r = sqrtf(zeta1);
+	float phi = 2.0f * pi * zeta2;
+	float x = r * cosf(phi);
+	float y = r * sinf(phi);
+	float z = sqrtf(1.0f - zeta1); //cos theta
+
+	//wi
+	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * no));
+	sample.wi = L;
+
+	//pdf
+	sample.pdf = z / pi;
+	if (sample.pdf < 1e-6f)
+	{
+		sample.good = false;
+		return sample;
+	}
+		
+	//f
+	sample.f = params.albedo / pi;
+
+	//good
+	sample.good = true;
+	sample.isTransmission = false;
+	return sample;
+
+}
+
+__device__ inline glm::vec3 SampleGGX_VNDF(const glm::vec3& N, const glm::vec3& V, float roughness, curandState& randState, float& pdfHalf);
+__device__ inline glm::vec3 SampleGGX(const glm::vec3& N, float roughness, curandState& randState, float& pdfHalf);
+__device__ inline float D_GGX(float NdotH, float alpha);
+__device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha);
+__device__ inline float FresnelSchlick(float cosT, float eta);
+__device__ inline glm::vec3 FresnelSchlick(float cosTheta, const glm::vec3& F0);
+__device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	BSDFSample sample;
+	glm::vec3 N = no;
+	glm::vec3 V = glm::normalize(wo);
+
+	if (params.roughness < 0.04f) //fall back to mirror
+	{
+		glm::vec3 L = glm::reflect(-V, N);
+		sample.wi = L;
+		sample.f = glm::vec3(1.0);
+		sample.pdf = 1.0f;
+		return sample;
+	}
+
+
+	float pdfHalf;
+	glm::vec3 halfway;
+
+	//halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdfHalf);
+	halfway = SampleGGX(N, params.roughness, RNG, pdfHalf);
+
+	//reflect on the haldway vector to get sample vector
+	glm::vec3 L = glm::reflect(-V, halfway);
+
+	if (glm::dot(L, N) <= 0.0f) 
+	{
+		sample.good = false;
+		return sample;
+	};
+
+	//while (glm::dot(L, N) <= 0.0f)
+	//{
+	//	halfway = SampleGGX(N, materialData.roughness, randState, pdfHalf);
+	//	L = glm::reflect(-V, halfway);
+	//}
+	//if (glm::dot(L, N) <= 0.0f) return false; //ENERGY LOSS WARNING
+
+	sample.pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobian factor to pdf
+	if (sample.pdf < 1e-6f)
+	{
+		sample.good = false;
+		return sample;
+	}
+
+	//glm::vec3 L = SampleLambertian(N, randState, pdf); 
+	//if (pdf < 1e-6f || glm::dot(L, N) <= 0.0f)           
+	//	return false;
+	//glm::vec3 halfway = glm::normalize(V + L);
+
+	//evalyate BRDF to find attenuation
+	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
+	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
+	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
+
+	float D = D_GGX(NdotH, params.roughness * params.roughness);
+	float G = G_SmithHeightCorrelated(NdotV, NdotL, params.roughness * params.roughness);
+
+	//TEMP
+	glm::vec3 F0 = mix(glm::vec3(0.04f), params.albedo, params.metallic); //still hack
+	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
+	glm::vec3 F = FresnelSchlick(VdotH, F0);
+
+	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
+	sample.f = specular; //just the brdf
+	sample.wi = L;
+	sample.good = true;
+	sample.isTransmission = false;
+
+	return sample;
+}
+
+__device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	return BSDFSample();
+}
+
+__device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	DielectricParams p;
+	p.eta = params.eta;
+	return SampleDielectricBSDF(p, wo, no, RNG);
+}
+
+__device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	BSDFSample s;
+	s.good = false;
+	return s;
+}
+
+
+__device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	switch (m.tag)
+	{
+	case LAMBERT:	 return SampleLambertBSDF	(m.lambert, wo, no, RNG);
+	case MICROFACET: return SampleMicrofacetBSDF(m.microfacet, wo, no, RNG);
+	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, no, RNG);
+	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, no, RNG);
+	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, no, RNG);
+	}
+}
+
+__device__ inline BSSRDFSample SampleSubsurfaceBSSRDF(const SubsurfaceParams& params, const glm::vec3& po, const glm::vec3& no, curandState& RNG)
+{
+	return BSSRDFSample();
+}
+
+__device__ inline BSSRDFSample ConstructAndSampleBSSRDF(const MaterialGPU& m, const glm::vec3& po, const glm::vec3& no, curandState& RNG)
+{
+	if (m.tag != SUBSURFACE) return BSSRDFSample();
+
+	return SampleSubsurfaceBSSRDF(m.subsurface, po, no, RNG);
+}
 
 __device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT)
 {
@@ -234,21 +487,6 @@ __device__ inline bool ScatterDielectric(const MaterialData& materialData,
 	scattered = Ray(rec.p, direction);
 	
 	return true;
-}
-
-//Tangent -> World
-__device__ inline void BuildTBN(glm::vec3& T, glm::vec3& B, const glm::vec3 N)
-{
-	if (fabsf(N.x) > fabsf(N.z))
-	{
-		T = glm::normalize(glm::vec3(-N.y, N.x, 0.0f));
-	}
-	else
-	{
-		T = glm::normalize(glm::vec3(0.0f, -N.z, N.y));
-	}
-
-	B = glm::cross(N, T);
 }
 
 __device__ inline float D_GGX(float NdotH, float alpha)

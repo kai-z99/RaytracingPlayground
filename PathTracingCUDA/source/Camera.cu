@@ -111,6 +111,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
     for (int depth = 0; depth < maxDepth; ++depth)
     {
+        Ray scattered;
         HitRecord rec;
 
         //found source: sky
@@ -120,73 +121,62 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             break;
         }
 
-        MaterialData& materialData = scene.materials[rec.matDataID];
+        MaterialGPU& m = scene.materials[rec.matDataID];
 
-        //found source: area light
-        if (materialData.type == MAT_LIGHT_DIFFUSE)
+        //hit a light
+        if (m.tag == EMISSIVE)
         {
-            col += totalAttenuation * materialData.emission;
+            col += totalAttenuation * m.emissive.emission;
             break;
         }
 
-        //surface hit, scatter?
+        glm::vec3 wo = -r.direction();
+        glm::vec3 no = rec.normal;
 
-        Ray scattered;
-        glm::vec3 evaluation;
-        float pdf;
+        //create the bsdf from material and call sample_F
+        BSDFSample sample = ConstructAndSampleBSDF(m, wo, no, randState);
+        if (!sample.good) break;
 
+        //integrate the sample
+        float cosine = glm::dot(sample.wi, no);
+        totalAttenuation *= sample.f * cosine / sample.pdf;
 
-        if (!Scatter(materialData, randState, scene, r, rec, evaluation, scattered, pdf, prevSSS))
+        //update ray
+        scattered = Ray(rec.p, sample.wi);
+
+        //handle bssrdf if applicable
+        if (m.tag == SUBSURFACE && sample.isTransmission)
         {
-            //exit
-            break;
-        }
+            //sample bssrdf
+            glm::vec3 po = rec.p;
+            glm::vec3 no = rec.normal;
+            BSSRDFSample bss = SampleSubsurfaceBSSRDF(m.subsurface, po, no, randState);
+            if (!bss.good) break;
 
-        //scattered and attenuated succesfully---
+            //update throughput
+            totalAttenuation *= bss.f / bss.pdf;
 
-        //estimate rendering equation for 1 monte carlo sample
-        //Note: if its a sss surface, we evaluate the seperable bssrdf instead where evaluation is bssrdf * bsdf of initial hit
-        float cosine = fmaxf(glm::dot(scattered.direction(), rec.normal), 0.0f);
-        glm::vec3 contrib = evaluation * cosine / pdf;
+            //sample exit bsdf
+            glm::vec3 woDummy = glm::vec3(0.0f);
+            glm::vec3 noExit = bss.ni;
+            BSDFSample exit = ConstructAndSampleBSDF(bss.exitBSDF, woDummy, noExit, randState);
+            if (!exit.good) break;
+            
+            //update throughput
+            float exitCosine = glm::dot(bss.ni, exit.wi);
+            totalAttenuation *= exit.f * exitCosine / exit.pdf;
 
-        if (!isfinite(pdf))
-        {
-            printf("warning: pdf\n");
-            break;
-        }
-        if (!isfinite(cosine))
-        {
-            printf("warning: cosine\n");
-            break;
-        }
-        if (!isfinite(evaluation.r) || !isfinite(evaluation.g) || !isfinite(evaluation.b))
-        {
-            printf("warning: atttenuation\n");
-            break;
-        }
+            //update scattered ray
+            scattered = Ray(bss.pi, exit.wi);
 
-        if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b))
-        {
-            printf("warning: contrib\n");
-            break;
-        }
-
-  /*      contrib.r = fminf(contrib.r, 5.5f);
-        contrib.g = fminf(contrib.g, 5.5f);
-        contrib.b = fminf(contrib.b, 5.5f);*/
-
-        if (prevSSS) 
-        {
-            // measure “energy” as luma(contrib), 
+            //debug
+            glm::vec3 contrib = exit.f * bss.f * exitCosine / (exit.pdf * bss.pdf);
             atomicAdd(&sssEnergySumR, (double)contrib.r);
             atomicAdd(&sssEnergySumG, (double)contrib.g);
             atomicAdd(&sssEnergySumB, (double)contrib.b);
-            atomicAdd(&sssHitCount, 1ull);  
+            atomicAdd(&sssHitCount, 1ull);
         }
 
-        totalAttenuation *= contrib;
-
-       
         if (this->russianroulette && depth >= 3)
         {
             //the max compoenent of total attenution
@@ -196,7 +186,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             if (RandomFloat(randState) > p) break;
 
             //To preserve energy: boost the energy of non-terminated paths by the probablity of being terminated.
-            totalAttenuation /= p; 
+            totalAttenuation /= p;
         }
 
         r = scattered;
