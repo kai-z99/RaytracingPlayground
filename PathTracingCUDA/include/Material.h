@@ -17,6 +17,7 @@ extern __managed__ double sssEnergySumR;
 extern __managed__ double sssEnergySumG;
 extern __managed__ double sssEnergySumB;
 extern __managed__ unsigned long long sssHitCount;
+extern __managed__ float dieSum;
 //
 //----------
 // 
@@ -146,7 +147,7 @@ __device__ inline void BuildTBN(glm::vec3& T, glm::vec3& B, const glm::vec3 N)
 	B = glm::cross(N, T);
 }
 
-__device__ inline BSDFSample SampleLambertBSDF(const LambertParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
 	BSDFSample sample;
 
@@ -191,7 +192,7 @@ __device__ inline float D_GGX(float NdotH, float alpha);
 __device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha);
 __device__ inline float FresnelSchlick(float cosT, float eta);
 __device__ inline glm::vec3 FresnelSchlick(float cosTheta, const glm::vec3& F0);
-__device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
 	BSDFSample sample;
 	glm::vec3 N = no;
@@ -207,7 +208,6 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 		sample.good = true;
 		return sample;
 	}
-
 
 	float pdfHalf;
 	glm::vec3 halfway;
@@ -248,50 +248,49 @@ __device__ inline BSDFSample SampleMicrofacetBSDF(const MicrofacetParams& params
 	return sample;
 }
 
+__device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT);
 __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
 	BSDFSample sample;
-	//n1/n2 where n1 = refractive index of air = 1.0
-	//ff: air into dialectric, 1/n2
-	//bf: dialectric into air, n2/1
-	bool frontFace = glm::dot(-wo, no) < 0.0f;
-	glm::vec3 N = frontFace ? no : -no;
 
-	float eta = frontFace ? (1.0f / params.eta) : params.eta;
-	float cosTheta = std::fmin(glm::dot(wo, N), 1.0f);
-	float sinTheta = std::sqrtf(1.0f - cosTheta * cosTheta);
+	// Oriented normal (pointing to the side wo lies in)
+	bool frontFace = glm::dot(-wo, no) < 0.0f;          
+	glm::vec3 N = frontFace ? no : -no; //ray normal
 
-	//cosTheta = fmaxf(glm::dot(wo, no), 0.0f);
-	float R = FresnelSchlick(cosTheta, params.eta);
-	float T = 1 - R;
-	bool TIR = eta * sinTheta > 1.0f;
+	// Indices for this side
+	float etaI = frontFace ? 1.0f : params.eta;
+	float etaT = frontFace ? params.eta : 1.0f;
+	float eta = etaI / etaT;                            // for glm::refract
 
-	//must reflect
-	glm::vec3 direction;
+	// Exact Fresnel
+	float cosThetaI = fabsf(glm::dot(wo, N));
+	float R = FrDielectricExact(cosThetaI, etaI, etaT);  // returns 1 exactly in TIR
 	float u = RandomFloat(RNG);
 
-	if (TIR || u < R)
+	glm::vec3 wi;
+	if (u < R) 
 	{
-		direction = glm::reflect(-wo, N);
-		sample.pdf = 1;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //delta has no cosine
-		sample.isTransmission = false;
+		MicrofacetParams p;
+		p.albedo = glm::vec3(1.0f);
+		p.metallic = 1.0f;
+		p.roughness = 0.2f;
+
+		return SampleGGXMicrofacetBRDF(p, wo, N, RNG);
 	}
-	else
+	else 
 	{
-		direction = glm::refract(-wo, N, eta); //specular transmission
-		sample.pdf = 1;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //delta has no cosine
+		// Specular transmission
+		wi = glm::refract(-wo, N, eta);             
+		sample.f = glm::vec3(1.0f) / (fabsf(glm::dot(wi, no))); //delta
 		sample.isTransmission = true;
+		sample.pdf = 1.0f;   // delta lobe
 	}
 
-	sample.wi = direction;
-	sample.good = true;
 	
+	sample.wi = wi;
+	sample.good = true;
 	return sample;
 }
-
-
 
 __device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
@@ -312,8 +311,8 @@ __device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const 
 {
 	switch (m.tag)
 	{
-	case LAMBERT:	 return SampleLambertBSDF	(m.lambert, wo, no, RNG);
-	case MICROFACET: return SampleMicrofacetBSDF(m.microfacet, wo, no, RNG);
+	case LAMBERT:	 return SampleLambertBRDF	(m.lambert, wo, no, RNG);
+	case MICROFACET: return SampleGGXMicrofacetBRDF(m.microfacet, wo, no, RNG);
 	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, no, RNG);
 	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, no, RNG);
 	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, no, RNG);

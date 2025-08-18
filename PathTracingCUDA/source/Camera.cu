@@ -132,18 +132,27 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         glm::vec3 wo = -r.direction();
         glm::vec3 no = rec.normal;
-        //if (m.tag == DIELECTRIC) no = rec.geoNormal;
+        if (m.tag == DIELECTRIC) no = rec.geoNormal;
 
         //create the bsdf from material and call sample_F
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, no, randState);
         if (!sample.good) break;
 
-        //integrate the sample
+        //integrate the sample---
         float cosine = fabsf(glm::dot(sample.wi, no));
-        //if (m.tag == DIELECTRIC) cosine = 1;
         //make sure the sample is finite
-        if (!isfinite((sample.f * cosine / sample.pdf).r) || !isfinite((sample.f * cosine / sample.pdf).g) || !isfinite((sample.f * cosine / sample.pdf).b)) break;
-        totalAttenuation *= sample.f * cosine / sample.pdf;
+        glm::vec3 contrib = (sample.f * cosine / sample.pdf);
+        if (!isfinite(contrib.r) || !isfinite((contrib).g) || !isfinite(contrib.b)) break;
+
+        totalAttenuation *= contrib;
+
+        //debug
+        if (m.tag == DIELECTRIC && fabsf(1.0f - cosine * sample.f.r / sample.pdf) > 1e8f) printf("warning\n");
+        if (m.tag == DIELECTRIC)
+        {
+            atomicAdd(&dieSum, cosine * sample.f.r / sample.pdf);
+            atomicAdd(&total, 1);
+        }
 
         //update ray
         scattered = Ray(rec.p, sample.wi);
@@ -151,7 +160,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //handle bssrdf if applicable
         if (m.tag == SUBSURFACE && sample.isTransmission)
         {
-            printf("bad");
             //sample bssrdf
             glm::vec3 po = rec.p;
             glm::vec3 no = rec.normal;

@@ -234,7 +234,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
-    MetalMaterial metal(glm::vec3(1.0f), 0.25f);
+    MetalMaterial metal(glm::vec3(1.0f), 0.0f);
     DielectricMaterial die(glm::vec3(1.0f), 1.5f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
@@ -323,14 +323,14 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //
 
     std::string objName = "dragon.obj";
-    float scale = 350.00f;
-    float yExtent = 0.700f;
+    float scale = 450.00f;
+    float yExtent = 0.7f;
     float rotDeg = 90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 30, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    //M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    //M = glm::rotate(M, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
@@ -353,6 +353,9 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, die);
 
+    //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
+    //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
+
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
@@ -362,6 +365,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
 
     //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
+
     //sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
     //sb.AddTriangle({ 0.0f, 250, 0.0f }, { 130.0f, 150, 0 }, {0,0, 200}, sm);
 
@@ -516,7 +520,7 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     cam->center = glm::vec3(0, 600, 1300);
     cam->vfov = 10;
     cam->lookAt = glm::vec3(0, 50, 0); //xyz: 50 s: 100
-    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.5f;
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.0f; //0.5
     cam->Init();
 
     SceneBuilder wb;
@@ -996,6 +1000,7 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
         0.5f
     );
     LambertianMaterial skinLambert(glm::vec3(1.0f, 0.788f, 0.667f));
+    DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
 
 
     // --- Cornell box dimensions ---
@@ -1077,7 +1082,7 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(1.0f, 0.0f, 0.0f)); //2
     
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, skin);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, glass);
 
     return sb.Build();
 }
