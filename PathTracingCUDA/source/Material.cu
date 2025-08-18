@@ -16,6 +16,7 @@ __managed__ double  sssEnergySumG = 0.0;
 __managed__ double  sssEnergySumB = 0.0;
 __managed__ unsigned long long sssHitCount = 0;
 
+
 __device__ inline float AverageColor(const glm::vec3& col)
 {
 	float sum = col.r + col.g + col.b;
