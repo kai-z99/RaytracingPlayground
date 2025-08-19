@@ -79,6 +79,7 @@ struct MicrofacetParams
 	glm::vec3 albedo;
 	float metallic;
 	float roughness;
+	float eta;
 };
 
 struct DielectricParams
@@ -250,6 +251,83 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 }
 
 __device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT);
+__device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+{
+	BSDFSample sample;
+	sample.good = false;
+	sample.isTransmission = true;
+
+	//geometry normal
+	glm::vec3 N = glm::normalize(no);
+	glm::vec3 V = glm::normalize(wo);
+
+	// Require opposite hemispheres for transmission
+	float cosNoV = glm::dot(N, V);
+	
+
+	float etaOutside = 1.0f;
+	float etaInside = params.eta;
+	bool entering = cosNoV > 0.0f;
+	float etaI = entering ? etaOutside : etaInside;
+	float etaT = entering ? etaInside : etaOutside;
+	float eta = etaI / etaT;               // relative IOR from wo-side to wi-side
+	float etap = etaT / etaI;               // relative IOR toward wi
+
+	if (params.roughness < 0.04f) //perfect refraction
+	{
+		glm::vec3 L = glm::refract(-V, N, eta);
+		sample.wi = L;
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //dirac delta, no cosine
+		sample.pdf = 1.0f;
+		sample.isTransmission = true;
+		sample.good = true;
+		return sample;
+	}
+
+	// VNDF sample the microfacet normal
+	float pdf_m = 0.f;
+	glm::vec3 halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdf_m);
+
+	glm::vec3 L = glm::refract(-V, halfway, eta);
+	float cosNoL = glm::dot(N, L);
+
+	//diacrd backfacing microfacets
+	if (glm::dot(halfway, L) * cosNoL < 0 || glm::dot(halfway, V) * cosNoV < 0) return sample;
+	if (cosNoL > 0.0f) return sample;
+
+	// Fresnel for dielectrics at the microfacet
+	float VdotM = fmaxf(glm::dot(V, halfway), 0.0f);
+	// Prefer exact dielectric Fresnel; fall back to your Schlick(cos, eta) if needed:
+	float R = FrDielectricExact(VdotM, etaI, etaT);
+	float T = 1.0f - R;
+
+	// Microfacet terms
+	float alpha = params.roughness * params.roughness;
+	float NdotM = fmaxf(glm::dot(N, halfway), 0.0f);
+	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
+	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
+	float IdotM = glm::dot(L, halfway);
+
+	float D = D_GGX(NdotM, alpha);
+	float G = G_SmithHeightCorrelated(NdotV, fabsf(glm::dot(N, L)), alpha);
+
+	// BTDF value (Eq. 9.40 in PBRT v4)
+	float denomJac = (IdotM + VdotM / etap);
+	float denom = (denomJac * denomJac) * fabsf(NdotV) * fabsf(glm::dot(N, L));
+	glm::vec3 ft = glm::vec3((D * G * T) * fabsf(IdotM * VdotM) / fmaxf(denom, 1e-12f));
+
+	// PDF for wi given wo (Eq. 9.37), when you sample m from the VNDF
+	float dwm_dwi = fabsf(IdotM) / fmaxf(denomJac * denomJac, 1e-12f);
+	float pdf = pdf_m * dwm_dwi;
+
+	// Pack sample
+	sample.wi = L;
+	sample.f = ft;
+	sample.pdf = pdf;
+	sample.good = (pdf > 0.f) && (isfinite(ft.x) && isfinite(ft.y) && isfinite(ft.z));
+	return sample;
+}
+
 __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
 {
 	BSDFSample sample;
@@ -268,29 +346,33 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 	float R = FrDielectricExact(cosThetaI, etaI, etaT);  // returns 1 exactly in TIR
 	float u = RandomFloat(RNG);
 
+	MicrofacetParams p;
+	p.albedo = glm::vec3(1.0f);
+	p.metallic = 1.0f;
+	p.roughness = params.roughness;
+	p.eta = params.eta;
+
 	glm::vec3 wi;
 	if (u < R) 
 	{
-		MicrofacetParams p;
-		p.albedo = glm::vec3(1.0f);
-		p.metallic = 1.0f;
-		p.roughness = params.roughness;
-
 		return SampleGGXMicrofacetBRDF(p, wo, N, RNG);
 	}
 	else 
 	{
+		
+		return SampleGGXMicrofacetBTDF(p, wo, N, RNG);
+
 		// Perfect Specular transmission
-		wi = glm::refract(-wo, N, eta);             
-		sample.f = glm::vec3(1.0f) / (fabsf(glm::dot(wi, no))); //delta
-		sample.isTransmission = true;
-		sample.pdf = 1.0f;   // delta lobe
+		//wi = glm::refract(-wo, N, eta);             
+		//sample.f = glm::vec3(1.0f) / (fabsf(glm::dot(wi, no))); //delta
+		//sample.isTransmission = true;
+		//sample.pdf = 1.0f;   // delta lobe
 	}
 
 	
-	sample.wi = wi;
-	sample.good = true;
-	return sample;
+	//sample.wi = wi;
+	//sample.good = true;
+	//return sample;
 }
 
 __device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)

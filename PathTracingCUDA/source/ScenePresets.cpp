@@ -322,10 +322,10 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "dragon.obj";
+    std::string objName = "bunny.obj";
     float scale = 350.00f;
-    float yExtent = 0.7f;
-    float rotDeg = 90.0f;
+    float yExtent = 1.0f;
+    float rotDeg = 0.0f;
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));

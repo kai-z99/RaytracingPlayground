@@ -146,14 +146,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         totalAttenuation *= contrib;
 
-        //debug
-        if (m.tag == DIELECTRIC && fabsf(1.0f - cosine * sample.f.r / sample.pdf) > 1e8f) printf("warning\n");
-        if (m.tag == DIELECTRIC)
-        {
-            atomicAdd(&dieSum, cosine * sample.f.r / sample.pdf);
-            atomicAdd(&total, 1);
-        }
-
         //update ray
         scattered = Ray(rec.p, sample.wi);
 
