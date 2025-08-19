@@ -235,7 +235,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     MetalMaterial metal(glm::vec3(1.0f), 0.0f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), 
@@ -323,12 +323,12 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //
 
     std::string objName = "dragon.obj";
-    float scale = 450.00f;
+    float scale = 350.00f;
     float yExtent = 0.7f;
     float rotDeg = 90.0f;
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale + 30, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
     //M = glm::rotate(M, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));

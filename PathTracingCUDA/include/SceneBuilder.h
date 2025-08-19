@@ -98,7 +98,7 @@ struct DielectricMaterial : public Material
 {
 	float eta;
 
-	DielectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f)
+	DielectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f, float roughness = 0.1f)
 	{
 		this->tag = MAT_DIALECTRIC;
 		this->albedo = albedo;
@@ -106,6 +106,7 @@ struct DielectricMaterial : public Material
 
 		mat.tag = DIELECTRIC;
 		mat.dielectric.eta = eta;
+		mat.dielectric.roughness = roughness;
 	}
 
 	MaterialData ToMaterialData() const override

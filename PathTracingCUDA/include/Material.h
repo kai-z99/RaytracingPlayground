@@ -84,6 +84,7 @@ struct MicrofacetParams
 struct DielectricParams
 {
 	float eta;
+	float roughness;
 };
 
 struct SubsurfaceParams
@@ -273,13 +274,13 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 		MicrofacetParams p;
 		p.albedo = glm::vec3(1.0f);
 		p.metallic = 1.0f;
-		p.roughness = 0.2f;
+		p.roughness = params.roughness;
 
 		return SampleGGXMicrofacetBRDF(p, wo, N, RNG);
 	}
 	else 
 	{
-		// Specular transmission
+		// Perfect Specular transmission
 		wi = glm::refract(-wo, N, eta);             
 		sample.f = glm::vec3(1.0f) / (fabsf(glm::dot(wi, no))); //delta
 		sample.isTransmission = true;
