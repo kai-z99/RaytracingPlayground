@@ -178,6 +178,12 @@ struct SubsurfaceMaterial : public Material
 		this->metallic = metallic;
 		this->sigmaA = sigmaA;
 		this->sigmaS = sigmaS;
+
+		mat.subsurface.albedo = sssTint;
+		mat.subsurface.ell = sssRadius;
+		mat.subsurface.eta = eta;
+		mat.subsurface.roughness = roughness;
+
 	}
 
 	MaterialData ToMaterialData() const override
@@ -193,6 +199,7 @@ struct SubsurfaceMaterial : public Material
 		m.sigmaA = this->sigmaA;
 		m.sigmaS = this->sigmaS;
 		m.type = this->tag;
+
 
 		return m;
 	}

@@ -132,14 +132,14 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         glm::vec3 wo = -r.direction();
         glm::vec3 no = rec.normal;
-        if (m.tag == DIELECTRIC) no = rec.geoNormal;
 
         //create the bsdf from material and call sample_F
-        BSDFSample sample = ConstructAndSampleBSDF(m, wo, no, randState);
+        BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);
         if (!sample.good) break;
 
         //integrate the sample---
-        float cosine = fabsf(glm::dot(sample.wi, no));
+        float cosine = fabsf(glm::dot(sample.wi, rec.geoNormal));
+
         //make sure the sample is finite
         glm::vec3 contrib = (sample.f * cosine / sample.pdf);
         if (!isfinite(contrib.r) || !isfinite((contrib).g) || !isfinite(contrib.b)) break;
@@ -155,7 +155,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             //sample bssrdf
             glm::vec3 po = rec.p;
             glm::vec3 no = rec.normal;
-            BSSRDFSample bss = ConstructAndSampleBSSRDF(m, po, no, randState);
+            BSSRDFSample bss = ConstructAndSampleBSSRDF(m, rec, randState);
             if (!bss.good) break;
 
             //update throughput
@@ -164,7 +164,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
             //sample exit bsdf
             glm::vec3 woDummy = glm::vec3(0.0f);
             glm::vec3 noExit = bss.ni;
-            BSDFSample exit = ConstructAndSampleBSDF(bss.exitBSDF, woDummy, noExit, randState);
+            BSDFSample exit = ConstructAndSampleBSDF(bss.exitBSDF, woDummy, rec, randState);
             if (!exit.good) break;
             
             //update throughput

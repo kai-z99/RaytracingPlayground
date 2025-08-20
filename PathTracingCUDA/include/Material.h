@@ -93,6 +93,7 @@ struct SubsurfaceParams
 	glm::vec3 albedo;
 	float ell;
 	float eta;
+	float roughness;
 };
 
 struct EmissiveParams
@@ -149,13 +150,13 @@ __device__ inline void BuildTBN(glm::vec3& T, glm::vec3& B, const glm::vec3 N)
 	B = glm::cross(N, T);
 }
 
-__device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 
 	//bxdf -> bsdf local frame
 	glm::vec3 T, B;
-	BuildTBN(T, B, no);
+	BuildTBN(T, B, si.normal);
 
 	float zeta1 = RandomFloat(RNG);
 	float zeta2 = RandomFloat(RNG);
@@ -167,7 +168,7 @@ __device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, cons
 	float z = sqrtf(1.0f - zeta1); //cos theta
 
 	//wi
-	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * no));
+	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.normal));
 	sample.wi = L;
 
 	//pdf
@@ -194,17 +195,19 @@ __device__ inline float D_GGX(float NdotH, float alpha);
 __device__ inline float G_SmithHeightCorrelated(float NdotV, float NdotL, float alpha);
 __device__ inline float FresnelSchlick(float cosT, float eta);
 __device__ inline glm::vec3 FresnelSchlick(float cosTheta, const glm::vec3& F0);
-__device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+
+//torrence-sparrow
+__device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
-	glm::vec3 N = no;
+	glm::vec3 N = glm::normalize(si.normal);
 	glm::vec3 V = glm::normalize(wo);
 
 	if (params.roughness < 0.04f) //fall back to mirror, temp
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, si.geoNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = false;
 		sample.good = true;
@@ -217,7 +220,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 	halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdfHalf);
 	//halfway = SampleGGX(N, params.roughness, RNG, pdfHalf);
 
-	//reflect on the haldway vector to get sample vector
+	//reflect on the halfway vector to get sample vector
 	glm::vec3 L = glm::reflect(-V, halfway);
 
 	if (glm::dot(L, N) <= 0.0f) 
@@ -251,20 +254,19 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 }
 
 __device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT);
-__device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 	sample.good = false;
 	sample.isTransmission = true;
 
 	//geometry normal
-	glm::vec3 N = glm::normalize(no);
+	glm::vec3 N = glm::normalize(si.normal);
 	glm::vec3 V = glm::normalize(wo);
 
 	// Require opposite hemispheres for transmission
 	float cosNoV = glm::dot(N, V);
 	
-
 	float etaOutside = 1.0f;
 	float etaInside = params.eta;
 	bool entering = cosNoV > 0.0f;
@@ -277,7 +279,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& par
 	{
 		glm::vec3 L = glm::refract(-V, N, eta);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, no)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, si.geoNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = true;
 		sample.good = true;
@@ -328,13 +330,13 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& par
 	return sample;
 }
 
-__device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 
 	// Oriented normal (pointing to the side wo lies in)
-	bool frontFace = glm::dot(-wo, no) < 0.0f;          
-	glm::vec3 N = frontFace ? no : -no; //ray normal
+	bool frontFace = glm::dot(-wo, si.geoNormal) < 0.0f;          
+	glm::vec3 N = si.normal;
 
 	// Indices for this side
 	float etaI = frontFace ? 1.0f : params.eta;
@@ -355,34 +357,23 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 	glm::vec3 wi;
 	if (u < R) 
 	{
-		return SampleGGXMicrofacetBRDF(p, wo, N, RNG);
+		return SampleGGXMicrofacetBRDF(p, wo, si, RNG);
 	}
 	else 
 	{
-		
-		return SampleGGXMicrofacetBTDF(p, wo, N, RNG);
-
-		// Perfect Specular transmission
-		//wi = glm::refract(-wo, N, eta);             
-		//sample.f = glm::vec3(1.0f) / (fabsf(glm::dot(wi, no))); //delta
-		//sample.isTransmission = true;
-		//sample.pdf = 1.0f;   // delta lobe
+		return SampleGGXMicrofacetBTDF(p, wo, si, RNG);
 	}
-
-	
-	//sample.wi = wi;
-	//sample.good = true;
-	//return sample;
 }
 
-__device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	DielectricParams p;
 	p.eta = params.eta;
-	return SampleDielectricBSDF(p, wo, no, RNG);
+	p.roughness = params.roughness;
+	return SampleDielectricBSDF(p, wo, HitRecord(), RNG);
 }
 
-__device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample s;
 	s.good = false;
@@ -390,28 +381,30 @@ __device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, co
 }
 
 
-__device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const glm::vec3& wo, const glm::vec3& no, curandState& RNG)
+__device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	switch (m.tag)
 	{
-	case LAMBERT:	 return SampleLambertBRDF	(m.lambert, wo, no, RNG);
-	case MICROFACET: return SampleGGXMicrofacetBRDF(m.microfacet, wo, no, RNG);
-	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, no, RNG);
-	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, no, RNG);
-	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, no, RNG);
+	case LAMBERT:	 return SampleLambertBRDF	(m.lambert, wo, si, RNG);
+	case MICROFACET: return SampleGGXMicrofacetBRDF(m.microfacet, wo, si, RNG);
+	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, si, RNG);
+	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, si, RNG);
+	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, si, RNG);
 	}
 }
 
-__device__ inline BSSRDFSample SampleSubsurfaceBSSRDF(const SubsurfaceParams& params, const glm::vec3& po, const glm::vec3& no, curandState& RNG)
+__device__ inline BSSRDFSample SampleSubsurfaceBSSRDF(const SubsurfaceParams& params, const HitRecord& si, curandState& RNG)
 {
-	return BSSRDFSample();
+
+
+	
 }
 
-__device__ inline BSSRDFSample ConstructAndSampleBSSRDF(const MaterialGPU& m, const glm::vec3& po, const glm::vec3& no, curandState& RNG)
+__device__ inline BSSRDFSample ConstructAndSampleBSSRDF(const MaterialGPU& m, const HitRecord& si, curandState& RNG)
 {
 	if (m.tag != SUBSURFACE) return BSSRDFSample();
 
-	return SampleSubsurfaceBSSRDF(m.subsurface, po, no, RNG);
+	return SampleSubsurfaceBSSRDF(m.subsurface, si, RNG);
 }
 
 __device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT)
@@ -705,7 +698,7 @@ __device__ inline glm::vec3 SampleGGX_VNDF(const glm::vec3& N, const glm::vec3& 
 	float D = D_GGX(NdotH, a);
 	float G1 = 1.0f / (1.0f + LambdaGGX(NdotV, a));
 
-	pdfHalf = (G1 * VdotH * D) / NdotV; //denom is V dot Z
+	pdfHalf = (G1 * VdotH * D) / NdotV; //pbrt eq 9.23
 
 	return halfway;
 }

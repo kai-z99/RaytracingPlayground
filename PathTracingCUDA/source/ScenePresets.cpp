@@ -235,7 +235,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     MetalMaterial metal(glm::vec3(1.0f), 0.0f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.1f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), 
