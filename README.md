@@ -4,6 +4,9 @@
 ## Notes
 - Subsurface Scattering with Analystic BSSRDFs
   - Please refer to my blog at: https://kai-z99.github.io/blog/Implementing-Subsurface-Scattering-with-Analytic-BSSRDFs.html
+
+- Rough Dielectric BSDF
+   - https://www.pbr-book.org/4ed/Reflection_Models/Rough_Dielectric_BSDF
     
 - BVH = Bounding Volume Hierarchy (used for acceleration)
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
