@@ -8,7 +8,6 @@
 - BVH = Bounding Volume Hierarchy (used for acceleration)
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
   - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
-  - We traverse this tree structure on the GPU iteratively as opposed to recursively, as it maximizes register usage and minimizes branch divergence.
     
 
 
@@ -64,10 +63,6 @@
 
 ## Other Images Gallery
 <img width="1918" height="1110" alt="skylight2048spp-10 0" src="https://github.com/user-attachments/assets/0cf81441-3dbc-4222-8789-1b7946781423" />
-<img width="1231" height="1108" alt="image" src="https://github.com/user-attachments/assets/4f89f2c6-73ef-4ee1-8eaa-3ea073080534" />
-<img width="1918" height="1107" alt="rayShowCUDA30" src="https://github.com/user-attachments/assets/871cfc7e-5263-4f38-ab95-1df0f650a051" />
-<img width="1227" height="1111" alt="rayShowCUDA24" src="https://github.com/user-attachments/assets/9a160bc1-a052-4ba3-8c54-490bcffb7d94" />
-<img width="1228" height="1107" alt="rayShowCUDA27" src="https://github.com/user-attachments/assets/77079b7a-0800-4c81-b991-1cdda5f172ec" />
 
 
 
