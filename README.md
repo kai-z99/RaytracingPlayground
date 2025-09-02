@@ -2,7 +2,7 @@
 
 
 ## Notes
-- Subsurface Scattering with Analystic BSSRDFs
+- Subsurface Scattering with Analytic BSSRDFs
   - Please refer to my blog at: https://kai-z99.github.io/blog/Implementing-Subsurface-Scattering-with-Analytic-BSSRDFs.html
 
 - Rough Dielectric BSDF
