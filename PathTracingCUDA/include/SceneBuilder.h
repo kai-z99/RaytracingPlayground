@@ -9,180 +9,67 @@
 
 struct Material
 {
-	glm::vec3 albedo;
-	
+	MaterialGPU mat;	
 	virtual ~Material() = default;
-	virtual MaterialData ToMaterialData() const = 0;
-
-protected:
-	MaterialType tag;
-};
-
-struct PBRMaterial : public Material
-{
-	glm::vec3 albedo;
-	float metallic;
-	float roughness;
-
-	PBRMaterial(glm::vec3 albedo = glm::vec3(1.0f), float metallic = 0.0f, float roughness = 1.0f)
-	{
-		this->tag = MAT_PBR;
-		this->albedo = albedo;
-		this->metallic = metallic;
-		this->roughness = roughness;
-	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.metallic = this->metallic;
-		m.roughness = this->roughness;
-		m.type = this->tag;
-		return m;
-	}
 };
 
 struct LambertianMaterial : public Material
 {
 	LambertianMaterial(glm::vec3 albedo = glm::vec3(1.0f))
 	{
-		this->tag = MAT_PBR;
-		this->albedo = albedo;
-	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.roughness = 0.0f;
-		m.metallic = 0.0f;
-		m.type = this->tag;
-		return m;
+		this->mat.tag = LAMBERT;
+		this->mat.lambert.albedo = albedo;
 	}
 };
 
 struct MetalMaterial : public Material
 {
-	float fuzz;
-
 	MetalMaterial(glm::vec3 albedo = glm::vec3(1.0f), float fuzz = 0.0f)
 	{
-		this->tag = MAT_PBR;
-		this->albedo = albedo;
-		this->fuzz = fuzz;
+		this->mat.tag = MICROFACET;
+		this->mat.microfacet.albedo = albedo;
+		this->mat.microfacet.roughness = fuzz;
+		this->mat.microfacet.metallic = 1.0f;
 	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.roughness = this->fuzz;
-		m.metallic = 1.0f;
-		m.type = this->tag;
-		return m;
-	}
-
 };
 
 struct DielectricMaterial : public Material
 {
-	float eta;
-
-	DielectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f)
+	DielectricMaterial(glm::vec3 albedo = glm::vec3(1.0f), float eta = 1.5f, float roughness = 0.1f)
 	{
-		this->tag = MAT_DIALECTRIC;
-		this->albedo = albedo;
-		this->eta = eta;
-		
-	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.refractionIndex = this->eta;
-		m.type = this->tag;
-		return m;
+		this->mat.tag = DIELECTRIC;
+		this->mat.dielectric.eta = eta;
+		this->mat.dielectric.roughness = roughness;
 	}
 };
 
 struct DiffuseLightMaterial : public Material
 {
-	glm::vec3 emissive;
-
 	DiffuseLightMaterial(glm::vec3 emissive = glm::vec3(1.0f))
 	{
-		this->tag = MAT_LIGHT_DIFFUSE;
-		this->albedo = glm::vec3(0.0f);
-		this->emissive = emissive;
-	}
-
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.emission = this->emissive;
-		m.type = this->tag;
-
-		return m;
+		mat.tag = EMISSIVE;
+		mat.emissive.emission = emissive;
 	}
 };
 
 struct SubsurfaceMaterial : public Material
 {
-	float subsurface;
-	float sssRadius;
-	glm::vec3 sssTint;
-	float eta;
-	float roughness;
-	float metallic;
-	float sigmaS;
-	float sigmaA;
-
 	SubsurfaceMaterial
 	(
 		glm::vec3 albedo = glm::vec3(1.0f),
-		glm::vec3 sssTint = glm::vec3(1.0f),
-		float subsurface = 1.0f,
 		float radius = 1.0f,
-		float sigmaS = 1.0f,
-		float sigmaA = 1.0f,
 		float eta = 1.5f,
-		float metallic = 0.0f,
 		float roughness = 0.5f
 	)
 	{
-		this->tag = MAT_SUBSURFACE;
-		this->albedo = albedo;
-		this->subsurface = subsurface;
-		this->sssTint = sssTint;
-		this->sssRadius = radius;
-		this->eta = eta;
-		this->roughness = roughness;
-		this->metallic = metallic;
-		this->sigmaA = sigmaA;
-		this->sigmaS = sigmaS;
-	}
+		mat.subsurface.albedo = albedo;
+		mat.subsurface.ell = radius;
+		mat.subsurface.eta = eta;
+		mat.subsurface.roughness = roughness;
+		mat.tag = SUBSURFACE;
 
-	MaterialData ToMaterialData() const override
-	{
-		MaterialData m;
-		m.albedo = this->albedo;
-		m.sssTint = this->sssTint;
-		m.sssRadius = this->sssRadius;
-		m.refractionIndex = this->eta;
-		m.subsurface = this->subsurface;
-		m.roughness = this->roughness;
-		m.metallic = this->metallic;
-		m.sigmaA = this->sigmaA;
-		m.sigmaS = this->sigmaS;
-		m.type = this->tag;
-
-		return m;
 	}
 };
-
 
 
 class SceneBuilder
@@ -207,8 +94,8 @@ public:
 
 private:
 	void UploadMaterialDataToScene(Scene*& scene);
-	std::vector<MaterialData> materials;
-	int PushMaterialAndGetID(MaterialData m);
+	std::vector<MaterialGPU> materials;
+	int PushMaterialAndGetID(MaterialGPU m);
 
 	//sphere
 	void UploadSphereDataToScene(Scene*& scene);
