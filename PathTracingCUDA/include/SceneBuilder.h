@@ -183,6 +183,7 @@ struct SubsurfaceMaterial : public Material
 		mat.subsurface.ell = sssRadius;
 		mat.subsurface.eta = eta;
 		mat.subsurface.roughness = roughness;
+		mat.tag = SUBSURFACE;
 
 	}
 

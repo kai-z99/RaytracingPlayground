@@ -234,8 +234,8 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
-    MetalMaterial metal(glm::vec3(1.0f), 0.0f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.1f);
+    MetalMaterial metal(glm::vec3(1.0f), 0.1f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.0f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(1.0f, 1.0f, 1.0f), 
@@ -351,7 +351,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, die);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
 
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
@@ -602,13 +602,14 @@ Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
         glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(1.0, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
         1.0f,
-        0.1f,
+        1.1f,
         1.0f,
         1.0f,
         1.5f,
         1.0f,
-        0.2f //xyz: 0.2 s: 0.25
+        0.2f
     );
+
 
     PBRMaterial pm = PBRMaterial
     (

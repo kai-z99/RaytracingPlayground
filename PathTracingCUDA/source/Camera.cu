@@ -136,13 +136,24 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //create the bsdf from material and call sample_F
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);
         if (!sample.good) break;
+        
 
         //integrate the sample---
         float cosine = fabsf(glm::dot(sample.wi, rec.geoNormal));
 
         //make sure the sample is finite
         glm::vec3 contrib = (sample.f * cosine / sample.pdf);
+
+        //if (m.tag == SUBSURFACE)
+        //{
+        //    printf("f: %f\n", sample.f);
+        //    printf("cosine: %f\n", cosine);
+        //    printf("pdf: %f\n", sample.pdf);
+        //}
+        
+
         if (!isfinite(contrib.r) || !isfinite((contrib).g) || !isfinite(contrib.b)) break;
+        
 
         totalAttenuation *= contrib;
 
@@ -152,30 +163,20 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //handle bssrdf if applicable
         if (m.tag == SUBSURFACE && sample.isTransmission)
         {
+            atomicAdd(&h1, 1ull);
+            //printf("test");
             //sample bssrdf
             glm::vec3 po = rec.p;
             glm::vec3 no = rec.normal;
-            BSSRDFSample bss = ConstructAndSampleBSSRDF(m, rec, randState);
+            BSSRDFSample bss = ConstructAndSampleBSSRDF(m, rec, wo, randState, scene);
             if (!bss.good) break;
 
             //update throughput
-            totalAttenuation *= bss.f / bss.pdf;
-
-            //sample exit bsdf
-            glm::vec3 woDummy = glm::vec3(0.0f);
-            glm::vec3 noExit = bss.ni;
-            BSDFSample exit = ConstructAndSampleBSDF(bss.exitBSDF, woDummy, rec, randState);
-            if (!exit.good) break;
-            
-            //update throughput
-            float exitCosine = fmaxf(glm::dot(bss.ni, exit.wi), 0.0f);
-            totalAttenuation *= exit.f * exitCosine / exit.pdf;
+            totalAttenuation *= bss.f * fabsf(glm::dot(bss.ni, bss.wi)) / bss.pdf; //cosine?
 
             //update scattered ray
-            scattered = Ray(bss.pi, exit.wi);
+            scattered = Ray(bss.pi, bss.wi);
 
-            //debug
-            glm::vec3 contrib = exit.f * bss.f * exitCosine / (exit.pdf * bss.pdf);
             atomicAdd(&sssEnergySumR, (double)contrib.r);
             atomicAdd(&sssEnergySumG, (double)contrib.g);
             atomicAdd(&sssEnergySumB, (double)contrib.b);

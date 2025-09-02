@@ -18,6 +18,7 @@ extern __managed__ double sssEnergySumG;
 extern __managed__ double sssEnergySumB;
 extern __managed__ unsigned long long sssHitCount;
 extern __managed__ float dieSum;
+extern __managed__ unsigned long long h1;
 //
 //----------
 // 
@@ -129,9 +130,8 @@ struct BSSRDFSample
 	glm::vec3 f;
 	glm::vec3 pi;
 	glm::vec3 ni;
+	glm::vec3 wi;
 	float pdf;
-
-	MaterialGPU exitBSDF;
 	bool good;
 };
 
@@ -207,7 +207,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, si.geoNormal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.geoNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = false;
 		sample.good = true;
@@ -275,11 +275,11 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& par
 	float eta = etaI / etaT;               // relative IOR from wo-side to wi-side
 	float etap = etaT / etaI;               // relative IOR toward wi
 
-	if (params.roughness < 0.04f) //perfect refraction
+	if (params.roughness < 0.004f) //perfect refraction
 	{
 		glm::vec3 L = glm::refract(-V, N, eta);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(wo, si.geoNormal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.geoNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = true;
 		sample.good = true;
@@ -334,7 +334,6 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 {
 	BSDFSample sample;
 
-	// Oriented normal (pointing to the side wo lies in)
 	bool frontFace = glm::dot(-wo, si.geoNormal) < 0.0f;          
 	glm::vec3 N = si.normal;
 
@@ -370,7 +369,7 @@ __device__ inline BSDFSample SampleSubsurfaceBSDF(const SubsurfaceParams& params
 	DielectricParams p;
 	p.eta = params.eta;
 	p.roughness = params.roughness;
-	return SampleDielectricBSDF(p, wo, HitRecord(), RNG);
+	return SampleDielectricBSDF(p, wo, si, RNG);
 }
 
 __device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
@@ -393,18 +392,293 @@ __device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const 
 	}
 }
 
-__device__ inline BSSRDFSample SampleSubsurfaceBSSRDF(const SubsurfaceParams& params, const HitRecord& si, curandState& RNG)
+__device__ inline float BurleyRd(float r, float d)
 {
+	float e1 = std::exp(-r / d);
+	float e3 = std::exp(-r / d * (1.0f / 3.0f));
+	return ((e1 + e3)) / (8.0f * pi * d * r);
+}
 
+__device__ inline float BurleyRd(float r, float s, float l)
+{
+	float d = l / s;
+	return BurleyRd(r, d);
+}
+
+__device__ inline float BurleyDiskPdf(float r, float s, float ell)
+{
+	return BurleyRd(r, s, ell);
+}
+
+//https://zero-radiance.github.io/post/sampling-diffusion/
+// Performs sampling of a Normalized Burley diffusion profile in polar coordinates.
+// 'u' is the random number (the value of the CDF): [0, 1).
+// rcp(s) = 1 / ShapeParam = ScatteringDistance.
+// 'r' is the sampled radial distance, s.t. (u = 0 -> r = 0) and (u = 1 -> r = Inf).
+// rcp(Pdf) is the reciprocal of the corresponding PDF value.
+__device__ inline void SampleBurleyRadius(float u, float rcpS, float& r, float& rcpPdf)
+{
+	const float LOG2_E = 1.44269504089f;
+	u = 1.0f - u; // Convert CDF to CCDF; the resulting value of (u != 0)
+
+	float g = 1.0f + (4.0f * u) * (2.0f * u + sqrtf(1.0f + (4.0f * u) * u));
+	float n = exp2f(log2f(g) * (-1.0f / 3.0f));                    // g^(-1/3)
+	float p = (g * n) * n;                                   // g^(+1/3)
+	float c = 1.0f + p + n;                                     // 1 + g^(+1/3) + g^(-1/3)
+	float x = (3.0f / LOG2_E) * log2f(c / (4.0f * u));           // 3 * Log[c / (4 * u)]
+
+	// x      = s * r
+	// exp_13 = Exp[-x/3] = Exp[-1/3 * 3 * Log[c / (4 * u)]]
+	// exp_13 = Exp[-Log[c / (4 * u)]] = (4 * u) / c
+	// exp_1  = Exp[-x] = exp_13 * exp_13 * exp_13
+	// expSum = exp_1 + exp_13 = exp_13 * (1 + exp_13 * exp_13)
+	// rcpExp = rcp(expSum) = c^3 / ((4 * u) * (c^2 + 16 * u^2))
+	float rcpExp = ((c * c) * c) / ((4.0f * u) * ((c * c) + (4.0f * u) * (4.0f * u)));
+
+	r = x * rcpS;
+	rcpPdf = (8.0f * pi * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
+}
+
+__device__ inline void SampleSSSRadius(float u, const SubsurfaceParams& params, float& r, float& pdf, int channel, bool accum = false)
+{
+	//type1
+	float A = params.albedo[channel];
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f);
+	SampleBurleyRadius(u, 1 / s, r, pdf); //note that ell = sssRadius is not effecting this
+
+	if (accum)
+	{
+		//atomicAdd(&uSum, u);
+		//atomicAdd(&radialSamplesCount, 1.0f);
+		//atomicAdd(&radialSamplesSum, r);
+		float respS = 1 / s;
+		expectedRadialAverage = 2.5f * respS;
+	}
+
+	r *= params.ell; //normalized -> radius 
+}
+
+__device__ inline bool SampleSubsurfaceDisk(const SubsurfaceParams& params,
+	curandState& randState,
+	const Scene& scene,
+	const HitRecord& rec,
+	glm::vec3& xi, //returned entry point
+	glm::vec3& xiN, //return entry point normal
+	float& pdfS,
+	int& channel)
+{
+	//choose a channel [0,1,2] = [r,g,b]
+	float u3 = fmaxf(RandomFloat(randState), 1e-6f);
+	channel = fminf(int(u3 * 3), 3 - 1);
+
+	// 0. pick an axis
+	glm::vec3 T, B;
+	BuildTBN(T, B, rec.normal);
+
+	float uA = RandomFloat(randState);
+	glm::vec3 axisN, vx, vy;
+	int axis;
+	if (uA < 0.5f) //N
+	{
+		axisN = rec.normal; vx = T; vy = B;
+		axis = 2;
+	}
+	else if (uA < 0.75f) //T
+	{
+		axisN = T;  vx = B;  vy = rec.normal;
+		axis = 0;
+	}
+	else //B
+	{
+		axisN = B;  vx = rec.normal;  vy = T;
+		axis = 1;
+	}
+
+	// 1. importance sample a radius (theta)
+	float u = RandomFloat(randState);
+	u = fminf(fmaxf(u, 1e-4f), 1.0f - 1e-4f);
+	float r, pdfR;
+	SampleSSSRadius(u, params, r, pdfR, channel, true);
+
+	// 2. Take uniform azimuthal angle
+	float phi = 2.0f * pi * RandomFloat(randState);
+	float pdfPhi = 1.0f / (2.0f * pi); //no need, included in samplessradius
+
+	// 3. polar to cartesian
+	glm::vec3 offset = r * (cosf(phi) * vx + sinf(phi) * vy);
+
+	// 4. Probe to find intersections
+	float rMax, tmp_inv;
+	SampleSSSRadius(0.999f, params, rMax, tmp_inv, channel, false);
+	//printf("Rmax: %f\n", rMax);
+	//printf("max:%f\n", rMax);
+	float l = 2.0f * sqrtf(fmaxf(0.0f, rMax * rMax - r * r)); //As in pbrt
+	//printf("rMax: %f, r: %f, l: %f\n", rMax, r, l);
+	Ray probe(rec.p + (axisN * (l * 0.5f)) + offset, -axisN);
+	HitList hList;
+	if (!HitScene(scene, probe, Interval(0.0f, l), hList))
+	{
+		return false;
+	}
+
+	//if (hList.count > 1) printf("inital hits: %d\n", hList.count);
+	//only keep intesection with same material
+	int keep = 0;
+	for (int i = 0; i < hList.count; ++i)
+	{
+		if (hList.hits[i].matDataID == rec.matDataID)
+		{
+			hList.hits[keep++] = hList.hits[i];
+		}
+	}
+
+	hList.count = keep;
+	if (hList.count == 0)
+	{
+		//atomicAdd(&noIntersection, 1);
+		return false;
+	}
+
+	// 5. By PBRT: Pick one random intersection
+	int nHits = hList.count;
+	float u2 = fmaxf(RandomFloat(randState), 1e-6f);
+	int pick = fminf(int(u2 * nHits), nHits - 1);
+
+	const HitRecord& h = hList.hits[pick];
+	//HitRecord h;
+	//if (!HitScene(scene, probe, Interval(0.0f, l), h))
+	//{
+	//	return false;
+	//}
+
+	xi = h.p;
+	xiN = h.geoNormal;
+
+	//printf("nHits: %d\n", nHits);
+
+	glm::vec3 N = axisN;
+	glm::vec3 d = xi - rec.p;
+
+	float dLocal[3] = { fabsf(dot(T, d)),	fabsf(dot(B, d)),	 fabsf(dot(N, d)) }; //d in exit space
+	float nLocal[3] = { fabsf(dot(T, xiN)), fabsf(dot(B, xiN)),  fabsf(dot(N, xiN)) }; //xiN in exit space
+
+	//printf("xiN: %f,%f,%f   T: %f,%f,%f    B: %f,%f,%f  N: %f,%f,%f\n", xiN.x, xiN.y, xiN.z, T.x, T.y, T.z, B.x, B.y, B.z, N.x, N.y, N.z );
+	//printf("dLocal: %f,%f,%f\n", dLocal[0], dLocal[1], dLocal[2]);
+
+	float rProj[3] = { std::sqrtf(dLocal[1] * dLocal[1] + dLocal[2] * dLocal[2]),
+				   std::sqrtf(dLocal[2] * dLocal[2] + dLocal[0] * dLocal[0]),
+				   std::sqrtf(dLocal[0] * dLocal[0] + dLocal[1] * dLocal[1]) };
+
+	float A = params.albedo[channel];
+	float s = 1.85f - A + 7.0f * powf(fabsf(A - 0.8f), 3.0f); //note this is artistic
+	float ell = params.ell;
+
+	float axisPdfs[3] = { 0.f, 0.f, 1.0f }; // T , B , N
+	float channelPdf = 1.0f / 3.0f;
+	float pMix = 0.0f;
+
+	//printf("x: %f, y: %f, z: %f\n", rProj[0], rProj[1], rProj[2]);
+
+	//for (int axis = 0; axis < 3; axis++)
+	//{
+	//	for (int ch = 0; ch < 3; ch++)
+	//	{
+	//		float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /* nLocal[axis]*/ * axisPdfs[axis] * channelPdf;
+	//		pMix += contrib;
+	//	}
+	//}
+
+	float contrib = BurleyDiskPdf(fmaxf(/*rProj[axis]*/ glm::length(d), 1e-6f), s, ell) /** nLocal[axis]*/;
+	pMix += contrib;
+	//61 39
+	//63 40
+
+	pdfS = pMix;
+	if (!(pdfS > 0 && isfinite(pdfS))) return false;
+
+	//atomicAdd(&PDFs, 1);
+	//if (pdfS == 1e-8f) atomicAdd(&clampedPDFs, 1);
+
+	return true;
+}
+
+__device__ inline float FresnelMoment1(float invEta)
+{
+	float e = invEta;
+	float e2 = e * e, e3 = e2 * e, e4 = e2 * e2, e5 = e3 * e2;
+	if (e < 1.0f)
+		return 0.45966f - 1.73965f * e + 3.37668f * e2 - 3.904945f * e3 + 2.49277f * e4 - 0.68441f * e5;
+	else
+		return -4.61686f + 11.1136f * e - 10.4646f * e2 + 5.11455f * e3 - 1.27198f * e4 + 0.12746f * e5;
+}
+
+__device__ inline glm::vec3 EvaluateDiffusionProfile(float distance, const SubsurfaceParams& params, int channel)
+{
+	// Burley
+	float A = params.albedo[channel];
+	float s = 1.85f - A + 7.0f * std::pow(std::abs(A - 0.8f), 3.0f);
+	float l = params.ell;
+	float Rd = BurleyRd(distance, s, l);
+	return Rd * params.albedo; //!!??
+}
+
+__device__ inline BSSRDFSample SampleSubsurfaceBSSRDF(const SubsurfaceParams& params, const HitRecord& si, const glm::vec3 wo, curandState& RNG, const Scene& scene)
+{
+	BSSRDFSample sample;
+	sample.good = false;
+
+
+	//find where the light entered the surface xi
+	glm::vec3 xi;
+	glm::vec3 xiN;
+	float pdfBssrdf;
+	int channel;
+
+	//atomicAdd(&total, 1);
+
+	if (!SampleSubsurfaceDisk(params, RNG, scene, si, xi, xiN, pdfBssrdf, channel)) return sample;
+
+	//exit brdf
+	HitRecord r;
+	r.normal = xiN;
+	LambertParams p;
+	p.albedo = glm::vec3(1.0f);
+	glm::vec3 dummyWo = glm::vec3(1.0f);
+	BSDFSample adapterSample = SampleLambertBRDF(p, dummyWo, r, RNG);
+	if (!adapterSample.good) return sample;
+
+	//build Sw
+	float LdotxiN = fmaxf(glm::dot(adapterSample.wi, xiN), 0.0f);
+	float F_i = FrDielectricExact(LdotxiN, 1.0f, params.eta);
+	float c = 1 - 2 * FresnelMoment1(1 / params.eta);
+	float Sw = (1 - F_i) / (c * pi);
+	if (!isfinite(Sw)) return sample;
+
+	//we need Sp, sample our diffusion profile.
+	float distance = glm::length(xi - si.p);
+	glm::vec3 Sp = EvaluateDiffusionProfile(distance, params, channel);
+	if (!isfinite(Sp.r) || !isfinite(Sp.g) || !isfinite(Sp.b)) return sample;
+
+	//Sp * Sw * (1 - Fr)
+	glm::vec3 bssrdfEvaluation = Sp * Sw;
+
+	sample.f = bssrdfEvaluation;
+	sample.pi = xi;
+	sample.pdf = pdfBssrdf * adapterSample.pdf;
+	sample.ni = xiN;	
+	sample.wi = adapterSample.wi;
+	sample.good = true;
+
+	return sample;
 
 	
 }
 
-__device__ inline BSSRDFSample ConstructAndSampleBSSRDF(const MaterialGPU& m, const HitRecord& si, curandState& RNG)
+__device__ inline BSSRDFSample ConstructAndSampleBSSRDF(const MaterialGPU& m, const HitRecord& si, const glm::vec3& wo, curandState& RNG, const Scene& scene)
 {
 	if (m.tag != SUBSURFACE) return BSSRDFSample();
 
-	return SampleSubsurfaceBSSRDF(m.subsurface, si, RNG);
+	return SampleSubsurfaceBSSRDF(m.subsurface, si, wo, RNG, scene);
 }
 
 __device__ inline float FrDielectricExact(float cosThetaI, float etaI, float etaT)

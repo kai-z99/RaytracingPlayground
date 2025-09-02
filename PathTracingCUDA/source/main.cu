@@ -22,7 +22,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 36;
+    c.samplesPerPixel = 1024;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -210,7 +210,7 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
-    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
+    Scene* uScene = Scenes::DragonScene(seed, uCamera);
 
     //render
     RenderScene(*uScene, *uCamera, dRandomPixelStates);
@@ -219,7 +219,8 @@ int main()
     printf("uSum: %f, uAvg: %f \n", uSum, uSum / radialSamplesCount);
     printf("total radial samples: %f, total radii: %f, avg: %f, expected: %f\n", radialSamplesCount, radialSamplesSum, radialSamplesSum / radialSamplesCount, expectedRadialAverage);
     printf("SSS samples: %llu, Avg Energy: (%lf, %lf, %lf)\n", sssHitCount, sssEnergySumR/(double)sssHitCount, sssEnergySumG / (double)sssHitCount, sssEnergySumB / (double)sssHitCount);
-    printf("Samples: %i, Sum: %f, avg: %f", total, dieSum, (float)dieSum / (float)total);
+    printf("Samples: %i, Sum: %f, avg: %f\n", total, dieSum, (float)dieSum / (float)total);
+    printf("In before bad sample: %llu", h1);
     //NOTEL: SSS enrgy expceted is supposed to be == sss.Tint. For some reason, increasing the sssRadius increasees total ebergy and vise versa. Interesetingly, 
     // A good hint is the energy discrpency is uniform across rgb, for example if tint = (1.0f, 0.4, 0.5) and the R avg was 4.4, dividing G and B by 4.4 should make R,G = 0.4f, 0.4f, and 
     //obvously dividing R by 4.4 will give 1, recovering (1,0.4,0.4). Note again this energy discrepency increases and decreases based on increasing and decereasing radius.
