@@ -137,7 +137,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);
         if (!sample.good) break;
         
-
         //integrate the sample---
         float cosine = fabsf(glm::dot(sample.wi, rec.geoNormal));
 
@@ -154,7 +153,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         if (!isfinite(contrib.r) || !isfinite((contrib).g) || !isfinite(contrib.b)) break;
         
-
         totalAttenuation *= contrib;
 
         //update ray

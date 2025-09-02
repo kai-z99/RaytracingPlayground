@@ -238,20 +238,12 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.0f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(1.0f, 1.0f, 1.0f), 
         glm::vec3(0.0f, 0.659f, 0.42f),
-        1.f,
-        10.0f,
-        1.0f,
-        1.0f,
+        3.0f,
         1.5f,
-        1.0f,
-        0.2f
-
+        0.5f
         //jade: 0.0f, 0.659f, 0.42f
     );
-
-    PBRMaterial m(glm::vec3(0.4f, 0.0f, 0.0f), 0.0f, 0.1f);
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
@@ -390,14 +382,9 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
         glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
-        1.0f,
         50.0f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.5f
     );
 
@@ -541,22 +528,10 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     wb.AddQuad(glm::vec3(0.0f, 300.0f, -0.0f), glm::vec2(250.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(1.0, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
-        1.0f,
         0.10f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.2f //xyz: 0.2 s: 0.25
-    );
-
-    PBRMaterial pm = PBRMaterial
-    (
-        { 0.9, 0.365, 0.216 },
-        0.0f,
-        0.0f
     );
 
     std::string objName = "xyzrgb_dragon.obj";
@@ -599,23 +574,10 @@ Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
     wb.AddQuad(glm::vec3(0.0f, 150.0f, -200.0f), glm::vec2(250), glm::vec4(1.0f, 0.0f, 0.0f, -70.0f), light);
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(1.0, 0.365, 0.216), //xyz:  s: 0.16, 0.837, 0.25
-        1.0f,
         1.1f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.2f
-    );
-
-
-    PBRMaterial pm = PBRMaterial
-    (
-        { 0.9, 0.365, 0.216 },
-        0.0f,
-        0.0f
     );
 
     std::string objName = "xyzrgb_dragon.obj";
@@ -659,38 +621,23 @@ Scene* Scenes::DragonScene(int seed, Camera*& cam)
     wb.AddSphere(glm::vec3(0.0f, 100.0f, -150.0f), 35.0f, light);
 
     SubsurfaceMaterial dragonMat = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(0.0f, 0.659f, 0.42f), //xyz:  s: 0.16, 0.837, 0.25
-        1.0f,
         10.00f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.2f //xyz: 0.2 s: 0.25
     );
 
     SubsurfaceMaterial lucyMat = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(1.0f, 0.25f, 0.35f), //xyz:  s: 0.16, 0.837, 0.25
-        1.0f,
         3.50f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.1f //xyz: 0.2 s: 0.25
     );
 
     SubsurfaceMaterial buddhaMat = SubsurfaceMaterial(
-        glm::vec3(1.f, 1.f, 1.f),
         glm::vec3(0.2f, 0.259f, 0.82f), //xyz:  s: 0.16, 0.837, 0.25
-        1.0f,
         1.00f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.5f //xyz: 0.2 s: 0.25
     );
 
@@ -753,14 +700,9 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(1.0f, 0.788f, 0.667f), //red sss == yellow
-        1.0f,
-        20.5f,
-        1.0f,
-        1.0f,
+        glm::vec3(1.0f, 0.788f, 0.667f),
+        3.0f,
         1.5f,
-        1.0f,
         0.5f
     );
 
@@ -878,14 +820,9 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(0.906f, 0.737f, 0.569f), 
-        1.0f,
-        0.3f,
-        1.0f,
-        1.0f,
+        glm::vec3(1.0f, 0.788f, 0.667f),
+        3.0f,
         1.5f,
-        1.0f,
         0.5f
     );
     LambertianMaterial skinDiffuse(glm::vec3(0.906f, 0.737f, 0.569f));
@@ -990,14 +927,9 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(8.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
         glm::vec3(1.0f, 0.788f, 0.667f),
-        1.0f,
         3.0f,
-        1.0f,
-        1.0f,
         1.5f,
-        1.0f,
         0.5f
     );
     LambertianMaterial skinLambert(glm::vec3(1.0f, 0.788f, 0.667f));
@@ -1205,7 +1137,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(-150, (yExtent / 2.0f) * scale, -150));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(0.816, 0.573, 0.91), 0.5f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(0.816, 0.573, 0.91), 0.5f, 0.225f));
 
 
     objName = "buddha.obj";
@@ -1217,7 +1149,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::translate(M, glm::vec3(150, (yExtent / 2.0f) * scale, -75));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(0.502, 0.82, 0.698), 0.8f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(0.502, 0.82, 0.698), 0.8f, 0.225f));
 
     objName = "lucy.obj";
     rotDeg = 180.0f;
@@ -1231,7 +1163,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
 
     M = glm::scale(M, glm::vec3(scale));
 
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1, 0.667, 0.4), 1.0f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1, 0.667, 0.4), 1.0f, 0.225f));
 
 
 
@@ -1317,18 +1249,7 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     LambertianMaterial white(glm::vec3(0.73f));
     LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
-    PBRMaterial metal(glm::vec3(1.0f), 1.0f, 0.0f);
-    SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.6f, 1.00f, 0.6f), //green albedo
-        glm::vec3(1.0f, 0.3f, 0.3f), //red sss == yellow
-        1.0f,
-        5.0f,
-        1.0f,
-        1.0f,
-        1.5f,
-        1.0f,
-        0.5f
-    );
+    //PBRMaterial metal(glm::vec3(1.0f), 1.0f, 0.0f);
 
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
@@ -1356,14 +1277,14 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     sb.AddBox(glm::vec3(70.0f, 82.5f, 100.0f),          // centre
         glm::vec3(165.0f, 165.0f, 165.0f),          // size
         glm::vec4(0, 1, 0, -18.0f),                 // rotation
-        sm);
+        red);
 
     // ---------------------------------------------------------------------
     // ---------------------------------------------------------------------
     sb.AddBox(glm::vec3(-100.0f, 165, -100.0f),         // centre
         glm::vec3(165.0f, 330.0f, 165.0f),          // size
         glm::vec4(0, 1, 0, 19.0f),                 
-        metal);
+        red);
     
     return sb.Build();
 }
