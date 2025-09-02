@@ -33,7 +33,7 @@
 
 ![Render Output](Images/rayShowCUDA10.png)
 ![Render Output](Images/rayShowCUDA22.png)
-![Render Output](Images/rayShowCUDA12.png)
+<img width="1228" height="1105" alt="dragonGlass-10k" src="https://github.com/user-attachments/assets/a3c0de60-2327-485f-bbcd-2789e1515a65" />
 <img width="1230" height="1107" alt="dragonJade10000spp" src="https://github.com/user-attachments/assets/b1654e77-7cc0-4ac3-865a-8ad2f451d393" />
 
 
