@@ -8,6 +8,7 @@
 
 //device only
 struct MaterialData;
+struct MaterialGPU;
 
 struct Scene
 {
@@ -21,7 +22,7 @@ struct Scene
     PrimType* primTypes;    //type
     uint32_t* primIndices;  //index in the corresponding AoS
     
-    MaterialData* materials;
+    MaterialGPU* materials;
     uint32_t materialCount;
 };
 

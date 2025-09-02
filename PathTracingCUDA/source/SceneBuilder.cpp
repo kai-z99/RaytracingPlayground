@@ -99,10 +99,10 @@ void SceneBuilder::UploadTriangleDataToScene(Scene*& scene)
 void SceneBuilder::UploadMaterialDataToScene(Scene*& scene)
 {
 	//malloc managed material fields
-	cudaMallocManaged(&scene->materials, this->materials.size() * sizeof(MaterialData));
+	cudaMallocManaged(&scene->materials, this->materials.size() * sizeof(MaterialGPU));
 
 	//copy our vector data into the gpu memory
-	memcpy(scene->materials, this->materials.data(), this->materials.size() * sizeof(MaterialData));
+	memcpy(scene->materials, this->materials.data(), this->materials.size() * sizeof(MaterialGPU));
 	scene->materialCount = (int)this->materials.size();
 }
 
@@ -110,7 +110,7 @@ void SceneBuilder::AddSphere(glm::vec3 position, float radius, const Material& m
 {
 	this->spherePositionRadii.push_back(glm::vec4(position, radius));
 
-	int matID = PushMaterialAndGetID(material.ToMaterialData());
+	int matID = PushMaterialAndGetID(material.mat);
 	this->sphereMaterialIDs.push_back(matID);
 }
 
@@ -120,7 +120,7 @@ void SceneBuilder::AddQuad(glm::vec3 position, glm::vec3 u, glm::vec3 v, const M
 	this->quadUs.push_back(u);
 	this->quadVs.push_back(v);
 
-	int matID = PushMaterialAndGetID(material.ToMaterialData());
+	int matID = PushMaterialAndGetID(material.mat);
 	this->quadMaterialsIDs.push_back(matID);
 
 }
@@ -181,7 +181,7 @@ void SceneBuilder::AddTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, const M
 	this->triP1s.push_back(p1);
 	this->triP2s.push_back(p2);
 
-	int matID = PushMaterialAndGetID(material.ToMaterialData());
+	int matID = PushMaterialAndGetID(material.mat);
 	this->triMaterialsIDs.push_back(matID);
 }
 
@@ -191,7 +191,7 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 	int tris = 0;
 	std::cout << "LOADING MODEL AT: " << path << '\n';
 
-	MaterialData   md = material.ToMaterialData();
+	MaterialGPU    md = material.mat;
     int            meshMatID = PushMaterialAndGetID(md);
 
 	tinyobj::attrib_t attrib;
@@ -292,8 +292,7 @@ void SceneBuilder::AddModel(const std::string& path, const glm::mat4& transform,
 }
 
 
-
-int SceneBuilder::PushMaterialAndGetID(MaterialData m)
+int SceneBuilder::PushMaterialAndGetID(MaterialGPU m)
 {
 	this->materials.push_back(m);
 	return (int)(this->materials.size() - 1);

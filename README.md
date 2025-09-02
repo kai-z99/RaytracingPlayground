@@ -36,6 +36,8 @@
 ![Render Output](Images/rayShowCUDA10.png)
 ![Render Output](Images/rayShowCUDA22.png)
 ![Render Output](Images/rayShowCUDA12.png)
+<img width="1230" height="1107" alt="dragonJade10000spp" src="https://github.com/user-attachments/assets/b1654e77-7cc0-4ac3-865a-8ad2f451d393" />
+
 
 <br/>
 <br/>
