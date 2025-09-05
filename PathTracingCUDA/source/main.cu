@@ -19,7 +19,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 10000;
+    c.samplesPerPixel = 128;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -218,7 +218,7 @@ static void DisplayResultProgressive(unsigned char* hPixels, unsigned char* dPix
     auto lastBlit = clock::now() - std::chrono::seconds(2); // force an immediate first blit
     bool renderFinished = false;
 
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window) && !renderFinished) {
         glfwPollEvents();
 
         // every 25ms, blit the current device pixel buffer to the screen
@@ -307,6 +307,8 @@ int main()
     auto t1 = std::chrono::high_resolution_clock::now();
     float secs = std::chrono::duration<float>(t1 - t0).count();
     std::cout << "GPU render pass (host-timed, async): " << secs << " secs\n";
+
+    DisplayResult(hPixels);
 
     // destroy CUDA sync objects
     checkCudaErrors(cudaEventDestroy(doneEvent));
