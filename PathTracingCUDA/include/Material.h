@@ -142,6 +142,7 @@ __device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, cons
 __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
+	sample.good = false;
 	glm::vec3 N = glm::normalize(si.normal);
 	glm::vec3 V = glm::normalize(wo);
 
@@ -149,7 +150,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.geoNormal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.normal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = false;
 		sample.good = true;
@@ -167,11 +168,10 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 
 	if (glm::dot(L, N) <= 0.0f) 
 	{
-		sample.good = false;
 		return sample;
 	};
 
-	sample.pdf = pdfHalf / (4.0f * fabsf(dot(V, halfway))); //changes of variables adds jacobian factor to pdf
+	sample.pdf = pdfHalf / (4.0f * fabsf(glm::dot(V, halfway))); //changes of variables adds jacobian factor to pdf
 
 	//evalyate BRDF to find attenuation
 	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
@@ -184,6 +184,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 	glm::vec3 F0 = mix(glm::vec3(0.04f), params.albedo, params.metallic); //still hack
 	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
 	glm::vec3 F = FresnelSchlick(VdotH, F0);
+
 
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
 	sample.f = specular; //just the brdf
@@ -220,7 +221,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& par
 	{
 		glm::vec3 L = glm::refract(-V, N, eta);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.geoNormal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.normal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = true;
 		sample.good = true;
