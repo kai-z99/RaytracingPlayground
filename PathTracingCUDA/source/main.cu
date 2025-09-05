@@ -8,8 +8,7 @@
 
 #include <chrono>
 #include <random>
-
-//Todo: convert to single axis pdfs for now because its techincally unbiased.
+#include <cstring>
 
 struct Config
 {
@@ -17,12 +16,10 @@ struct Config
     int maxBounceDepth;
 };
 
-//27.16
-// 53.3681 secs
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 1024;
+    c.samplesPerPixel = 10000;
     c.maxBounceDepth = 15;
 
     std::cout << "CUDA VERSION" << '\n';
@@ -79,7 +76,7 @@ void SetupRandomPixelStates(curandState*& dPixelRandomStates, int seed)
     cudaMalloc(&dPixelRandomStates, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(curandState)); //one for each pixel
     dim3 block(16, 16);
     dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
-    InitPixelRandStatesKernel<<<grid, block>>>(dPixelRandomStates, seed);
+    InitPixelRandStatesKernel << <grid, block >> > (dPixelRandomStates, seed);
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
     std::cout << "CREATED RANDOM STATES!\n";
@@ -89,7 +86,7 @@ void SetupRandomPixelStates(curandState*& dPixelRandomStates, int seed)
 void BuildCamera(Camera*& uCamera, unsigned char* pixelBuffer, const Config& config)
 {
     cudaMallocManaged(&uCamera, sizeof(Camera));
-    new (uCamera) Camera();                                  
+    new (uCamera) Camera();
     uCamera->samplesPerPixel = config.samplesPerPixel;
     uCamera->maxRayDepth = config.maxBounceDepth;
     uCamera->SetPixelBuffer(pixelBuffer);                           // still device mem
@@ -146,6 +143,22 @@ void RenderScene(Scene uScene, Camera uCamera, curandState* dRandomPixelStates)
         << secs << " secs\n";
 }
 
+static cudaEvent_t RenderSceneAsync(Scene uScene, Camera uCamera, curandState* dRandomPixelStates, cudaStream_t renderStream)
+{
+    dim3 block(16, 16);
+    dim3 grid(CeilDiv(SCREEN_WIDTH, block.x), CeilDiv(SCREEN_HEIGHT, block.y));
+
+    // launch render kernel asynchronously on its own stream
+    cudaEvent_t doneEvent;
+    checkCudaErrors(cudaEventCreateWithFlags(&doneEvent, cudaEventDisableTiming));
+    RenderKernel <<<grid, block, 0, renderStream>>>(uCamera, uScene, dRandomPixelStates); //launch kernel on the renderStream (before cuda event record)
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaEventRecord(doneEvent, renderStream)); //make doneEvent success only when renderStream kernels that were queued before this eventRecord was called are finished
+    return doneEvent;
+
+    //no block (devicesync)
+}
+
 void CleanUp(Scene* uScene, Camera* uCamera, unsigned char* dPixels, unsigned char* hPixels)
 {
     DestroySceneCPU(uScene);
@@ -154,7 +167,7 @@ void CleanUp(Scene* uScene, Camera* uCamera, unsigned char* dPixels, unsigned ch
 
     checkCudaErrors(cudaFree(dPixels));
     checkCudaErrors(cudaFree(uCamera));
-    delete[] hPixels;
+    checkCudaErrors(cudaFreeHost(hPixels));
 }
 
 void DisplayResult(unsigned char* hPixels)
@@ -187,6 +200,69 @@ void DisplayResult(unsigned char* hPixels)
     glfwTerminate();
 }
 
+static void DisplayResultProgressive(unsigned char* hPixels, unsigned char* dPixels, cudaEvent_t renderDoneEvent, cudaStream_t copyStream)
+{
+    GLFWwindow* window = setupWindow();
+    unsigned int quadVAO = setupBuffer();
+    SetUpOpenGLState();
+    Shader screenShader = Shader("shaders/screen.vert", "shaders/screen.frag");
+    screenShader.use();
+    screenShader.setInt("sceneTexture", 0);
+
+    // create OpenGL texture; initialize with current host buffer
+    unsigned int resultTextureRGB = GetOGLTextureFromPixelBuffer(hPixels);
+
+    const size_t byteCount = size_t(SCREEN_WIDTH) * size_t(SCREEN_HEIGHT) * 3;
+
+    using clock = std::chrono::high_resolution_clock;
+    auto lastBlit = clock::now() - std::chrono::seconds(2); // force an immediate first blit
+    bool renderFinished = false;
+
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
+        // every 25ms, blit the current device pixel buffer to the screen
+        auto now = clock::now();
+        if (now - lastBlit >= std::chrono::milliseconds(25))
+        {
+            // copy device -> host asynchronously, then sync the copy stream
+            checkCudaErrors(cudaMemcpyAsync(hPixels, dPixels, byteCount, cudaMemcpyDeviceToHost, copyStream));
+            checkCudaErrors(cudaStreamSynchronize(copyStream));
+
+            // update GL texture with new host pixels
+            glBindTexture(GL_TEXTURE_2D, resultTextureRGB);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, hPixels);
+
+            lastBlit = now;
+        }
+
+        // check if render finished
+        // renderDoneEvent will be cudaSuccess only when the kernel on its stream finishes.
+        if (!renderFinished && cudaEventQuery(renderDoneEvent) == cudaSuccess)
+        {
+            renderFinished = true;
+            // one final copy to ensure we have the final image
+            checkCudaErrors(cudaMemcpyAsync(hPixels, dPixels, byteCount, cudaMemcpyDeviceToHost, copyStream));
+            checkCudaErrors(cudaStreamSynchronize(copyStream));
+            glBindTexture(GL_TEXTURE_2D, resultTextureRGB);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, hPixels);
+        }
+
+        screenShader.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, resultTextureRGB);
+
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+
+        glfwSwapBuffers(window);
+    }
+
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
 int main()
 {
     //CONFIG
@@ -199,7 +275,9 @@ int main()
     int seed = (int)std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
     //create device and host texture
-    unsigned char* hPixels = new unsigned char[SCREEN_WIDTH * SCREEN_HEIGHT * 3];
+    unsigned char* hPixels;
+    checkCudaErrors(cudaMallocHost(&hPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3)); // pinned for async copies
+    std::memset(hPixels, 0, SCREEN_WIDTH * SCREEN_HEIGHT * 3);
     unsigned char* dPixels; checkCudaErrors(cudaMalloc(&dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3));
 
     //create random states for each pixel
@@ -210,36 +288,30 @@ int main()
     Camera* uCamera;
     BuildCamera(uCamera, dPixels, config);
 
+    //init scene
     Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
 
-    //render
-    RenderScene(*uScene, *uCamera, dRandomPixelStates);
+    // launch render async and display while running
+    cudaStream_t renderStream; checkCudaErrors(cudaStreamCreate(&renderStream));
+    cudaStream_t copyStream;   checkCudaErrors(cudaStreamCreate(&copyStream));
 
-    printf("rejected: %i, total: %i, rptcg: %f, no material: %i\n", rejected, total, (float)rejected/(float)total, noIntersection);
-    printf("uSum: %f, uAvg: %f \n", uSum, uSum / radialSamplesCount);
-    printf("total radial samples: %f, total radii: %f, avg: %f, expected: %f\n", radialSamplesCount, radialSamplesSum, radialSamplesSum / radialSamplesCount, expectedRadialAverage);
-    printf("SSS samples: %llu, Avg Energy: (%lf, %lf, %lf)\n", sssHitCount, sssEnergySumR/(double)sssHitCount, sssEnergySumG / (double)sssHitCount, sssEnergySumB / (double)sssHitCount);
-    printf("Samples: %i, Sum: %f, avg: %f\n", total, dieSum, (float)dieSum / (float)total);
-    printf("In before bad sample: %llu", h1);
-    //NOTEL: SSS enrgy expceted is supposed to be == sss.Tint. For some reason, increasing the sssRadius increasees total ebergy and vise versa. Interesetingly, 
-    // A good hint is the energy discrpency is uniform across rgb, for example if tint = (1.0f, 0.4, 0.5) and the R avg was 4.4, dividing G and B by 4.4 should make R,G = 0.4f, 0.4f, and 
-    //obvously dividing R by 4.4 will give 1, recovering (1,0.4,0.4). Note again this energy discrepency increases and decreases based on increasing and decereasing radius.
-    //Some tested Average energy values for each sssradius. for tint = (1, 0.4, 0.4), therfore expected is (1, 0.4, 0.4) no matter the sssRadius. Note that for this case since 
-    // tint.r = 1, energy.r is exactly the discrepency for all of energy.rgb (uniform).
-    // 0.1f: (inf, inf, inf)
-    // 0.15f:(inf, inf, inf)
-    // 0.2f: (1.990812, 0.796325, 0.796325)
-    // 0.3f: (2.139567, 0.855827, 0.855827)
-    // 0.4f: (2.274573, 0.909829, 0.909829)
-    // 1.0f: (2.669819, 1.067928, 1.067928)
-    // 5.0f: (3.708132, 1.483253, 1.483253)
-    // 10.0f:(4.235995, 1.694398, 1.694398)
+    std::cout << "STARTING RENDERING...\n";
+    auto t0 = std::chrono::high_resolution_clock::now();
+    cudaEvent_t doneEvent = RenderSceneAsync(*uScene, *uCamera, dRandomPixelStates, renderStream);
 
-    //copy device texture into host texture
-    checkCudaErrors(cudaMemcpy(hPixels, dPixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, cudaMemcpyDeviceToHost));
-    
-    //display result
-    DisplayResult(hPixels);
+    // display and blit every ~1s while render runs
+    DisplayResultProgressive(hPixels, dPixels, doneEvent, copyStream);
+
+    // ensure render is done before cleanup & timing
+    checkCudaErrors(cudaEventSynchronize(doneEvent));
+    auto t1 = std::chrono::high_resolution_clock::now();
+    float secs = std::chrono::duration<float>(t1 - t0).count();
+    std::cout << "GPU render pass (host-timed, async): " << secs << " secs\n";
+
+    // destroy CUDA sync objects
+    checkCudaErrors(cudaEventDestroy(doneEvent));
+    checkCudaErrors(cudaStreamDestroy(renderStream));
+    checkCudaErrors(cudaStreamDestroy(copyStream));
 
     //free allocated  memory
     CleanUp(uScene, uCamera, dPixels, hPixels);

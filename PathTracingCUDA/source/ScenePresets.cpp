@@ -235,13 +235,13 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     MetalMaterial metal(glm::vec3(1.0f), 0.1f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.0f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.1f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
-        glm::vec3(0.0f, 0.659f, 0.42f),
-        3.0f,
+        glm::vec3(1.0f, 0.659f, 0.42f),
+        1.0f,
         1.5f,
-        0.5f
+        0.55f
         //jade: 0.0f, 0.659f, 0.42f
     );
 
@@ -314,10 +314,10 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "bunny.obj";
+    std::string objName = "dragon.obj";
     float scale = 350.00f;
-    float yExtent = 1.0f;
-    float rotDeg = 0.0f;
+    float yExtent = 0.705f;
+    float rotDeg = 90.0f;
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
@@ -343,13 +343,13 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, die);
 
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
 
     M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
    // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
@@ -457,17 +457,6 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "dragon.obj";
-    float scale = 350.00f;
-    float yExtent = 0.700f;
-    float rotDeg = 90.0f;
-
-    glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
-    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    //M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
-    M = glm::scale(M, glm::vec3(scale));
-
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
@@ -487,12 +476,6 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     //glm::vec3(0.4f, 0.4f, 1.0f), 
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
-
-    M = glm::mat4(1.0f);
-    M = glm::translate(M, glm::vec3(-110, (yExtent / 2.0f) * scale, 0));
-    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
-    // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
-    M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
 
@@ -701,7 +684,7 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
         glm::vec3(1.0f, 0.788f, 0.667f),
-        3.0f,
+        1.0f,
         1.5f,
         0.5f
     );

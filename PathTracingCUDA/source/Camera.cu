@@ -46,7 +46,7 @@ __host__ void Camera::Init()
     this->v = glm::cross(w, u);
 
     this->aspect = SCREEN_WIDTH / float(SCREEN_HEIGHT);
-    this->halfHeight = tan(glm::radians(this->vfov) * 0.5);
+    this->halfHeight = tanf(glm::radians(this->vfov) * 0.5f);
     this->halfWidth = this->aspect * this->halfHeight;
 }
 
@@ -107,8 +107,6 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
     glm::vec3 col(0.0f);
     glm::vec3 totalAttenuation(1.0f);
 
-    bool prevSSS = false;
-
     for (int depth = 0; depth < maxDepth; ++depth)
     {
         Ray scattered;
@@ -131,9 +129,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         }
 
         glm::vec3 wo = -r.direction();
-        glm::vec3 no = rec.normal;
 
-        //create the bsdf from material and call sample_F
+        //create the bsdf from material and SI and call sample_F,
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);
         if (!sample.good) break;
         
@@ -141,44 +138,27 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         float cosine = fabsf(glm::dot(sample.wi, rec.geoNormal));
 
         //make sure the sample is finite
-        glm::vec3 contrib = (sample.f * cosine / sample.pdf);
-
-        //if (m.tag == SUBSURFACE)
-        //{
-        //    printf("f: %f\n", sample.f);
-        //    printf("cosine: %f\n", cosine);
-        //    printf("pdf: %f\n", sample.pdf);
-        //}
-        
-
+        glm::vec3 contrib = (sample.f * cosine / sample.pdf);        
         if (!isfinite(contrib.r) || !isfinite((contrib).g) || !isfinite(contrib.b)) break;
         
         totalAttenuation *= contrib;
 
-        //update ray
+        //update the bounced ray
         scattered = Ray(rec.p, sample.wi);
 
         //handle bssrdf if applicable
         if (m.tag == SUBSURFACE && sample.isTransmission)
         {
-            atomicAdd(&h1, 1ull);
-            //printf("test");
             //sample bssrdf
-            glm::vec3 po = rec.p;
-            glm::vec3 no = rec.normal;
             BSSRDFSample bss = ConstructAndSampleBSSRDF(m, rec, wo, randState, scene);
             if (!bss.good) break;
 
             //update throughput
-            totalAttenuation *= bss.f * fabsf(glm::dot(bss.ni, bss.wi)) / bss.pdf; //cosine?
+            //Note: we have cosine here since the lambertian bsdf is folded into bssrdf eveulation..
+            totalAttenuation *= bss.f * fabsf(glm::dot(bss.ni, bss.wi)) / bss.pdf;
 
             //update scattered ray
             scattered = Ray(bss.pi, bss.wi);
-
-            atomicAdd(&sssEnergySumR, (double)contrib.r);
-            atomicAdd(&sssEnergySumG, (double)contrib.g);
-            atomicAdd(&sssEnergySumB, (double)contrib.b);
-            atomicAdd(&sssHitCount, 1ull);
         }
 
         if (this->russianroulette && depth >= 3)

@@ -146,6 +146,7 @@ struct Scene
 
 }
 
+
 __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t, HitList& outHits)
 {
     constexpr int MAX_STACK = 64;
