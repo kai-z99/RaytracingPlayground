@@ -113,26 +113,21 @@ __device__ inline LightPointSample SampleQuadLight(const Scene& scene,
     glm::vec3 Q, u, v; int _matID_unused;
     FetchQuad(scene.quads, L.primIndex, Q, u, v, _matID_unused);
 
-    // corners: Q, Q+u, Q+v, Q+u+v
-    bool first = (RandomFloat(RNG) < 0.5f);
-    glm::vec3 a = Q;
-    glm::vec3 b = first ? (Q + u) : (Q + u + v);
-    glm::vec3 c = first ? (Q + v) : (Q + v - u);
+    // Uniform over the full parallelogram spanned by u and v
+    float a = RandomFloat(RNG);
+    float b = RandomFloat(RNG);
 
-    // uniform on chosen triangle
-    float r1 = RandomFloat(RNG);
-    float r2 = RandomFloat(RNG);
-    if (r1 + r2 > 1.0f) { r1 = 1.0f - r1; r2 = 1.0f - r2; }
-
-    glm::vec3 p = a + r1 * (b - a) + r2 * (c - a);
-    glm::vec3 n = glm::normalize(glm::cross(u, v));   // assumes planar quad
-
-    s.pos = p;
-    s.normal = n;
+    s.pos = Q + a * u + b * v;
+    s.normal = glm::normalize(glm::cross(u, v));
     s.Le = scene.materials[L.matIndex].emissive.emission;
-    s.pdf_area = 1.0f / fmaxf(L.area, 1e-12f);        // matches host area (two tris sum)
+
+    // area = |u x v|
+    float area = glm::length(glm::cross(u, v));
+    s.pdf_area = 1.0f / fmaxf(area, 1e-12f);
     return s;
 }
+
+
 
 
 //Sample a point on the light
@@ -193,35 +188,41 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
         printf("This shouldnt happen.\n");
         return glm::vec3(0.0f);
     }
-    // 2B) Area light sampling branch
-    // Pick a random emissive shape; sample a point on it (uniform over area, or your dist)
-    const EmissiveGeom& L = SampleEmissive(scene, RNG);  // returns a reference / index to a light
-    LightPointSample ls = SamplePointOnLight(L, scene, RNG);    // ls.pos, ls.normal, ls.Le, ls.pdf_area
 
+    // 2B) Area light sampling branch
+    const EmissiveGeom& L = SampleEmissive(scene, RNG);
+    LightPointSample ls = SamplePointOnLight(L, scene, RNG);  // pos, normal, Le, pdf_area (1/area_i)
     if (ls.pdf_area <= 0.0f) return glm::vec3(0.0f);
 
     glm::vec3 toL = ls.pos - rec.p;
-    float dist2 = glm::dot(toL, toL);
-    float dist = sqrtf(dist2);
+    float     dist2 = glm::dot(toL, toL);
+    float     dist = sqrtf(dist2);
     glm::vec3 wi = toL / dist;
 
+    // Shading cosine
     float cosNo = fmaxf(0.0f, glm::dot(rec.normal, wi));
-    float cosNl = fabsf(glm::dot(ls.normal, -wi));
-    if (cosNo <= 0.0f || cosNl <= 0.0f) return glm::vec3(0.0f);
+
+    float cosNl = glm::dot(ls.normal, -wi);
+    float cosNl_abs = fabsf(cosNl);
+
+    if (cosNo <= 0.0f || cosNl_abs <= 0.0f) return glm::vec3(0.0f);
 
     // Visibility test (shadow ray)
     HitRecord occ;
     if (HitScene(scene, Ray(rec.p, wi), Interval(0.001f, dist - 1e-3f), occ)) return glm::vec3(0.0f);
-        
-    // Convert area-PDF to solid-angle PDF at the shading point:
-    // p_omega = p_area * (dist^2 / cosNl)
-    float pdf_omega = ls.pdf_area * (dist2 / fmaxf(cosNl, 1e-8f));
+
+    // ----- PDF over solid angle -----
+    float totalArea = fmaxf(scene.lightSet->totalArea, 1e-8f);
+    float pdf_omega = (dist2 / fmaxf(cosNl_abs, 1e-8f)) / totalArea;
     if (pdf_omega <= 0.0f) return glm::vec3(0.0f);
 
+    // BSDF eval
     BSDFSample sample = ConstructAndEvaluateBSDF(m, wo, wi, rec, RNG);
     if (!sample.good) return glm::vec3(0.0f);
 
-    // No MIS: return f * cos(theta_o) * Le / ((1-p_env) * p_omega)
-    float lightSelPdf = fmaxf(1.0f - p_env, 1e-8f); // prob we chose area bucket
-    return sample.f * (cosNo * ls.Le / (pdf_omega * lightSelPdf));
+    // Bucket prob: we chose the area-light path with (1 - p_env)
+    float lightSelPdf = fmaxf(1.0f - p_env, 1e-8f);
+
+    // Final contribution (no MIS beyond bucket split)
+    return sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
 }

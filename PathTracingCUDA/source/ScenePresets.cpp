@@ -304,9 +304,32 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     sb.AddQuad(
         glm::vec3(0.0f, W - 0.1f, 0.0f),
         glm::vec2(200.0f),
-        glm::vec4(1,0,0,0),  // positive Z
+        glm::vec4(1,0,0,0),  
         light
     );
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f - 300, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f - 600, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+
 
    
     //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));

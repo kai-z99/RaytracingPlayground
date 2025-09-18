@@ -116,7 +116,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //found source: sky
         if (!HitScene(scene, r, Interval(0.001f, infinity), rec)) //hit sky
         {
-            if (depth == 0)  col += totalAttenuation * this->backgroundColor;
+            if (depth == 0)  
+                col += totalAttenuation * this->backgroundColor;
             
             break;
         }
@@ -126,7 +127,8 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //hit a light
         if (m.tag == EMISSIVE)
         {
-            if (depth == 0) col += totalAttenuation * m.emissive.emission;
+            if (depth == 0) 
+                col += totalAttenuation * m.emissive.emission;
             
             break;
         }
