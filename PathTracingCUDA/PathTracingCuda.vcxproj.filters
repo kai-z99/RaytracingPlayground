@@ -94,7 +94,7 @@
     <ClInclude Include="include\tiny_obj_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LightSampling.h">
+    <ClInclude Include="include\LightSampling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
