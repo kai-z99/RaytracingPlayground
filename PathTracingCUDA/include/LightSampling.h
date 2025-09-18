@@ -180,7 +180,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
         if (!sample.good) return glm::vec3(0.0f);
         glm::vec3 f = sample.f;
         // No MIS: weight is 1, so contribution = f * cos(theta_o) * Le / pdf_light
-        return f * (cosNo * es.Le / (es.pdf_dir * p_env + 1e-8f));
+        return f * (cosNo * es.Le / (es.pdf_dir * p_env + 1e-6f));
     }
 
     if (!hasArea)
@@ -205,24 +205,34 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     float cosNl = glm::dot(ls.normal, -wi);
     float cosNl_abs = fabsf(cosNl);
 
-    if (cosNo <= 0.0f || cosNl_abs <= 0.0f) return glm::vec3(0.0f);
+    if (cosNo <= 1e-4f || cosNl_abs <= 1e-4f) return glm::vec3(0.0f);
 
     // Visibility test (shadow ray)
     HitRecord occ;
     if (HitScene(scene, Ray(rec.p, wi), Interval(0.001f, dist - 1e-3f), occ)) return glm::vec3(0.0f);
 
     // ----- PDF over solid angle -----
-    float totalArea = fmaxf(scene.lightSet->totalArea, 1e-8f);
-    float pdf_omega = (dist2 / fmaxf(cosNl_abs, 1e-8f)) / totalArea;
-    if (pdf_omega <= 0.0f) return glm::vec3(0.0f);
+    float totalArea = fmaxf(scene.lightSet->totalArea, 1e-6f);
+    float pdf_omega = (dist2 / fmaxf(cosNl_abs, 1e-6f)) / totalArea;
+    if (pdf_omega <= 1e-6f) return glm::vec3(0.0f);
 
     // BSDF eval
     BSDFSample sample = ConstructAndEvaluateBSDF(m, wo, wi, rec, RNG);
     if (!sample.good) return glm::vec3(0.0f);
 
     // Bucket prob: we chose the area-light path with (1 - p_env)
-    float lightSelPdf = fmaxf(1.0f - p_env, 1e-8f);
+    float lightSelPdf = fmaxf(1.0f - p_env, 1e-6f);
 
     // Final contribution (no MIS beyond bucket split)
-    return sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
+    glm::vec3 contrib = sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
+    if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b)) return glm::vec3(0.0f);
+
+    float t = 150;
+    if (contrib.r > t || contrib.g > t || contrib.b > t) 
+    {
+        printf("hmmm?\n");
+
+    }
+
+    return contrib;
 }
