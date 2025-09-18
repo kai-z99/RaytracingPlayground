@@ -29,6 +29,9 @@ Scene* SceneBuilder::Build()
 
 	//tri data
 	this->UploadTriangleDataToScene(scene);
+
+	//lights
+	this->BuildLightSet(scene);
 	
 	std::cout << "WORLD BUILT!\n";
 
@@ -94,6 +97,103 @@ void SceneBuilder::UploadTriangleDataToScene(Scene*& scene)
 	memcpy(scene->tris->p2, this->triP2s.data(), this->triP2s.size() * sizeof(glm::vec3));
 	memcpy(scene->tris->materialID, this->triMaterialsIDs.data(), this->triMaterialsIDs.size() * sizeof(int));
 	scene->tris->n = (int)this->triP0s.size();
+}
+
+static inline float TriArea(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) 
+{
+	return 0.5f * glm::length(glm::cross(b - a, c - a));
+}
+
+void SceneBuilder::BuildLightSet(Scene*& scene)
+{
+	// 1) Gather emissive prims on host
+	std::vector<EmissiveGeom> lights;
+	lights.reserve(64);
+	double totalArea = 0.0;
+
+	auto pushLight = [&](PrimType type, uint32_t primIndex, uint32_t matIndex, float area) 
+	{
+		if (area <= 0.0f) return;
+		EmissiveGeom g;
+		g.type = type;
+		g.primIndex = primIndex;
+		g.matIndex = matIndex;
+		g.area = area;
+		lights.push_back(g);
+		totalArea += (double)area;
+	};
+
+	// --- spheres ---
+	for (uint32_t i = 0; i < (uint32_t)sphereMaterialIDs.size(); ++i) {
+		uint32_t mid = (uint32_t)sphereMaterialIDs[i];
+		if (mid >= materials.size()) continue;
+		if (materials[mid].tag != EMISSIVE) continue;
+
+		const glm::vec4 cr = spherePositionRadii[i]; // (center.xyz, radius)
+		float r = cr.w;
+		float area = 4.0f * (float)pi * r * r;
+		pushLight(PRIM_SPHERE, i, mid, area);
+	}
+
+	// --- quads (as two triangles) ---
+	for (uint32_t i = 0; i < (uint32_t)quadMaterialsIDs.size(); ++i) {
+		uint32_t mid = (uint32_t)quadMaterialsIDs[i];
+		if (mid >= materials.size()) continue;
+		if (materials[mid].tag != EMISSIVE) continue;
+
+		const glm::vec3 Q = quadQs[i];
+		const glm::vec3 u = quadUs[i];
+		const glm::vec3 v = quadVs[i];
+
+		// corners: Q, Q+u, Q+v, Q+u+v
+		glm::vec3 q0 = Q;
+		glm::vec3 q1 = Q + u;
+		glm::vec3 q2 = Q + v;
+		glm::vec3 q3 = Q + u + v;
+
+		float area = TriArea(q0, q1, q2) + TriArea(q0, q2, q3);
+		pushLight(PRIM_QUAD, i, mid, area);
+	}
+
+	// --- triangles ---
+	for (uint32_t i = 0; i < (uint32_t)triMaterialsIDs.size(); ++i) {
+		uint32_t mid = (uint32_t)triMaterialsIDs[i];
+		if (mid >= materials.size()) continue;
+		if (materials[mid].tag != EMISSIVE) continue;
+
+		float area = TriArea(triP0s[i], triP1s[i], triP2s[i]);
+		pushLight(PRIM_TRIANGLE, i, mid, area);
+	}
+
+	// 2) If no emissive prims, set pointer to null and return
+	if (lights.empty()) {
+		scene->lightSet = nullptr;   // device code checks (scene.lightSet && count>0)
+		return;
+	}
+
+	// 3) Build CDF over areas (normalized to [0,1])
+	std::vector<float> cdf(lights.size());
+	double running = 0.0;
+	for (size_t i = 0; i < lights.size(); ++i) {
+		running += (double)lights[i].area;
+		cdf[i] = (float)(running / totalArea);
+		// ensure strictly increasing within float precision
+		if (i > 0 && cdf[i] <= cdf[i - 1]) cdf[i] = std::nextafterf(cdf[i - 1], 1.0f);
+	}
+	cdf.back() = 1.0f; // clamp for numeric safety
+
+	// 4) Upload LightSetGPU + arrays to unified memory
+	cudaMallocManaged(&scene->lightSet, sizeof(LightSetGPU));
+	LightSetGPU* L = scene->lightSet;
+
+	L->count = (uint32_t)lights.size();
+	L->totalArea = (float)totalArea;
+
+	cudaMallocManaged(&L->lights, L->count * sizeof(EmissiveGeom));
+	cudaMallocManaged(&L->cdf, L->count * sizeof(float));
+
+	std::memcpy(L->lights, lights.data(), L->count * sizeof(EmissiveGeom));
+	std::memcpy(L->cdf, cdf.data(), L->count * sizeof(float));
 }
 
 void SceneBuilder::UploadMaterialDataToScene(Scene*& scene)

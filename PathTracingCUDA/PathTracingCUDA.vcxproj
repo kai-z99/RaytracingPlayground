@@ -42,6 +42,7 @@
     <ClInclude Include="include\Generic.h" />
     <ClInclude Include="include\Hittable.h" />
     <ClInclude Include="include\Interval.h" />
+    <ClInclude Include="include\LightSampling.h" />
     <ClInclude Include="include\Material.h" />
     <ClInclude Include="include\Primitives.h" />
     <ClInclude Include="include\Quad.h" />

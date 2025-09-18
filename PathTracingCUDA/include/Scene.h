@@ -10,6 +10,22 @@
 struct MaterialData;
 struct MaterialGPU;
 
+struct EmissiveGeom 
+{
+    PrimType type;       // e.g., PRIM_SPHERE / PRIM_QUAD / PRIM_TRI
+    uint32_t primIndex;  // index into spheres/quads/tris pack
+    uint32_t matIndex;   // emissive material index
+    float area;          // geometric area in world space
+};
+
+struct LightSetGPU 
+{
+    EmissiveGeom* lights;   // device array of emissive prim handles
+    float* cdf;             // device array, non-decreasing [0..1], length==count
+    uint32_t count;         // number of emissive prims
+    float totalArea;        // sum of areas
+};
+
 struct Scene
 {
     SpheresPacked* spheres;
@@ -24,6 +40,9 @@ struct Scene
     
     MaterialGPU* materials;
     uint32_t materialCount;
+
+    //lighting
+    LightSetGPU* lightSet;     // nullptr if no emissive prims
 };
 
 //traverse the bvh instead of linearly scanning

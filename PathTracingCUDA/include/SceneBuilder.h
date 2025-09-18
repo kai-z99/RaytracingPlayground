@@ -117,6 +117,7 @@ private:
 	std::vector<glm::vec3> triP2s;
 	std::vector<int> triMaterialsIDs;
 
-	//models
+	//lighting
+	void BuildLightSet(Scene*& scene);
 
 };

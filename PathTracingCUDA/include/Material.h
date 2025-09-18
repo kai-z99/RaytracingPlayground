@@ -136,7 +136,36 @@ __device__ inline BSDFSample SampleLambertBRDF(const DiffuseParams& params, cons
 	sample.good = true;
 	sample.isTransmission = false;
 	return sample;
+}
 
+__device__ inline BSDFSample EvaluateLambertBSDF(const DiffuseParams& params, const glm::vec3& wo, const glm::vec3& wi, const HitRecord& si, curandState& RNG)
+{
+	BSDFSample sample;
+
+	sample.wi = wi;
+
+	float cosNo = glm::dot(si.normal, wi);
+	if (cosNo <= 0.0f) {
+		sample.pdf = 0.0f;
+		sample.f = glm::vec3(0.0f);
+		sample.good = false;
+		sample.isTransmission = false;
+		return sample;
+	}
+
+	sample.f = params.albedo / pi;
+	sample.pdf = cosNo / pi;
+
+	if (sample.pdf < 1e-6f) {
+		sample.f = glm::vec3(0.0f);
+		sample.good = false;
+	}
+	else {
+		sample.good = true;
+	}
+
+	sample.isTransmission = false;
+	return sample;
 }
 
 __device__ inline BSDFSample SampleOrenNayarBRDF(const DiffuseParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
@@ -378,6 +407,19 @@ __device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const 
 	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, si, RNG);
 	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, si, RNG);
 	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, si, RNG);
+	default:
+		BSDFSample s;
+		s.good = false;
+		return s;
+	}
+}
+
+//pbrt's f
+__device__ inline BSDFSample ConstructAndEvaluateBSDF(const MaterialGPU& m, const glm::vec3& wo, const glm::vec3& wi, const HitRecord& si, curandState& RNG)
+{
+	switch (m.tag)
+	{
+	case DIFFUSE:	 return EvaluateLambertBSDF(m.diffuse, wo, wi, si, RNG);
 	default:
 		BSDFSample s;
 		s.good = false;
