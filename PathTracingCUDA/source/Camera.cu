@@ -130,6 +130,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
 
         glm::vec3 wo = -r.direction();
 
+        //Add direct lighting
+        col += totalAttenuation * SampleDirectNEE(scene, rec, m, wo, randState, this->backgroundColor);
+
         //create the bsdf from material and SI and call sample_F,
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);
         if (!sample.good) break;

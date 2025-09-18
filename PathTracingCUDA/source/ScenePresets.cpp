@@ -17,7 +17,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
 
     //floor
-    LambertianMaterial groundMat(glm::vec3(0.8f, 0.8f, 0.8f));
+    DiffuseMaterial groundMat(glm::vec3(0.8f, 0.8f, 0.8f));
     wb.AddQuad(
         glm::vec3(-150.0f, 0.0f, -150.0f),
         glm::vec3(0.0f, 0.0f, 300.0f),
@@ -36,7 +36,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
             if (choose < .8f)
             {
                 // diffuse
-                LambertianMaterial m(glm::vec3(U(rng) * U(rng), U(rng) * U(rng), U(rng) * U(rng)));
+                DiffuseMaterial m(glm::vec3(U(rng) * U(rng), U(rng) * U(rng), U(rng) * U(rng)));
                 wb.AddSphere(center, 0.2f, m);
             }
             else if (choose < .95f)
@@ -59,7 +59,7 @@ Scene* Scenes::RayTracingInOneWeekend(int seed, Camera*& cam)
     DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
     wb.AddSphere(glm::vec3(0, 1, 0), 1.0f, glass);
 
-    LambertianMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
+    DiffuseMaterial lam(glm::vec3(0.4f, 0.2f, 0.1f));
     wb.AddSphere(glm::vec3(-4, 1, 0), 1.0f, lam);
 
     MetalMaterial metal(glm::vec3(0.7f, 0.6f, 0.5f), 0.05f);
@@ -98,7 +98,7 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
     const glm::vec3 v1(1.0f, 0.0f, 0.0f);
     const glm::vec3 v2(0.5f, 0.0f, h);
     const glm::vec3 v3(0.5f, H, h / 3);
-    LambertianMaterial groundMat(glm::vec3(1.0f));
+    DiffuseMaterial groundMat(glm::vec3(1.0f));
     sb.AddQuad(
         glm::vec3(-150.0f, -10.5f, -150.0f),
         glm::vec3(0.0f, -10.5f, 300.0f),
@@ -137,7 +137,7 @@ Scene* Scenes::TriangleTestScene(int seed, Camera*& cam )
         }
         else
         {
-            mat = new LambertianMaterial(tint);
+            mat = new DiffuseMaterial(tint);
         }
         
         // --- four triangular faces -------------------------------------------
@@ -166,19 +166,19 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
     cam->Init();
 
     //floor
-    sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1,0,0,0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1,0,0,0), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
 
     //roof
-    sb.AddQuad(glm::vec3(-2.5f - gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
-    sb.AddQuad(glm::vec3(2.5f + gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), LambertianMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(-2.5f - gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(2.5f + gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
     
     //x walls (red)
-    sb.AddQuad(glm::vec3(.0f, 0.5f, 5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), LambertianMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
-    sb.AddQuad(glm::vec3(.0f, 0.5f, -5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), LambertianMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(.0f, 0.5f, 5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), DiffuseMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(.0f, 0.5f, -5.0), glm::vec2(10, 2), glm::vec4(1, 0, 0, 90), DiffuseMaterial(glm::vec3(1.0f, 0.5f, 0.5f)));
 
     //z walls (green)
-    sb.AddQuad(glm::vec3(-5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), LambertianMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
-    sb.AddQuad(glm::vec3(5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), LambertianMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
+    sb.AddQuad(glm::vec3(-5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), DiffuseMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
+    sb.AddQuad(glm::vec3(5.0f, 0.5f, .0f), glm::vec2(2, 10), glm::vec4(0, 0, 1, 90), DiffuseMaterial(glm::vec3(0.5f, 1.0f, 0.5f)));
 
     //spheres
     sb.AddSphere(glm::vec3(0.0f, 0.3f, 0.0f), 0.3f, MetalMaterial(glm::vec3(0.3f, 0.3f, 0.3f), 0.05f));
@@ -188,7 +188,7 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
     for (int i = 0; i < 200; i++)
     {
         float r = 0.05f + U(rng) * 0.12f;
-        sb.AddSphere(glm::vec3(U2(rng) * 4, r, U2(rng) * 4), r, LambertianMaterial(glm::vec3(U(rng), U(rng), U(rng))));
+        sb.AddSphere(glm::vec3(U2(rng) * 4, r, U2(rng) * 4), r, DiffuseMaterial(glm::vec3(U(rng), U(rng), U(rng))));
     }
     
 
@@ -230,11 +230,12 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial black(glm::vec3(0.0f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
-    MetalMaterial metal(glm::vec3(1.0f), 0.1f);
+    MetalMaterial metal(glm::vec3(1.0f), 0.2f);
     DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
@@ -308,7 +309,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     );
 
    
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -328,7 +329,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
-    //LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    //DiffuseMaterial m = DiffuseMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
     //SubsurfaceMaterial sm = SubsurfaceMaterial(
     //    glm::vec3(0.7f, 0.7f, 0.7f),
     //    glm::vec3(0.7f, 0.7f, 0.7f), //
@@ -343,7 +344,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, sm);
+    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, white);
 
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
@@ -376,9 +377,9 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
     SubsurfaceMaterial sm = SubsurfaceMaterial(
@@ -451,7 +452,7 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     );
 
 
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -460,7 +461,7 @@ Scene* Scenes::SlabScene(int seed, Camera*& cam)
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
 
-    LambertianMaterial m = LambertianMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    DiffuseMaterial m = DiffuseMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
     //SubsurfaceMaterial sm = SubsurfaceMaterial(
     //    glm::vec3(0.7f, 0.7f, 0.7f),
     //    glm::vec3(0.7f, 0.7f, 0.7f), //
@@ -497,7 +498,7 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
 
-    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    DiffuseMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
     wb.AddQuad(
         glm::vec3(-3000.0f, 0.0f, -3000.0f),
         glm::vec3(0.0f, 0.0f, 6000.0f),
@@ -545,7 +546,7 @@ Scene* Scenes::PassthroughScene(int seed, Camera*& cam)
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
 
-    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    DiffuseMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
     wb.AddQuad(
         glm::vec3(-3000.0f, 0.0f, -3000.0f),
         glm::vec3(0.0f, 0.0f, 6000.0f),
@@ -591,7 +592,7 @@ Scene* Scenes::DragonScene(int seed, Camera*& cam)
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> U(0.0f, 1.0f);
 
-    LambertianMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
+    DiffuseMaterial groundMat(glm::vec3(0.7f, 0.7f, 0.7f));
     wb.AddQuad(
         glm::vec3(-3000.0f, 0.0f, -3000.0f),
         glm::vec3(0.0f, 0.0f, 6000.0f),
@@ -678,9 +679,9 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
         glm::vec3(1.0f, 0.788f, 0.667f),
@@ -752,7 +753,7 @@ Scene* Scenes::MetalHeadScene(int seed, Camera*& cam)
     );
 
 
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -798,9 +799,9 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
         glm::vec3(1.0f, 0.788f, 0.667f),
@@ -808,7 +809,7 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
         1.5f,
         0.5f
     );
-    LambertianMaterial skinDiffuse(glm::vec3(0.906f, 0.737f, 0.569f));
+    DiffuseMaterial skinDiffuse(glm::vec3(0.906f, 0.737f, 0.569f));
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
@@ -873,7 +874,7 @@ Scene* Scenes::HeadScene(int seed, Camera*& cam)
     );
 
 
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -905,9 +906,9 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(8.0f));
     SubsurfaceMaterial skin = SubsurfaceMaterial(
         glm::vec3(1.0f, 0.788f, 0.667f),
@@ -915,7 +916,7 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
         1.5f,
         0.5f
     );
-    LambertianMaterial skinLambert(glm::vec3(1.0f, 0.788f, 0.667f));
+    DiffuseMaterial skinLambert(glm::vec3(1.0f, 0.788f, 0.667f));
     DielectricMaterial glass(glm::vec3(1.0f), 1.5f);
 
 
@@ -982,7 +983,7 @@ Scene* Scenes::HandScene(int seed, Camera*& cam)
     );
 
 
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -1017,7 +1018,7 @@ Scene* Scenes::ModelTest(int seed, Camera*& cam)
 
 
     sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/dragon.obj", M, DielectricMaterial());
-    sb.AddQuad(glm::vec3(0.0f, -0.70498f / 2.0f, 0.0f), glm::vec2(5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), LambertianMaterial(glm::vec3(0.7f)));
+    sb.AddQuad(glm::vec3(0.0f, -0.70498f / 2.0f, 0.0f), glm::vec2(5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), DiffuseMaterial(glm::vec3(0.7f)));
 
 
     return sb.Build();
@@ -1037,9 +1038,9 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // --- Materials ---
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
     // --- Cornell box dimensions ---
@@ -1105,7 +1106,7 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     );
 
 
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, LambertianMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -1229,9 +1230,9 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     SceneBuilder sb;
 
     // Materials
-    LambertianMaterial white(glm::vec3(0.73f));
-    LambertianMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
-    LambertianMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     //PBRMaterial metal(glm::vec3(1.0f), 1.0f, 0.0f);
 
     DiffuseLightMaterial light(glm::vec3(15.0f));

@@ -13,12 +13,13 @@ struct Material
 	virtual ~Material() = default;
 };
 
-struct LambertianMaterial : public Material
+struct DiffuseMaterial : public Material
 {
-	LambertianMaterial(glm::vec3 albedo = glm::vec3(1.0f))
+	DiffuseMaterial(glm::vec3 albedo = glm::vec3(1.0f), float roughness = 0.0f /*lambert */ )
 	{
-		this->mat.tag = LAMBERT;
-		this->mat.lambert.albedo = albedo;
+		this->mat.tag = DIFFUSE;
+		this->mat.diffuse.albedo = albedo;
+		this->mat.diffuse.roughness = roughness;
 	}
 };
 
@@ -26,7 +27,7 @@ struct MetalMaterial : public Material
 {
 	MetalMaterial(glm::vec3 albedo = glm::vec3(1.0f), float fuzz = 0.0f)
 	{
-		this->mat.tag = MICROFACET;
+		this->mat.tag = CONDUCTOR;
 		this->mat.microfacet.albedo = albedo;
 		this->mat.microfacet.roughness = fuzz;
 		this->mat.microfacet.metallic = 1.0f;

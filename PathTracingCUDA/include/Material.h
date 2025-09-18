@@ -9,16 +9,17 @@
 // 
 enum MaterialTag
 {
-	LAMBERT,
-	MICROFACET,
+	DIFFUSE,
+	CONDUCTOR,
 	DIELECTRIC,
 	SUBSURFACE,
 	EMISSIVE,
 };
 
-struct LambertParams
+struct DiffuseParams
 {
 	glm::vec3 albedo;
+	float roughness; //sigma = spec rough * 0.33
 };
 
 struct MicrofacetParams
@@ -54,7 +55,7 @@ struct MaterialGPU
 
 	union
 	{
-		LambertParams lambert;
+		DiffuseParams diffuse;
 		MicrofacetParams microfacet;
 		DielectricParams dielectric;
 		SubsurfaceParams subsurface;
@@ -99,7 +100,7 @@ __device__ bool SampleDisneySubsurface(const SubsurfaceParams& params, curandSta
 
 
 //BSDF SAMPLERS----------------------
-__device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
+__device__ inline BSDFSample SampleLambertBRDF(const DiffuseParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 
@@ -136,6 +137,56 @@ __device__ inline BSDFSample SampleLambertBRDF(const LambertParams& params, cons
 	sample.isTransmission = false;
 	return sample;
 
+}
+
+__device__ inline BSDFSample SampleOrenNayarBRDF(const DiffuseParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
+{
+	BSDFSample sample;
+	sample.good = false;
+	sample.isTransmission = false;
+
+	//bxdf -> bsdf local frame
+	glm::vec3 T, B;
+	BuildTBN(T, B, si.normal);
+
+	float zeta1 = RandomFloat(RNG);
+	float zeta2 = RandomFloat(RNG);
+
+	float r = sqrtf(zeta1);
+	float phi = 2.0f * pi * zeta2;
+	float x = r * cosf(phi);
+	float y = r * sinf(phi);
+	float z = sqrtf(1.0f - zeta1); //cos theta
+
+	//wi
+	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.normal));
+	sample.wi = L;
+
+	//pdf
+	sample.pdf = z / pi;
+	if (sample.pdf < 1e-6f)
+	{
+		sample.good = false;
+		return sample;
+	}
+
+	//f oren nayar
+	float sigma = glm::radians(60.0f) * glm::clamp(params.roughness, 0.0f, 1.0f);
+	float sigma2 = sigma * sigma;
+
+	float A = 1 - (sigma2 / (2.0f * (sigma2 + 0.33f)));
+	float Bc = (0.45f * sigma2) / (sigma2 + 0.09f);
+
+	float thetaI = acosf(z); //unneeded
+	float thetaO;
+	float alpha = glm::max(thetaI, thetaO);
+	float beta = glm::min(thetaI, thetaO);
+
+	sample.f = (params.albedo / pi) * (A + Bc * glm::max(0.0f, cosf(0)) * sinf(alpha) * tanf(beta));
+
+	//good
+	sample.good = true;
+	return sample;
 }
 
 //torrence-sparrow
@@ -317,13 +368,13 @@ __device__ inline BSDFSample SampleEmissiveBSDF(const EmissiveParams& params, co
 	return s;
 }
 
-
+//PBRT's sample_f pretty much. (but we make the bsdf in the same step)
 __device__ inline BSDFSample ConstructAndSampleBSDF(const MaterialGPU& m, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	switch (m.tag)
 	{
-	case LAMBERT:	 return SampleLambertBRDF	(m.lambert, wo, si, RNG);
-	case MICROFACET: return SampleGGXMicrofacetBRDF(m.microfacet, wo, si, RNG);
+	case DIFFUSE:	 return SampleLambertBRDF	(m.diffuse, wo, si, RNG);
+	case CONDUCTOR:  return SampleGGXMicrofacetBRDF(m.microfacet, wo, si, RNG);
 	case DIELECTRIC: return SampleDielectricBSDF(m.dielectric, wo, si, RNG);
 	case SUBSURFACE: return SampleSubsurfaceBSDF(m.subsurface, wo, si, RNG);
 	case EMISSIVE:   return SampleEmissiveBSDF(m.emissive, wo, si, RNG);
@@ -355,7 +406,7 @@ __device__ inline BSSRDFSample SampleSeparableBSSRDF(const SubsurfaceParams& par
 	//exit brdf: lambertian
 	HitRecord r;
 	r.normal = xiN;
-	LambertParams p;
+	DiffuseParams p;
 	p.albedo = glm::vec3(1.0f);
 	glm::vec3 dummyWo = glm::vec3(1.0f); //dont care about the exit dir for lambert
 	BSDFSample adapterSample = SampleLambertBRDF(p, dummyWo, r, RNG);
