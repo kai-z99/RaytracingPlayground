@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+#Dont ignore obj files in resources.
+!PathTracingCUDA/
+!PathTracingCUDA/resources/
+!PathTracingCUDA/resources/**/*.obj
