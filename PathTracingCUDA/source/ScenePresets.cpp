@@ -160,13 +160,13 @@ Scene* Scenes::PlaneTestScene(int seed, Camera*& cam)
 
     float gap = 0.0f;
 
-    (cam)->lookAt = glm::vec3(0, .5, 0);
-    (cam)->center = glm::vec3(-2, 0.5, 2);
+    (cam)->lookAt = glm::vec3(0.f, 0.5f, 0.0f);
+    (cam)->center = glm::vec3(-2.0f, 0.5f, 2.0f);
     cam->vfov = 50;
     cam->Init();
 
     //floor
-    sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1,0,0,0), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
+    sb.AddQuad(glm::vec3(0,0,0), glm::vec2(10,10), glm::vec4(1.0f,0.0f,0.0f,0.0f), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
 
     //roof
     sb.AddQuad(glm::vec3(-2.5f - gap, 1, 0), glm::vec2(5, 10), glm::vec4(1, 0, 0, 0), DiffuseMaterial(glm::vec3(0.5f, 0.5f, 0.5f)));
