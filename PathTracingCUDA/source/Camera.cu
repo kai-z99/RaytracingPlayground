@@ -6,6 +6,8 @@
 //NAIVE: ~12.74
 //BVH: ~3.45s
 
+//#define NEE
+
 __host__ Camera::Camera()
 {
     this->center = glm::vec3(0.0f, 0.0f, -2.0f);
@@ -116,7 +118,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //found source: sky
         if (!HitScene(scene, r, Interval(0.001f, infinity), rec)) //hit sky
         {
-            if (depth == 0)  
+        #ifdef NEE
+            if (depth == 0)
+        #endif
                 col += totalAttenuation * this->backgroundColor;
             
             break;
@@ -127,7 +131,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         //hit a light
         if (m.tag == EMISSIVE)
         {
+        #ifdef NEE
             if (depth == 0) 
+        #endif
                 col += totalAttenuation * m.emissive.emission;
             
             break;
@@ -136,7 +142,9 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         glm::vec3 wo = -r.direction();
 
         //Add direct lighting
-        col += totalAttenuation * SampleDirectNEE(scene, rec, m, wo, randState, this->backgroundColor);
+        #ifdef NEE
+            col += totalAttenuation * SampleDirectNEE(scene, rec, m, wo, randState, this->backgroundColor);
+        #endif
 
         //create the bsdf from material and SI and call sample_F,
         BSDFSample sample = ConstructAndSampleBSDF(m, wo, rec, randState);

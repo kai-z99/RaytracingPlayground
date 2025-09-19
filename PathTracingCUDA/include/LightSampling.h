@@ -210,7 +210,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
 
     // Visibility test (shadow ray)
     HitRecord occ;
-    if (HitScene(scene, Ray(rec.p, wi), Interval(0.001f, dist - 1e-3f), occ)) return glm::vec3(0.0f);
+    if (HitScene(scene, Ray(rec.p, wi), Interval(0.001f, dist - 1e-2f), occ)) return glm::vec3(0.0f);
 
     // ----- PDF over solid angle -----
     float totalArea = fmaxf(scene.lightSet->totalArea, 1e-6f);
@@ -229,12 +229,11 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     glm::vec3 contrib = sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
     if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b)) return glm::vec3(0.0f);
 
-    float t = 100;
+    float t = 500;
     if (contrib.r > t || contrib.g > t || contrib.b > t) 
     {
         printf("r: %f, g: %f, b: %f\n", contrib.r, contrib.g, contrib.b);
         printf("sample.f.r: %f \n sample.f.g: %f \n sample.f.b: %f \n cosNo: %f \n ls.Le: %f \n pdf_omega: %f \n lightSelPdf: %f \n", sample.f.r, sample.f.g, sample.f.b, cosNo, ls.Le.r, pdf_omega, lightSelPdf);
-        //return glm::vec3(0.0f);
     }
 
     return contrib;

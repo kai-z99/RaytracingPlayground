@@ -234,6 +234,107 @@ __device__ inline bool HitScene(const Scene& scene, const Ray& r, Interval ray_t
     return outHits.count > 0;
 }
 
+// Ignore helper
+__device__ inline bool IsIgnored(const EmissiveGeom* ig, PrimType t, uint32_t idx) 
+{
+    return ig && (ig->type == t) && (ig->primIndex == idx);
+}
+
+// BVH traversal with "ignore this emissive geom"
+__device__ inline bool HitSceneExcept(const Scene& scene,
+    const Ray& r,
+    Interval ray_t,
+    HitRecord& rec,
+    const EmissiveGeom* ignore,     // <- pass &L from your NEE
+    int* hitCount = nullptr)
+{
+    constexpr int MAX_STACK = 64;
+    uint32_t stack[MAX_STACK];
+    int stackPtr = 0;
+
+    bool  hitAny = false;
+    float closestSoFar = ray_t.max;
+    int   count = 0;
+
+    stack[stackPtr++] = 0;
+
+    while (stackPtr) {
+        uint32_t nodeIdx = stack[--stackPtr];
+        const BVHNode& node = scene.BVHNodes[nodeIdx];
+
+        if (IntersectAABB(r, node.bboxMin, node.bboxMax, closestSoFar) < 0.0f)
+            continue;
+
+        if (node.primCount) {
+            // Leaf: test all prims
+            for (uint32_t i = 0; i < node.primCount; ++i) {
+                uint32_t idx = node.leftFirst + i;
+                PrimType type = scene.primTypes[idx];
+                uint32_t primIdx = scene.primIndices[idx];
+
+                // Skip the ignored light primitive entirely
+                if (IsIgnored(ignore, type, primIdx))
+                    continue;
+
+                HitRecord tempRec;
+                bool hit = false;
+
+                switch (type) {
+                case PRIM_SPHERE:
+                    hit = HitSphere(*scene.spheres, primIdx, r, Interval(ray_t.min, closestSoFar), tempRec);
+                    break;
+                case PRIM_QUAD:
+                    hit = HitQuad(*scene.quads, primIdx, r, Interval(ray_t.min, closestSoFar), tempRec);
+                    break;
+                case PRIM_TRIANGLE:
+                    hit = HitTriangle(*scene.tris, primIdx, r, Interval(ray_t.min, closestSoFar), tempRec);
+                    break;
+                default:
+                    break;
+                }
+
+                if (hit) {
+                    ++count;
+                    hitAny = true;
+                    closestSoFar = tempRec.t;
+                    rec = tempRec;
+                }
+            }
+        }
+        else {
+            // Interior: push children, near last so it pops first
+            const BVHNode& left = scene.BVHNodes[node.leftFirst];
+            const BVHNode& right = scene.BVHNodes[node.rightFirst];
+
+            float tLeft = IntersectAABB(r, left.bboxMin, left.bboxMax, closestSoFar);
+            float tRight = IntersectAABB(r, right.bboxMin, right.bboxMax, closestSoFar);
+            bool hitLeft = tLeft >= 0.0f;
+            bool hitRight = tRight >= 0.0f;
+
+            if (hitLeft && hitRight) {
+                if (tLeft < tRight) {
+                    if (stackPtr < MAX_STACK) stack[stackPtr++] = node.rightFirst; // far
+                    if (stackPtr < MAX_STACK) stack[stackPtr++] = node.leftFirst;  // near
+                }
+                else {
+                    if (stackPtr < MAX_STACK) stack[stackPtr++] = node.leftFirst;  // near
+                    if (stackPtr < MAX_STACK) stack[stackPtr++] = node.rightFirst; // far
+                }
+            }
+            else if (hitLeft) {
+                if (stackPtr < MAX_STACK) stack[stackPtr++] = node.leftFirst;
+            }
+            else if (hitRight) {
+                if (stackPtr < MAX_STACK) stack[stackPtr++] = node.rightFirst;
+            }
+        }
+    }
+
+    if (hitCount) *hitCount = count;
+    return hitAny;
+}
+
+
 
 __device__ inline bool HitSceneLinear(const Scene& scene, const Ray& r, Interval ray_t, HitRecord& rec)
 {

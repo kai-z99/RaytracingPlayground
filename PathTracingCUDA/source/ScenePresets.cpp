@@ -235,6 +235,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseMaterial black(glm::vec3(0.0f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
+    DiffuseLightMaterial sphereLight(glm::vec3(60.0f));
     MetalMaterial metal(glm::vec3(1.0f), 0.2f);
     DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
     
@@ -268,7 +269,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //    white
     //);
 
-    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), green);
 
 
     // Back wall (z = W)
@@ -301,12 +302,15 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
 
     // --- Area light on the ceiling ---
-    sb.AddQuad(
-        glm::vec3(0.0f, W - 0.001f, 0.0f),
-        glm::vec2(200.0f),
-        glm::vec4(1,0,0,0),  
-        light
-    );
+    //sb.AddQuad(
+    //    glm::vec3(0.0f, W - 0.001f, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(1,0,0,0),  
+    //    light
+    //);
+
+    sb.AddSphere(glm::vec3(-150.0f, W - 300.f, -150.0f), 10.0f, sphereLight);
+
 
     //sb.AddQuad(
     //    glm::vec3(200.0f, W - 0.1f, 0.0f),
@@ -367,7 +371,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("resources/models/" + objName, M, white);
+    //sb.AddModel("resources/models/" + objName, M, white);
     //
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);

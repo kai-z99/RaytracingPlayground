@@ -172,49 +172,49 @@ __device__ inline BSDFSample SampleOrenNayarBRDF(const DiffuseParams& params, co
 {
 	BSDFSample sample;
 	sample.good = false;
-	sample.isTransmission = false;
+	//sample.isTransmission = false;
 
-	//bxdf -> bsdf local frame
-	glm::vec3 T, B;
-	BuildTBN(T, B, si.normal);
+	////bxdf -> bsdf local frame
+	//glm::vec3 T, B;
+	//BuildTBN(T, B, si.normal);
 
-	float zeta1 = RandomFloat(RNG);
-	float zeta2 = RandomFloat(RNG);
+	//float zeta1 = RandomFloat(RNG);
+	//float zeta2 = RandomFloat(RNG);
 
-	float r = sqrtf(zeta1);
-	float phi = 2.0f * pi * zeta2;
-	float x = r * cosf(phi);
-	float y = r * sinf(phi);
-	float z = sqrtf(1.0f - zeta1); //cos theta
+	//float r = sqrtf(zeta1);
+	//float phi = 2.0f * pi * zeta2;
+	//float x = r * cosf(phi);
+	//float y = r * sinf(phi);
+	//float z = sqrtf(1.0f - zeta1); //cos theta
 
-	//wi
-	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.normal));
-	sample.wi = L;
+	////wi
+	//glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.normal));
+	//sample.wi = L;
 
-	//pdf
-	sample.pdf = z / pi;
-	if (sample.pdf < 1e-6f)
-	{
-		sample.good = false;
-		return sample;
-	}
+	////pdf
+	//sample.pdf = z / pi;
+	//if (sample.pdf < 1e-6f)
+	//{
+	//	sample.good = false;
+	//	return sample;
+	//}
 
-	//f oren nayar
-	float sigma = glm::radians(60.0f) * glm::clamp(params.roughness, 0.0f, 1.0f);
-	float sigma2 = sigma * sigma;
+	////f oren nayar
+	//float sigma = glm::radians(60.0f) * glm::clamp(params.roughness, 0.0f, 1.0f);
+	//float sigma2 = sigma * sigma;
 
-	float A = 1 - (sigma2 / (2.0f * (sigma2 + 0.33f)));
-	float Bc = (0.45f * sigma2) / (sigma2 + 0.09f);
+	//float A = 1 - (sigma2 / (2.0f * (sigma2 + 0.33f)));
+	//float Bc = (0.45f * sigma2) / (sigma2 + 0.09f);
 
-	float thetaI = acosf(z); //unneeded
-	float thetaO;
-	float alpha = glm::max(thetaI, thetaO);
-	float beta = glm::min(thetaI, thetaO);
+	//float thetaI = acosf(z); //unneeded
+	//float thetaO;
+	//float alpha = glm::max(thetaI, thetaO);
+	//float beta = glm::min(thetaI, thetaO);
 
-	sample.f = (params.albedo / pi) * (A + Bc * glm::max(0.0f, cosf(0)) * sinf(alpha) * tanf(beta));
+	//sample.f = (params.albedo / pi) * (A + Bc * glm::max(0.0f, cosf(0)) * sinf(alpha) * tanf(beta));
 
-	//good
-	sample.good = true;
+	////good
+	//sample.good = true;
 	return sample;
 }
 
