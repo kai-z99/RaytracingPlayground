@@ -9,7 +9,6 @@
 #include <chrono>
 #include <random>
 #include <cstring>
-
 struct Config
 {
     int samplesPerPixel;
@@ -19,9 +18,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 32;
+    c.samplesPerPixel = 128;
     c.maxBounceDepth = 15;
-
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
     std::cout << "SAMPLES PER PIXEL: " << c.samplesPerPixel << '\n';

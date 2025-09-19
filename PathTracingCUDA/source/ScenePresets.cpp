@@ -302,7 +302,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
     // --- Area light on the ceiling ---
     sb.AddQuad(
-        glm::vec3(0.0f, W - 0.1f, 0.0f),
+        glm::vec3(0.0f, W - 0.001f, 0.0f),
         glm::vec2(200.0f),
         glm::vec4(1,0,0,0),  
         light
@@ -367,8 +367,8 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, white);
-
+    sb.AddModel("resources/models/" + objName, M, white);
+    //
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
 

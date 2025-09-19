@@ -192,7 +192,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     // 2B) Area light sampling branch
     const EmissiveGeom& L = SampleEmissive(scene, RNG);
     LightPointSample ls = SamplePointOnLight(L, scene, RNG);  // pos, normal, Le, pdf_area (1/area_i)
-    if (ls.pdf_area <= 0.0f) return glm::vec3(0.0f);
+    if (ls.pdf_area <= 1e-6f) return glm::vec3(0.0f);
 
     glm::vec3 toL = ls.pos - rec.p;
     float     dist2 = glm::dot(toL, toL);
@@ -202,10 +202,11 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     // Shading cosine
     float cosNo = fmaxf(0.0f, glm::dot(rec.normal, wi));
 
+	//2 sided emission
     float cosNl = glm::dot(ls.normal, -wi);
     float cosNl_abs = fabsf(cosNl);
 
-    if (cosNo <= 1e-4f || cosNl_abs <= 1e-4f) return glm::vec3(0.0f);
+    if (cosNo <= 1e-6f || cosNl_abs <= 1e-6f) return glm::vec3(0.0f);
 
     // Visibility test (shadow ray)
     HitRecord occ;
@@ -213,7 +214,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
 
     // ----- PDF over solid angle -----
     float totalArea = fmaxf(scene.lightSet->totalArea, 1e-6f);
-    float pdf_omega = (dist2 / fmaxf(cosNl_abs, 1e-6f)) / totalArea;
+    float pdf_omega = (dist2 / fmaxf(cosNl_abs, 1e-6f)) / fmaxf(totalArea, 1e-6f);
     if (pdf_omega <= 1e-6f) return glm::vec3(0.0f);
 
     // BSDF eval
@@ -222,16 +223,18 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
 
     // Bucket prob: we chose the area-light path with (1 - p_env)
     float lightSelPdf = fmaxf(1.0f - p_env, 1e-6f);
+    if (lightSelPdf <= 1e-6f) return glm::vec3(0.0f);
 
     // Final contribution (no MIS beyond bucket split)
     glm::vec3 contrib = sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
     if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b)) return glm::vec3(0.0f);
 
-    float t = 150;
+    float t = 100;
     if (contrib.r > t || contrib.g > t || contrib.b > t) 
     {
-        printf("hmmm?\n");
-
+        printf("r: %f, g: %f, b: %f\n", contrib.r, contrib.g, contrib.b);
+        printf("sample.f.r: %f \n sample.f.g: %f \n sample.f.b: %f \n cosNo: %f \n ls.Le: %f \n pdf_omega: %f \n lightSelPdf: %f \n", sample.f.r, sample.f.g, sample.f.b, cosNo, ls.Le.r, pdf_omega, lightSelPdf);
+        //return glm::vec3(0.0f);
     }
 
     return contrib;
