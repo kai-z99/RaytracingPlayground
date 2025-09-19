@@ -12,6 +12,18 @@
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
   - This approach delivers very fast build times (≈O(n log n)), but is less optimized for ray-tracing cost. A binned Surface Area Heuristic (SAH) pass will improve traversal performance further.
   - https://developer.nvidia.com/blog/thinking-parallel-part-ii-tree-traversal-gpu/
+
+- NEE (Next Event Estimation)
+  - We can explicity sample direct lighting to reduce variance, especially on scenes where BSDF sampling would rarely hit a light.
+  - Blog coming soon on this. 
+  - Left: NEE with 110spp (~11 seconds)
+  - Right: No NEE with 256spp (~11 seconds)
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/55dd78fd-556f-4617-acec-613a41eacbbf" width="400" />
+  <img src="https://github.com/user-attachments/assets/e12ecdbb-fa80-4fa8-8c0d-aaebf1eeb57a" width="400" /> 
+</p>
+
+
     
 
 
