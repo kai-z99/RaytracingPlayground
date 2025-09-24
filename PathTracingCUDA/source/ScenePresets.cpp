@@ -1069,9 +1069,9 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
-    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.4f);
-	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.4f);
-	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.4f);
+    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.2f);
+	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.2f);
+	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.2f);
 
 
     // --- Cornell box dimensions ---

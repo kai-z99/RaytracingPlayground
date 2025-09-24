@@ -329,8 +329,8 @@ __device__ inline BSDFSample EvaluateGGXConductorBRDF(
 	s.f = (D * G) * F / (4.0f * NdotV * NdotL);
 
 	// pdf for VNDF
-	float G1v = 1.0f / (1.0f + LambdaGGX(fmaxf(NdotV, 1e-6f), alpha));
-	s.pdf = (D * G1v * fmaxf(NdotH, 0.0f)) / (4.0f * fmaxf(VdotH, 1e-6f));
+	float G1v = 1.0f / (1.0f + LambdaGGX(NdotV, alpha));
+	s.pdf = fmaxf(D * G1v / fmaxf(4.0f * NdotV, 1e-6f), 1e-6f);
 
 	// Final
 	if (s.pdf > 0.0f &&
@@ -345,9 +345,6 @@ __device__ inline BSDFSample EvaluateGGXConductorBRDF(
 	}
 	return s;
 }
-
-
-
 
 //torrence-sparrow
 __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
