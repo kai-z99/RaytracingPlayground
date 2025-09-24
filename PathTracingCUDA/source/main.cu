@@ -18,7 +18,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 256;
+    c.samplesPerPixel = 64;
     c.maxBounceDepth = 15;
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -287,7 +287,7 @@ int main()
     BuildCamera(uCamera, dPixels, config);
 
     //init scene
-    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
+    Scene* uScene = Scenes::StatueScene(seed, uCamera);
 
     // launch render async and display while running
     cudaStream_t renderStream; checkCudaErrors(cudaStreamCreate(&renderStream));

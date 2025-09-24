@@ -145,8 +145,6 @@ __device__ inline LightPointSample SamplePointOnLight(const EmissiveGeom& L,
     }
 }
 
-// Returns the direct lighting at 'rec' (L_d) *without* multiplying by throughput.
-// No MIS: light-only sampling. If you later add MIS, you'll pair this with BSDF sampling and weights.
 __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     const HitRecord& rec,
     const MaterialGPU& m,
@@ -157,7 +155,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     // 1) Pick a light (area or environment). Here's a simple two-bucket sketch:
     //    - With probability p_env: sample environment
     //    - With probability (1 - p_env): sample a random emissive in scene
-    // Choose p_env to taste; e.g., 0.2f if you have area lights, 1.0f if only env.
+    // Choose some p_env so its cool or something
     const bool hasArea = scene.lightSet && scene.lightSet->count > 0;
     const float p_env = (hasArea)? 0.2f : 1.0f;
     
@@ -221,19 +219,20 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     BSDFSample sample = ConstructAndEvaluateBSDF(m, wo, wi, rec, RNG);
     if (!sample.good) return glm::vec3(0.0f);
 
-    // Bucket prob: we chose the area-light path with (1 - p_env)
+    // e area-light path with (1 - p_env)
     float lightSelPdf = fmaxf(1.0f - p_env, 1e-6f);
     if (lightSelPdf <= 1e-6f) return glm::vec3(0.0f);
 
-    // Final contribution (no MIS beyond bucket split)
+    // Final contribution
     glm::vec3 contrib = sample.f * (cosNo * ls.Le) / (pdf_omega * lightSelPdf);
     if (!isfinite(contrib.r) || !isfinite(contrib.g) || !isfinite(contrib.b)) return glm::vec3(0.0f);
 
     float t = 500;
     if (contrib.r > t || contrib.g > t || contrib.b > t) 
     {
-        printf("r: %f, g: %f, b: %f\n", contrib.r, contrib.g, contrib.b);
-        printf("sample.f.r: %f \n sample.f.g: %f \n sample.f.b: %f \n cosNo: %f \n ls.Le: %f \n pdf_omega: %f \n lightSelPdf: %f \n", sample.f.r, sample.f.g, sample.f.b, cosNo, ls.Le.r, pdf_omega, lightSelPdf);
+        //return glm::vec3(0.0f);
+        //printf("r: %f, g: %f, b: %f\n", contrib.r, contrib.g, contrib.b);
+        //printf("sample.f.r: %f \n sample.f.g: %f \n sample.f.b: %f \n cosNo: %f \n ls.Le: %f \n pdf_omega: %f \n lightSelPdf: %f \n", sample.f.r, sample.f.g, sample.f.b, cosNo, ls.Le.r, pdf_omega, lightSelPdf);
     }
 
     return contrib;

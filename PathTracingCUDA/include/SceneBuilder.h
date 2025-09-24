@@ -25,12 +25,12 @@ struct DiffuseMaterial : public Material
 
 struct MetalMaterial : public Material
 {
-	MetalMaterial(glm::vec3 albedo = glm::vec3(1.0f), float fuzz = 0.0f)
+	MetalMaterial(glm::vec3 eta = glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3 k = glm::vec3(4.483f, 3.586f, 2.869f), float roughness = 0.1f)
 	{
 		this->mat.tag = CONDUCTOR;
-		this->mat.microfacet.albedo = albedo;
-		this->mat.microfacet.roughness = fuzz;
-		this->mat.microfacet.metallic = 1.0f;
+		this->mat.conductor.eta = eta; 
+		this->mat.conductor.k = k;
+		this->mat.conductor.roughness = roughness;
 	}
 };
 

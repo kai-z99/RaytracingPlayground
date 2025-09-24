@@ -26,6 +26,31 @@ __device__ float FrDielectricExact(float cosThetaI, float etaI, float etaT)
 	return 0.5f * (rPar * rPar + rPer * rPer);
 }
 
+__device__ glm::vec3 FresnelConductor(float cosTheta, const glm::vec3& eta, const glm::vec3& k)
+{
+	cosTheta = glm::clamp(cosTheta, 0.0f, 1.0f);
+
+	glm::vec3 cos2 = glm::vec3(cosTheta * cosTheta);
+	glm::vec3 sin2 = glm::vec3(1.0f) - cos2;
+
+	glm::vec3 eta2 = eta * eta;
+	glm::vec3 k2 = k * k;
+
+	glm::vec3 t0 = eta2 + k2;
+
+	glm::vec3 twoEtaCos = 2.0f * eta * cosTheta;
+
+	glm::vec3 Rs_num = (t0 - twoEtaCos + cos2);
+	glm::vec3 Rs_den = (t0 + twoEtaCos + cos2);
+	glm::vec3 Rs = (Rs_num / glm::max(Rs_den, glm::vec3(1e-6f)));
+
+	glm::vec3 Rp_num = (t0 * cos2 - twoEtaCos + glm::vec3(1.0f));
+	glm::vec3 Rp_den = (t0 * cos2 + twoEtaCos + glm::vec3(1.0f));
+	glm::vec3 Rp = (Rp_num / glm::max(Rp_den, glm::vec3(1e-6f)));
+
+	return 0.5f * (Rs + Rp);
+}
+
 
 __device__ float FresnelSchlick(float cosT, float eta)
 {
