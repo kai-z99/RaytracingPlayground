@@ -347,7 +347,7 @@ __device__ inline BSDFSample EvaluateGGXConductorBRDF(
 }
 
 //torrence-sparrow
-__device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
+__device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 	sample.good = false;
@@ -385,13 +385,19 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 	float NdotL = fmaxf(glm::dot(N, L), 0.0f);
 	float NdotV = fmaxf(glm::dot(N, V), 0.0f);
 	float NdotH = fmaxf(glm::dot(N, halfway), 0.0f);
+	float VdotH = fmaxf(glm::dot(V, halfway), 0.0f);
 
 	float D = D_GGX(NdotH, params.roughness * params.roughness);
 	float G = G_SmithHeightCorrelated(NdotV, NdotL, params.roughness * params.roughness);
 
-	glm::vec3 F0 = mix(glm::vec3(0.04f), params.albedo, params.metallic); //still hack
-	float VdotH = glm::clamp(glm::dot(V, halfway), 0.0f, 1.0f);
-	glm::vec3 F = FresnelSchlick(VdotH, F0);
+	float etaOutside = 1.0f;
+	float etaInside = params.eta;     
+	bool entering = glm::dot(si.geoNormal, V) > 0;
+	float etaI = entering ? etaOutside : etaInside;
+	float etaT = entering ? etaInside : etaOutside;
+
+	float R = FrDielectricExact(VdotH, etaI, etaT); // scalar
+	glm::vec3 F = glm::vec3(R);                     // dielectrics reflect achromatically
 
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
 	sample.f = specular; //just the brdf
@@ -403,7 +409,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const MicrofacetParams& par
 }
 
 
-__device__ inline BSDFSample SampleGGXMicrofacetBTDF(const MicrofacetParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
+__device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	BSDFSample sample;
 	sample.good = false;
@@ -501,11 +507,11 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 
 	if (u < R) 
 	{
-		return SampleGGXMicrofacetBRDF(p, wo, si, RNG);
+		return SampleGGXMicrofacetBRDF(params, wo, si, RNG);
 	}
 	else 
 	{
-		return SampleGGXMicrofacetBTDF(p, wo, si, RNG);
+		return SampleGGXMicrofacetBTDF(params, wo, si, RNG);
 	}
 }
 

@@ -6,7 +6,7 @@
 //NAIVE: ~12.74
 //BVH: ~3.45s
 
-#define NEE
+//#define NEE
 
 __host__ Camera::Camera()
 {

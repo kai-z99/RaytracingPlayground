@@ -236,7 +236,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseLightMaterial sphereLight(glm::vec3(200.0f));
     MetalMaterial metal(glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3(4.483f, 3.586f, 2.869f), 0.1f);
     MetalMaterial gold(glm::vec3(0.27f, 0.53f, 1.45f), glm::vec3(2.77f, 2.37f, 1.90f), 0.3f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.35f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(0.7f, 0.7f, 0.7f),
@@ -341,10 +341,10 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "xyzrgb_dragon.obj";
-    float scale = 450.00f;
-    float yExtent = 0.32f;
-    float rotDeg = 225.0f;
+    std::string objName = "bunny.obj";
+    float scale = 350.00f;
+    float yExtent = 0.7f;
+    float rotDeg = 90.0f;
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
@@ -370,7 +370,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //glm::vec3(1.0f, 0.4f, 0.4f),
     //glm::vec3(0.4f, 0.4f, 1.0f), 
     
-    sb.AddModel("resources/models/" + objName, M, gold);
+    sb.AddModel("resources/models/" + objName, M, die);
     //
     //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
@@ -1069,9 +1069,9 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
-    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.2f);
-	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.2f);
-	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.2f);
+    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.1f);
+	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.1f);
+	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.1f);
 
 
     // --- Cornell box dimensions ---
