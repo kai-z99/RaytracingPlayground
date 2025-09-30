@@ -26,6 +26,26 @@ __device__ float FrDielectricExact(float cosThetaI, float etaI, float etaT)
 	return 0.5f * (rPar * rPar + rPer * rPer);
 }
 
+__device__ float FrDielectric(float cosThetaI, float eta) {
+	// Clamp and allow signed cosThetaI
+	cosThetaI = fmaxf(fminf(cosThetaI, 1.0f), -1.0f);
+
+	// If we’re “inside” (cos < 0), flip the interface
+	if (cosThetaI < 0.0f) {
+		eta = 1.0f / eta;
+		cosThetaI = -cosThetaI;
+	}
+
+	float sin2I = fmaxf(0.0f, 1.0f - cosThetaI * cosThetaI);
+	float sin2T = sin2I / (eta * eta);
+	if (sin2T >= 1.0f) return 1.0f; // Total internal reflection
+	
+	float cosT = sqrtf(fmaxf(0.0f, 1.0f - sin2T));
+	float rPar = (eta * cosThetaI - cosT) / (eta * cosThetaI + cosT);
+	float rPer = (cosThetaI - eta * cosT) / (cosThetaI + eta * cosT);
+	return 0.5f * (rPar * rPar + rPer * rPer);
+}
+
 __device__ glm::vec3 FresnelConductor(float cosTheta, const glm::vec3& eta, const glm::vec3& k)
 {
 	cosTheta = glm::clamp(cosTheta, 0.0f, 1.0f);
@@ -50,7 +70,6 @@ __device__ glm::vec3 FresnelConductor(float cosTheta, const glm::vec3& eta, cons
 
 	return 0.5f * (Rs + Rp);
 }
-
 
 __device__ float FresnelSchlick(float cosT, float eta)
 {
@@ -259,21 +278,21 @@ __device__ bool SampleDisneySubsurface(const SubsurfaceParams& params,
 
 	// 0. pick an axis
 	glm::vec3 T, B;
-	BuildTBN(T, B, rec.normal);
+	BuildTBN(T, B, rec.shadingNormal);
 
 	float uA = RandomFloat(randState);
 	glm::vec3 axisN, vx, vy;
 	if (uA < 0.5f) //N
 	{
-		axisN = rec.normal; vx = T; vy = B;
+		axisN = rec.shadingNormal; vx = T; vy = B;
 	}
 	else if (uA < 0.75f) //T
 	{
-		axisN = T;  vx = B;  vy = rec.normal;
+		axisN = T;  vx = B;  vy = rec.shadingNormal;
 	}
 	else //B
 	{
-		axisN = B;  vx = rec.normal;  vy = T;
+		axisN = B;  vx = rec.shadingNormal;  vy = T;
 	}
 
 	// 1. importance sample a radius (theta)

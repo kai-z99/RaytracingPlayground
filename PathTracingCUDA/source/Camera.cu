@@ -151,7 +151,7 @@ __device__ glm::vec3 Camera::RayColorIter(curandState& randState, Ray r, int max
         if (!sample.good) break;
         
         //integrate the sample---
-        float cosine = fabsf(glm::dot(sample.wi, rec.normal));
+        float cosine = fabsf(glm::dot(sample.wi, rec.shadingNormal));
 
         //make sure the sample is finite
         glm::vec3 contrib = (sample.f * cosine / sample.pdf);        

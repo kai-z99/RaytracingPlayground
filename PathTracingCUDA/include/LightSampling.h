@@ -128,8 +128,6 @@ __device__ inline LightPointSample SampleQuadLight(const Scene& scene,
 }
 
 
-
-
 //Sample a point on the light
 __device__ inline LightPointSample SamplePointOnLight(const EmissiveGeom& L,
     const Scene& scene,
@@ -167,7 +165,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
         EnvSample es = SampleEnvironment(scene, RNG, backgroundColor); // wi, pdf_dir, Le(wi)
         if (es.pdf_dir <= 0.0f) return glm::vec3(0.0f);
 
-        float cosNo = fmaxf(0.0f, glm::dot(rec.normal, es.wi));
+        float cosNo = fmaxf(0.0f, glm::dot(rec.shadingNormal, es.wi));
         if (cosNo <= 0.0f) return glm::vec3(0.0f);
 
         // Shadow ray to infinity: check if blocked immediately nearby (optional early occlusion for env if you support it)
@@ -198,7 +196,7 @@ __device__ inline glm::vec3 SampleDirectNEE(const Scene& scene,
     glm::vec3 wi = toL / dist;
 
     // Shading cosine
-    float cosNo = fmaxf(0.0f, glm::dot(rec.normal, wi));
+    float cosNo = fmaxf(0.0f, glm::dot(rec.shadingNormal, wi));
 
 	//2 sided emission
     float cosNl = glm::dot(ls.normal, -wi);

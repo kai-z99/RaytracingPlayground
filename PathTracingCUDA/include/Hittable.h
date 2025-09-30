@@ -5,7 +5,7 @@
 struct HitRecord
 {
 	glm::vec3 p;
-	glm::vec3 normal;    //ray oriented
+	glm::vec3 shadingNormal;    //ray oriented
     glm::vec3 geoNormal; //mesh orianted
 	float t;
 	int matDataID;

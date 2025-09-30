@@ -116,7 +116,7 @@ __device__ inline BSDFSample SampleLambertBRDF(const DiffuseParams& params, cons
 
 	//bxdf -> bsdf local frame
 	glm::vec3 T, B;
-	BuildTBN(T, B, si.normal);
+	BuildTBN(T, B, si.shadingNormal);
 
 	float zeta1 = RandomFloat(RNG);
 	float zeta2 = RandomFloat(RNG);
@@ -128,7 +128,7 @@ __device__ inline BSDFSample SampleLambertBRDF(const DiffuseParams& params, cons
 	float z = sqrtf(1.0f - zeta1); //cos theta
 
 	//wi
-	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.normal));
+	glm::vec3 L = glm::normalize((x * T) + (y * B) + (z * si.shadingNormal));
 	sample.wi = L;
 
 	//pdf
@@ -154,7 +154,7 @@ __device__ inline BSDFSample EvaluateLambertBSDF(const DiffuseParams& params, co
 
 	sample.wi = wi;
 
-	float cosNo = glm::dot(si.normal, wi);
+	float cosNo = glm::dot(si.shadingNormal, wi);
 	if (cosNo <= 0.0f) {
 		sample.pdf = 0.0f;
 		sample.f = glm::vec3(0.0f);
@@ -236,13 +236,13 @@ __device__ inline BSDFSample SampleGGXConductorBRDF(const ConductorParams& param
 	s.good = false;
 	s.isTransmission = false;
 
-	glm::vec3 N = glm::normalize(si.normal);
+	glm::vec3 N = glm::normalize(si.shadingNormal);
 	glm::vec3 V = glm::normalize(wo);
 
 	if (params.roughness < 0.04f) {
 		glm::vec3 L = glm::reflect(-V, N);
 		s.wi = L;
-		s.f = glm::vec3(1.0f) / fmaxf(1e-6f, fabsf(glm::dot(L, si.normal)));
+		s.f = glm::vec3(1.0f) / fmaxf(1e-6f, fabsf(glm::dot(L, si.shadingNormal)));
 		s.pdf = 1.0f;
 		s.good = true;
 		return s;
@@ -286,7 +286,7 @@ __device__ inline BSDFSample EvaluateGGXConductorBRDF(
 	s.isTransmission = false;
 	s.good = false;
 
-	glm::vec3 N = glm::normalize(si.normal);
+	glm::vec3 N = glm::normalize(si.shadingNormal);
 	glm::vec3 V = glm::normalize(wo);
 	glm::vec3 L = glm::normalize(wi);
 
@@ -351,14 +351,15 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& par
 {
 	BSDFSample sample;
 	sample.good = false;
-	glm::vec3 N = glm::normalize(si.normal);
+	
+	glm::vec3 N = glm::normalize(si.shadingNormal);
 	glm::vec3 V = glm::normalize(wo);
 
 	if (params.roughness < 0.04f) //fall back to mirror, temp
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.normal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.shadingNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = false;
 		sample.good = true;
@@ -399,6 +400,9 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& par
 	float R = FrDielectricExact(VdotH, etaI, etaT); // scalar
 	glm::vec3 F = glm::vec3(R);                     // dielectrics reflect achromatically
 
+	//glm::vec3 F0 = glm::vec3(1.0f);
+	//F = FresnelSchlick(VdotH, F0);
+
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
 	sample.f = specular; //just the brdf
 	sample.wi = L;
@@ -416,7 +420,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& par
 	sample.isTransmission = true;
 
 	//geometry normal
-	glm::vec3 N = glm::normalize(si.normal);
+	glm::vec3 N = glm::normalize(si.shadingNormal);
 	glm::vec3 V = glm::normalize(wo);
 
 	// Require opposite hemispheres for transmission
@@ -434,7 +438,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& par
 	{
 		glm::vec3 L = glm::refract(-V, N, eta);
 		sample.wi = L;
-		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.normal)); //dirac delta, no cosine
+		sample.f = glm::vec3(1.0f) / fabsf(glm::dot(L, si.shadingNormal)); //dirac delta, no cosine
 		sample.pdf = 1.0f;
 		sample.isTransmission = true;
 		sample.good = true;
@@ -487,7 +491,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& par
 __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params, const glm::vec3& wo, const HitRecord& si, curandState& RNG)
 {
 	bool frontFace = glm::dot(-wo, si.geoNormal) < 0.0f;          
-	glm::vec3 N = si.normal;
+	glm::vec3 N = si.shadingNormal;
 
 	// Indices for this side
 	float etaI = frontFace ? 1.0f : params.eta;
@@ -581,7 +585,7 @@ __device__ inline BSSRDFSample SampleSeparableBSSRDF(const SubsurfaceParams& par
 
 	//exit brdf: lambertian
 	HitRecord r;
-	r.normal = xiN;
+	r.shadingNormal = xiN;
 	DiffuseParams p;
 	p.albedo = glm::vec3(1.0f);
 	glm::vec3 dummyWo = glm::vec3(1.0f); //dont care about the exit dir for lambert
