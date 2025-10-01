@@ -5,8 +5,9 @@
 - Subsurface Scattering with Analytic BSSRDFs
   - Please refer to my blog at: https://kai-z99.github.io/blog/Implementing-Subsurface-Scattering-with-Analytic-BSSRDFs.html
 
-- Rough Dielectric BSDF
+- Rough Dielectric BSDF, Conductor BSDF
    - https://www.pbr-book.org/4ed/Reflection_Models/Rough_Dielectric_BSDF
+   - https://www.pbr-book.org/4ed/Reflection_Models/Conductor_BRDF
     
 - BVH = Bounding Volume Hierarchy 
   - The BVH is built with a median-split strategy along the longest axis of each AABB.
@@ -46,7 +47,7 @@
 
 ![Render Output](Images/rayShowCUDA10.png)
 ![Render Output](Images/rayShowCUDA22.png)
-<img width="1231" height="1111" alt="dragon-0 1-10k" src="https://github.com/user-attachments/assets/6a3fc7d3-311b-43f6-affb-0b11579e5acc" />
+<img width="1229" height="1079" alt="dragonGlass0 1-10000" src="https://github.com/user-attachments/assets/76edb716-df16-4925-b362-a49d671d86cb" />
 <img width="1230" height="1107" alt="dragonJade10000spp" src="https://github.com/user-attachments/assets/b1654e77-7cc0-4ac3-865a-8ad2f451d393" />
 
 
