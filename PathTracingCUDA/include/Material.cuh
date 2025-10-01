@@ -359,7 +359,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& par
 	glm::vec3 N = glm::normalize(si.shadingNormal);
 	glm::vec3 V = glm::normalize(wo);
 
-	if (params.roughness < 0.01f) //fall back to mirror, temp
+	if (params.roughness < 0.01f) //delta case
 	{
 		glm::vec3 L = glm::reflect(-V, N);
 		sample.wi = L;
@@ -409,7 +409,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& par
 	//printf(" f schlick: %f, f exact: %f\n", F.r, R);
 
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
-	sample.f = specular; //just the brdf
+	sample.f = specular; //just the brdf	
 	sample.wi = L;
 	sample.good = true;
 	sample.isTransmission = false;
@@ -440,7 +440,7 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& par
 	float eta = etaI / etaT;               // relative IOR from wo-side to wi-side
 	float etap = etaT / etaI;               // relative IOR toward wi
 
-	if (params.roughness < 0.01f) //perfect refraction
+	if (params.roughness < 0.01f) //delta case
 	{
 		glm::vec3 L = glm::refract(-V, N, eta);
 		sample.wi = L;
@@ -454,13 +454,17 @@ __device__ inline BSDFSample SampleGGXMicrofacetBTDF(const DielectricParams& par
 	// VNDF sample the microfacet normal
 	float pdf_m = 0.0f;
 	glm::vec3 halfway = SampleGGX_VNDF(N, V, params.roughness, RNG, pdf_m);
+	halfway = (glm::dot(halfway, N) < 0.0f) ? -halfway : halfway;
 
 	glm::vec3 L = glm::refract(-V, halfway, eta);
+	if (glm::length(L) == 0.0f) return sample; //TIR
 	float cosNoL = glm::dot(N, L);
 
-	//diacrd backfacing microfacets
+	//diacrd
 	if (glm::dot(halfway, L) * cosNoL < 0 || glm::dot(halfway, V) * cosNoV < 0) return sample;
 	if (cosNoL > 0.0f) return sample;
+	if (fabsf(glm::dot(N, V)) < 1e-6f || fabsf(glm::dot(N, L)) < 1e-6f) return sample;
+
 
 	// Fresnel for dielectrics at the microfacet
 	float VdotM = fmaxf(glm::dot(V, halfway), 0.0f);
@@ -512,20 +516,19 @@ __device__ inline BSDFSample SampleDielectricBSDF(const DielectricParams& params
 	float cosThetaI = fabsf(glm::dot(wo, N));
 	float R = FrDielectricExact(cosThetaI, etaI, etaT);  // returns 1 exactly in TIR
 	float u = RandomFloat(RNG);
-	
 
 	if (u < R) 
 	{
 		BSDFSample s = SampleGGXMicrofacetBRDF(params, wo, si, RNG);
 		if (!s.good) atomicAdd(&rejected, 1ULL);
-		s.pdf *= R;
+		if (params.roughness > 0.01f) s.pdf *= R;
 		return s;
 	}
 	else 
 	{
 		BSDFSample s = SampleGGXMicrofacetBTDF(params, wo, si, RNG);
 		if (!s.good) atomicAdd(&rejected, 1ULL);
-		s.pdf *= 1.0f - R;
+		if (params.roughness > 0.01f) s.pdf *= 1.0f - R;
 		return s;
 	}
 }

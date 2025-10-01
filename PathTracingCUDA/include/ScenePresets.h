@@ -34,4 +34,6 @@ namespace Scenes
 	Scene* PassthroughScene(int seed, Camera*& cam);
 
 	Scene* DragonScene(int seed, Camera*& cam);
+
+	Scene* CheckerScene(int /*seed*/, Camera*& cam);
 }

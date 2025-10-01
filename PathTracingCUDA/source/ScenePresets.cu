@@ -234,9 +234,11 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseMaterial black(glm::vec3(0.0f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
     DiffuseLightMaterial sphereLight(glm::vec3(200.0f));
-    MetalMaterial metal(glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3(4.483f, 3.586f, 2.869f), 0.1f);
+    MetalMaterial metal(glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3(4.483f, 3.586f, 2.869f), 0.15f);
     MetalMaterial gold(glm::vec3(0.27f, 0.53f, 1.45f), glm::vec3(2.77f, 2.37f, 1.90f), 0.3f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.1f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
+    DielectricMaterial die2(glm::vec3(1.0f), 1.5f, 0.15f);
+    DielectricMaterial die3(glm::vec3(1.0f), 1.5f, 0.3f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(0.7f, 0.7f, 0.7f),
@@ -340,10 +342,10 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "dragon.obj";
+    std::string objName = "bunny.obj";
     float scale = 350.00f;
-    float yExtent = 0.7f;
-    float rotDeg = 90.0f;
+    float yExtent = 1.0f;
+    float rotDeg = 0.0f;
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
@@ -371,7 +373,9 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     
     sb.AddModel("resources/models/" + objName, M, die);
     //
-    //sb.AddSphere(glm::vec3(0, 200, 0), 150, die);
+    //sb.AddSphere(glm::vec3(-200, 200, 0), 75, die);
+    //sb.AddSphere(glm::vec3(0, 200, 0), 75, die2);
+    //sb.AddSphere(glm::vec3(200, 200, 0), 75, die3);
     //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
 
     M = glm::mat4(1.0f);
@@ -1277,7 +1281,7 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
     const float W = 555.0f;                 // width  = height = depth
 
     // ---------------------------------------------------------------------
-    // 5 walls (front is left open for the camera)
+    // 5 walls (front is left open for the camera)-
     // ---------------------------------------------------------------------
     sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white); // floor
     sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white); // ceiling
@@ -1306,5 +1310,107 @@ Scene* Scenes::CornellBoxOGScene(int seed, Camera*& cam)
         glm::vec4(0, 1, 0, 19.0f),                 
         red);
     
+    return sb.Build();
+}
+
+Scene* Scenes::CheckerScene(int /*seed*/, Camera*& cam)
+{
+    cam->center = glm::vec3(0.0f, 150.0f, 800.0f);   
+    cam->lookAt = glm::vec3(0.0f, 150.0f, 0.0f);     
+    cam->vfov = 25.0f;
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.35f;;
+    cam->Init();
+
+    SceneBuilder sb;
+    DiffuseMaterial lightSqA(glm::vec3(0.9f));      // light square (floor/wall)
+    DiffuseMaterial darkSqA(glm::vec3(0.1f));      // dark square (floor/wall)
+    DiffuseLightMaterial areaLight(glm::vec3(8.0f));
+	DielectricMaterial glass(glm::vec3(1.0f), 1.5f, 0.0f);
+    DielectricMaterial glass2(glm::vec3(1.0f), 1.5f, 0.02f);
+    DielectricMaterial glass3(glm::vec3(1.0f), 1.5f, 0.15f);
+    DielectricMaterial glass4(glm::vec3(1.0f), 1.5f, 0.3f);
+
+    // ---------------- Overhead area light (simple fill) ----------------
+    sb.AddQuad(
+        glm::vec3(0.0f, 500.0f, 200.0f),  // above & a bit in front of the bunny
+        glm::vec2(150.0f),
+        glm::vec4(1, 0, 0, 0),
+        areaLight
+    );
+
+    sb.AddQuad(
+        glm::vec3(-200.0f, 500.0f, 200.0f), 
+        glm::vec2(150.0f),
+        glm::vec4(1, 0, 0, 0),
+        areaLight
+    );
+
+    sb.AddQuad(
+        glm::vec3(200.0f, 500.0f, 200.0f),  
+        glm::vec2(150.0f),
+        glm::vec4(1, 0, 0, 0),
+        areaLight
+    );
+
+    // ---------------- Checkerboard floor (y = 0 plane) ----------------
+    const float tile = 50.0f;
+    const int   N = 20;   
+
+    for (int ix = -N; ix < N; ++ix)
+    {
+        for (int iz = -N; iz < N; ++iz)
+        {
+            glm::vec3 center(ix * tile, 0.0f, iz * tile);
+            bool isLight = ((ix + iz) & 1) == 0;
+            sb.AddQuad(center, glm::vec2(tile), glm::vec4(1, 0, 0, 0), isLight ? lightSqA : darkSqA);
+        }
+    }
+
+    // ---------------- Checkerboard back wall (vertical at z = -wallZ) ----------------
+    const float wallZ = 500.0f; 
+    const int   Wtiles = N;   
+    const int   Htiles = 12;   
+
+    for (int ix = -Wtiles; ix < Wtiles; ++ix)
+    {
+        for (int iy = 0; iy < Htiles; ++iy)
+        {
+            glm::vec3 center(ix * tile, (iy + 0.5f) * tile, -wallZ);
+            bool isLight = ((ix + iy) & 1) == 0;
+            sb.AddQuad(center, glm::vec2(tile), glm::vec4(1, 0, 0, 90), isLight ? lightSqA : darkSqA);
+        }
+    }
+
+    // ---------------- Bunny at (0, y, 0) ----------------
+    std::string objName = "buddha.obj";
+    float  scale = 250.0f;
+    float  yExtent = 1.0f;                           // normalized model height
+    float  y = 0.5f * yExtent * scale;         // place base on y = 0
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(-200.0f, y, 0.0f));
+    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+    M = glm::scale(M, glm::vec3(scale));
+
+    sb.AddModel("resources/models/" + objName, M, glass2);
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(0, y, 0.0f));
+    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    sb.AddModel("resources/models/" + objName, M, glass3);
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(200.0f, y, 0.0f));
+    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::scale(M, glm::vec3(scale));
+
+    sb.AddModel("resources/models/" + objName, M, glass4);
+
+	//sb.AddSphere(glm::vec3(-200.0f, 120.0f, 0.0f), 75.0f, glass2);
+ //   sb.AddSphere(glm::vec3(0.0f, 120.0f, 0.0f), 75.0f, glass3);
+ //   sb.AddSphere(glm::vec3(200.0f, 120.0f, 0.0f), 75.0f, glass4);
+
     return sb.Build();
 }
