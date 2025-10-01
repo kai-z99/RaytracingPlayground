@@ -1,4 +1,8 @@
-#include "../include/Material.h"
+#include "../include/Material.cuh"
+
+__managed__ unsigned long long rejected = 0;
+__managed__ unsigned long long total = 0;
+
 
 //Other helpers-----------------------------------------------
 

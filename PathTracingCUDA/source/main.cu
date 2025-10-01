@@ -4,7 +4,7 @@
 #include "../include/Camera.h"
 #include "../include/Scene.h"
 #include "../include/ScenePresets.h"
-#include "../include/Material.h"
+#include "../include/Material.cuh"
 
 #include <chrono>
 #include <random>
@@ -18,7 +18,7 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 64;
+    c.samplesPerPixel = 1024;
     c.maxBounceDepth = 15;
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
@@ -287,7 +287,7 @@ int main()
     BuildCamera(uCamera, dPixels, config);
 
     //init scene
-    Scene* uScene = Scenes::SkyScene(seed, uCamera);
+    Scene* uScene = Scenes::CornellBoxScene(seed, uCamera);
 
     // launch render async and display while running
     cudaStream_t renderStream; checkCudaErrors(cudaStreamCreate(&renderStream));
@@ -315,6 +315,8 @@ int main()
 
     //free allocated  memory
     CleanUp(uScene, uCamera, dPixels, hPixels);
+
+    printf("total: %llu, rejected: %llu, ratio: %f\n", total, rejected, (float)((float)rejected / (float)total));
 
     return 0;
 }

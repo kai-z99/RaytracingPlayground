@@ -334,8 +334,7 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
 
 
 
-   
-    //sb.AddSphere(glm::vec3(110.0f, 100.0f, -60.0f), 100.0f, DiffuseMaterial(glm::vec3(0.4f, 0.5f, 1.0f)));
+  
     //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
     //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
@@ -517,7 +516,7 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
     cam->center = glm::vec3(0, 600, 1300);
     cam->vfov = 10;
     cam->lookAt = glm::vec3(0, 50, 0); //xyz: 50 s: 100
-    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.5f; //0.5
+    cam->backgroundColor = glm::vec3(0.70, 0.80, 1.00) * 0.25f; //0.5
     cam->Init();
 
     SceneBuilder wb;
@@ -531,7 +530,10 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         glm::vec3(6000.0f, 0.0f, 0.0f),
         groundMat);
 
-    DielectricMaterial glass(glm::vec3(1.0f), 1.5f, 0.2f);
+    wb.AddQuad(glm::vec3(0.0f, 0.0f, -150.0f), glm::vec2(500.0f), glm::vec4(1.0f, 0.0f, 0.0f, 90.0f), groundMat);
+
+    DielectricMaterial glass(glm::vec3(1.0f), 1.5f, 0.1f);
+    MetalMaterial metal = MetalMaterial();
 
     DiffuseLightMaterial light(glm::vec3(7.0f));
 
@@ -544,17 +546,19 @@ Scene* Scenes::SkyScene(int seed, Camera*& cam)
         0.2f //xyz: 0.2 s: 0.25
     );
 
-    std::string objName = "xyzrgb_dragon.obj";
-    float scale = 350.00f;
-    float yExtent = 0.55f; //xyz: 0.55 s: 0.705
-    float rotDeg = -60.0f - 70; //xyz: -60 s: -50
+    std::string objName = "bunny.obj";
+    float scale = 150.00f; //350
+    float yExtent = 1.0f; //xyz: 0.55 s: 0.705
+    float rotDeg = 0; //xyz: -60 - 70 s: -50
 
     glm::mat4 M(1.0f);
-    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale - 40, 0));
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0)); //-40
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
-    wb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, glass);
+    //wb.AddModel("resources/models/" + objName, M, glass);
+
+	wb.AddSphere(glm::vec3(0.0f, 50.0f, 0.0f), 50.0f, metal);
 
 
     return wb.Build();

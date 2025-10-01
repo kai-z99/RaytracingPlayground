@@ -1,5 +1,5 @@
 #include "../include/Camera.h"
-#include "../include/Material.h"
+#include "../include/Material.cuh"
 #include "../include/LightSampling.h"
 
 //10:12 TESTING

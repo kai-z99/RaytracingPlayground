@@ -2,7 +2,7 @@
 
 #include "Generic.h"
 #include "Scene.h"
-#include "Material.h"
+#include "Material.cuh"
 
 #include <vector>
 #include <unordered_map>

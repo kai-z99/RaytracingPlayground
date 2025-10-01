@@ -41,8 +41,10 @@ __device__ inline bool HitSphere(const SpheresPacked& s, int i, const Ray& r, In
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.shadingNormal = (rec.p - center) / radius; //normalized, always outwards
-    rec.geoNormal = rec.shadingNormal;
+
+	glm::vec3 outwardsNormal = (rec.p - center) / radius;
+    rec.shadingNormal = (glm::dot(r.direction(), outwardsNormal) < 0.0f) ? outwardsNormal : -outwardsNormal; //normalized, always outwards
+    rec.geoNormal = outwardsNormal;
     rec.matDataID = s.materialID[i];
 
     return true;
