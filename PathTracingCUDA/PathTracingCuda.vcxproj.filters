@@ -18,12 +18,6 @@
     <ClCompile Include="source\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\SceneBuilder.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="source\ScenePresets.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\screen.vert">
@@ -56,9 +50,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Interval.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\AABB.h">
@@ -97,6 +88,9 @@
     <ClInclude Include="include\LightSampling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Material.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="source\main.cu">
@@ -109,6 +103,12 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="source\Material.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="source\SceneBuilder.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="source\ScenePresets.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
