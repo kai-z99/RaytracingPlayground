@@ -1,6 +1,5 @@
 <img width="1918" height="1111" alt="sssAssorted50000spp" src="https://github.com/user-attachments/assets/b87eb332-6a88-4b88-9769-24bb87330450" />
 
-
 ## Notes
 - Subsurface Scattering with Analytic BSSRDFs
   - Please refer to my blog at: https://kai-z99.github.io/blog/Implementing-Subsurface-Scattering-with-Analytic-BSSRDFs.html
@@ -81,9 +80,8 @@
 ## Other Images Gallery
 <img width="1918" height="1110" alt="skylight2048spp-10 0" src="https://github.com/user-attachments/assets/0cf81441-3dbc-4222-8789-1b7946781423" />
 <img width="1230" height="1110" alt="bunnySSS1" src="https://github.com/user-attachments/assets/3c664f4e-9a3a-4f1e-a4a2-946fa3ba9d10" />
-<img width="1231" height="1107" alt="bunny0 2" src="https://github.com/user-attachments/assets/4829a3a5-7303-4b39-b9c9-c33ac3b72b9e" />
+<img width="1919" height="1077" alt="buddhaCompare15000" src="https://github.com/user-attachments/assets/82e00bf6-af81-48ef-8677-86153c92bf57" />
 
-<img width="1231" height="1108" alt="bunny0 5" src="https://github.com/user-attachments/assets/d38c4ded-21b4-4851-b8f6-79df678057f5" />
 
 
 
