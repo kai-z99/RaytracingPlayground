@@ -1,5 +1,7 @@
 <img width="1918" height="1111" alt="sssAssorted50000spp" src="https://github.com/user-attachments/assets/b87eb332-6a88-4b88-9769-24bb87330450" />
 
+*Assorted translucent materials rendered with analytic BSSRDFs*
+
 ## Notes
 - Subsurface Scattering with Analytic BSSRDFs
   - Please refer to my blog at: https://kai-z99.github.io/blog/Implementing-Subsurface-Scattering-with-Analytic-BSSRDFs.html
@@ -23,70 +25,49 @@
   <img src="https://github.com/user-attachments/assets/e12ecdbb-fa80-4fa8-8c0d-aaebf1eeb57a" width="400" /> 
 </p>
 
-
-    
-
-
-
-
-
 <br/>
 
-## Render Configuration
-- GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
-- Resolution: **1920×1080 pixels**
-- Rays per Pixel: **10000**
-- Maximum Bounce Depth: **15**
-- Scene: **Cornell Box, Stanford Dragon (871306 triangles)**
-## Performance Results
+## Image Gallery
 
-| Platform     | Acceleration | Time         |
-|--------------|--------------|--------------|
-| GPU (CUDA)   | BVH, Flat Traversal | ~999.8 seconds|
+![Render Output](Images/rayShowCUDA10.png)  
 
-![Render Output](Images/rayShowCUDA10.png)
-![Render Output](Images/rayShowCUDA22.png)
-<img width="1229" height="1079" alt="dragonGlass0 1-10000" src="https://github.com/user-attachments/assets/76edb716-df16-4925-b362-a49d671d86cb" />
-<img width="1230" height="1107" alt="dragonJade10000spp" src="https://github.com/user-attachments/assets/b1654e77-7cc0-4ac3-865a-8ad2f451d393" />
+*Simple diffuse material.*
+<br/><br/>
 
+![Render Output](Images/rayShowCUDA22.png)  
 
-<br/>
-<br/>
+*Metallic material rendered with Conductor BRDF.*
+<br/><br/>
 
-## Render Configuration
-- GPU: **RTX 4070 Mobile** | CPU: **i7-13650HX**
-- Resolution: **800×600 pixels**
-- Rays per Pixel: **10**
-- Maximum Bounce Depth: **12**
-- Scene: **Same from final output of "Ray Tracing in One Weekend" by Peter Shirley and more. https://raytracing.github.io/books/RayTracingInOneWeekend.html**
+<img width="1229" height="1079" alt="dragonGlass0 1-10000" src="https://github.com/user-attachments/assets/76edb716-df16-4925-b362-a49d671d86cb" />  
 
-## Performance Results
+*Glass material rendered with Rough Dielectric BSDF*
+<br/><br/>
 
-| Platform     | Acceleration | Time         |
-|--------------|--------------|--------------|
-| CPU          | N/A          | ~1800 seconds|
-| CPU          | BVH          | ~142 seconds |
-| GPU (CUDA)   | N/A          | ~0.28 seconds|
-| GPU (CUDA)   | BVH, Flat Traversal | ~0.06 seconds|
+<img width="1230" height="1107" alt="dragonJade10000spp" src="https://github.com/user-attachments/assets/b1654e77-7cc0-4ac3-865a-8ad2f451d393" />  
 
+*Subsurface scattering material rendered with analytic BSSRDF.*
+<br/><br/>
 
+![Render Output](Images/rayShowCUDA1.png)  
 
-![Render Output](Images/rayShowCUDA1.png)
-(Image uses 1000spp)
+*The scene from "Ray Tracing in One Weekend".*
+<br/><br/>
 
-<br/>
-<br/>
+<img width="1918" height="1110" alt="skylight2048spp-10 0" src="https://github.com/user-attachments/assets/0cf81441-3dbc-4222-8789-1b7946781423" />  
 
-## Other Images Gallery
-<img width="1918" height="1110" alt="skylight2048spp-10 0" src="https://github.com/user-attachments/assets/0cf81441-3dbc-4222-8789-1b7946781423" />
+*xyrgb dragon with high roughness SSS material*
+<br/><br/>
+
 <img width="1230" height="1110" alt="bunnySSS1" src="https://github.com/user-attachments/assets/3c664f4e-9a3a-4f1e-a4a2-946fa3ba9d10" />
-<img width="1919" height="1077" alt="buddhaCompare15000" src="https://github.com/user-attachments/assets/82e00bf6-af81-48ef-8677-86153c92bf57" />
 
+*Stanford Bunny with low roughness, high scattering SSS.*
+<br/><br/>
 
+<img width="1919" height="1077" alt="buddhaCompare15000" src="https://github.com/user-attachments/assets/82e00bf6-af81-48ef-8677-86153c92bf57" />  
 
-
-
-
+*Different roughness values of Dielectric BSDF. (alpha = 0.012 -> 0.12 -> 0.3)*
+<br/><br/>
 
 
 
