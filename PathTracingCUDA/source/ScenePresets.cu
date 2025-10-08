@@ -236,9 +236,11 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     DiffuseLightMaterial sphereLight(glm::vec3(200.0f));
     MetalMaterial metal(glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3(4.483f, 3.586f, 2.869f), 0.15f);
     MetalMaterial gold(glm::vec3(0.27f, 0.53f, 1.45f), glm::vec3(2.77f, 2.37f, 1.90f), 0.3f);
-    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.2f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.05f);
     DielectricMaterial die2(glm::vec3(1.0f), 1.5f, 0.15f);
     DielectricMaterial die3(glm::vec3(1.0f), 1.5f, 0.3f);
+    MetalMaterial cobalt(glm::vec3(2.7, 2.1, 1.7), glm::vec3(4.3, 3.7, 3.3), 0.1f);
+    MetalMaterial electricBlue(glm::vec3(1.7, 1.6, 1.5), glm::vec3(1.3, 0.35, 3.6), 0.05f);
     
     SubsurfaceMaterial sm = SubsurfaceMaterial(
         glm::vec3(0.7f, 0.7f, 0.7f),
@@ -342,9 +344,9 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
     //
 
-    std::string objName = "bunny.obj";
-    float scale = 350.00f;
-    float yExtent = 1.0f;
+    std::string objName = "bunny_high.obj";
+    float scale = 300.00f;
+    float yExtent = 1.00f;
     float rotDeg = 0.0f;
 
     glm::mat4 M(1.0f);
@@ -382,6 +384,187 @@ Scene* Scenes::CornellBoxScene(int /*seed*/, Camera*& cam)
     M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
     M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
    // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    M = glm::scale(M, glm::vec3(scale));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
+
+    //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 100.0f, sm);
+
+    //sb.AddBox(glm::vec3(0.0f, 268.0f, 0.0f), glm::vec3(300.0f, 30.0f, 300.0f), glm::vec4(0,1,1,45), sm);
+    //sb.AddTriangle({ 0.0f, 250, 0.0f }, { 130.0f, 150, 0 }, {0,0, 200}, sm);
+
+    return sb.Build();
+}
+
+Scene* Scenes::CatScene(int seed, Camera*& cam)
+{
+    // --- Camera setup ---
+    cam->center = glm::vec3(0.00f, 278.0f, 800.0f);
+    cam->lookAt = glm::vec3(0.0f, 278.0f, 0.0f);
+    cam->vfov = 50.0f;
+    cam->backgroundColor = glm::vec3(0.0f);
+    cam->Init();
+
+    SceneBuilder sb;
+
+    // --- Materials ---
+    DiffuseMaterial white(glm::vec3(0.73f));
+    DiffuseMaterial red(glm::vec3(0.65f, 0.05f, 0.05f));
+    DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
+    DiffuseMaterial black(glm::vec3(0.0f));
+    DiffuseMaterial fakeJade(glm::vec3(0.0f, 0.659f, 0.42f));
+    DiffuseLightMaterial light(glm::vec3(15.0f));
+    DiffuseLightMaterial sphereLight(glm::vec3(200.0f));
+    MetalMaterial metal(glm::vec3(0.05f, 0.06f, 0.0f), glm::vec3(4.483f, 3.586f, 2.869f), 0.35f);
+    MetalMaterial gold(glm::vec3(0.27f, 0.53f, 1.45f), glm::vec3(2.77f, 2.37f, 1.90f), 0.3f);
+    DielectricMaterial die(glm::vec3(1.0f), 1.5f, 0.05f);
+    DielectricMaterial die2(glm::vec3(1.0f), 1.5f, 0.15f);
+    DielectricMaterial die3(glm::vec3(1.0f), 1.5f, 0.3f);
+    MetalMaterial cobalt(glm::vec3(2.7, 2.1, 1.7), glm::vec3(4.3, 3.7, 3.3), 0.1f);
+    MetalMaterial electricBlue(glm::vec3(1.7, 1.6, 1.5), glm::vec3(1.3, 0.35, 3.6), 0.05f);
+
+    SubsurfaceMaterial sm = SubsurfaceMaterial(
+        glm::vec3(0.0f, 0.659f, 0.42f),
+        6.0f,
+        1.5f,
+        0.1f
+        //jade: 0.0f, 0.659f, 0.42f
+    );
+
+    // --- Cornell box dimensions ---
+    const float W = 555.0f;   // box width, height, depth
+
+    // Floor (y = 0)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Ceiling (y = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, W, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, 0.0f, -W),
+    //    white
+    //);
+
+    sb.AddQuad(glm::vec3(0.0f, W, 0.0f), glm::vec2(W), glm::vec4(1, 0, 0, 0), white);
+
+
+    // Back wall (z = W)
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, W),
+    //    /*u      */ glm::vec3(W, 0.0f, 0.0f),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    white
+    //);
+    sb.AddQuad(glm::vec3(0.0f, W / 2, -W / 2), glm::vec2(W), glm::vec4(1, 0, 0, 90), white);
+
+
+    // Left wall (x = 0), red
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(0.0f, 0.0f, 0.0f),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    red
+    //);
+    sb.AddQuad(glm::vec3(-W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), red);
+
+    // Right wall (x = W), green
+    //sb.AddQuad(
+    //    /*origin*/ glm::vec3(W, 0.0f, W),
+    //    /*u      */ glm::vec3(0.0f, 0.0f, -W),
+    //    /*v      */ glm::vec3(0.0f, W, 0.0f),
+    //    green
+    //);
+
+    sb.AddQuad(glm::vec3(W / 2, W / 2, 0.0f), glm::vec2(W), glm::vec4(0, 0, 1, 90), green);
+
+    // --- Area light on the ceiling ---
+    sb.AddQuad(
+        glm::vec3(0.0f, W - 0.001f, 0.0f),
+        glm::vec2(200.0f),
+        glm::vec4(1, 0, 0, 0),
+        light
+    );
+
+    //sb.AddSphere(glm::vec3(-150.0f, W - 300.f, -150.0f), 10.0f, sphereLight);
+
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f - 300, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+    //sb.AddQuad(
+    //    glm::vec3(200.0f, W - 0.1f - 600, 0.0f),
+    //    glm::vec2(200.0f),
+    //    glm::vec4(0, 0, 1, 90),  // positive Z
+    //    light
+    //);
+
+
+
+
+    //sb.AddSphere(glm::vec3(-20.0f, 80.0f, 50.0f), 80.0f, MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //sb.AddSphere(glm::vec3(0.0f - 120.0f, 50.0f, 0.0f - 120.0f), 50.0f, DielectricMaterial());
+    //sb.AddTriangle(glm::vec3(-W/2 + 30.0f, 50.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 30.0f, 225.0f, -W/2 + 30.0f), glm::vec3(-W/2 + 210.0f, 90.0f, -W/2 + 10.0f), MetalMaterial(glm::vec3(1.0f), 0.02f));
+    //
+
+    std::string objName = "amyCat.obj";
+    float scale = 450.00f;
+    float yExtent = 0.75f;
+    float rotDeg = 45.0f;
+
+    glm::mat4 M(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    //M = glm::rotate(M, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
+    M = glm::scale(M, glm::vec3(scale));
+
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, PBRMaterial(glm::vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.225f));
+    //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, DielectricMaterial());
+
+    //DiffuseMaterial m = DiffuseMaterial(glm::vec3(0.7f, 0.7f, 0.7f));
+    //SubsurfaceMaterial sm = SubsurfaceMaterial(
+    //    glm::vec3(0.7f, 0.7f, 0.7f),
+    //    glm::vec3(0.7f, 0.7f, 0.7f), //
+    //    1.0f,
+    //    5.6f,
+    //    1.5f,
+    //    1.0f
+    //);
+
+
+
+    //glm::vec3(1.0f, 0.4f, 0.4f),
+    //glm::vec3(0.4f, 0.4f, 1.0f), 
+
+    sb.AddModel("resources/models/" + objName, M, metal);
+    //
+    //sb.AddSphere(glm::vec3(-200, 200, 0), 75, die);
+    //sb.AddSphere(glm::vec3(0, 200, 0), 75, die2);
+    //sb.AddSphere(glm::vec3(200, 200, 0), 75, die3);
+    //sb.AddBox(glm::vec3(0, 200, 0), glm::vec3(150), glm::vec4(1,1,0,30), die);
+
+    M = glm::mat4(1.0f);
+    M = glm::translate(M, glm::vec3(0, (yExtent / 2.0f) * scale, 0));
+    M = glm::rotate(M, glm::radians(rotDeg), glm::vec3(0.0f, 1.0f, 0.0f)); //2
+    // M = glm::rotate(M, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //1
     M = glm::scale(M, glm::vec3(scale));
 
     //sb.AddModel("C:/repos/C++/RayTracingPlayground/PathTracingCUDA/resources/models/" + objName, M, m);
@@ -1077,10 +1260,10 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     DiffuseMaterial green(glm::vec3(0.12f, 0.45f, 0.15f));
     DiffuseLightMaterial light(glm::vec3(15.0f));
 
-    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.5f);
-	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.5f);
-	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.5f);
-
+    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.1f);
+	MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.1f);
+	MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.1f);
+    MetalMaterial cobalt(glm::vec3(2.7, 2.1, 1.7), glm::vec3(4.3, 3.7, 3.3), 0.1f);
 
     // --- Cornell box dimensions ---
     const float W = 555.0f;   // box width, height, depth
@@ -1188,6 +1371,12 @@ Scene* Scenes::StatueScene(int seed, Camera*& cam)
     M = glm::scale(M, glm::vec3(scale));
 
     sb.AddModel("resources/models/" + objName, M, silver);
+
+    //sb.AddSphere(glm::vec3(-100.0f, 100.0f, 0.0f), 50.0f, gold);
+    //sb.AddSphere(glm::vec3(0.0f, 100.0f, 0.0f), 50.0f, silver);
+    //sb.AddSphere(glm::vec3(100.0f, 100.0f, 0.0f), 50.0f, copper);
+
+    
 
 
 
@@ -1329,32 +1518,56 @@ Scene* Scenes::CheckerScene(int /*seed*/, Camera*& cam)
     DielectricMaterial glass2(glm::vec3(1.0f), 1.5f, 0.02f);
     DielectricMaterial glass3(glm::vec3(1.0f), 1.5f, 0.15f);
     DielectricMaterial glass4(glm::vec3(1.0f), 1.5f, 0.3f);
+    MetalMaterial gold(glm::vec3(0.17f, 0.35f, 1.50f), glm::vec3(3.10f, 2.70f, 1.90f), 0.1f);
+    MetalMaterial copper(glm::vec3(0.21f, 0.92f, 1.10f), glm::vec3(3.33f, 2.55f, 2.14f), 0.1f);
+    MetalMaterial silver(glm::vec3(0.14f, 0.16f, 0.13f), glm::vec3(4.10f, 2.30f, 3.10f), 0.1f);
+    SubsurfaceMaterial p1 = SubsurfaceMaterial(
+        glm::vec3(0.7f, 0.2f, 0.2f),
+        0.3f,
+        1.5f,
+        0.1f
+        //jade: 0.0f, 0.659f, 0.42f
+    );
+    SubsurfaceMaterial p2 = SubsurfaceMaterial(
+        glm::vec3(0.7f, 0.2f, 0.2f),
+        0.3f,
+        1.5f,
+        0.35f
+        //jade: 0.0f, 0.659f, 0.42f
+    );
+    SubsurfaceMaterial p3 = SubsurfaceMaterial(
+        glm::vec3(0.7f, 0.2f, 0.2f),
+        3.5f,
+        1.5f,
+        0.35f
+        //jade: 0.0f, 0.659f, 0.42f
+    );
 
     // ---------------- Overhead area light (simple fill) ----------------
     sb.AddQuad(
-        glm::vec3(0.0f, 500.0f, 200.0f),  // above & a bit in front of the bunny
+        glm::vec3(0.0f, 650.0f, 200.0f),  // above & a bit in front of the bunny
         glm::vec2(150.0f),
         glm::vec4(1, 0, 0, 0),
         areaLight
     );
 
     sb.AddQuad(
-        glm::vec3(-200.0f, 500.0f, 200.0f), 
+        glm::vec3(-200.0f, 650.0f, 200.0f),
         glm::vec2(150.0f),
         glm::vec4(1, 0, 0, 0),
         areaLight
     );
 
     sb.AddQuad(
-        glm::vec3(200.0f, 500.0f, 200.0f),  
+        glm::vec3(200.0f, 650.0f, 200.0f),
         glm::vec2(150.0f),
         glm::vec4(1, 0, 0, 0),
         areaLight
     );
 
     // ---------------- Checkerboard floor (y = 0 plane) ----------------
-    const float tile = 50.0f;
-    const int   N = 20;   
+    const float tile = 150.0f;
+    const int   N = 7;   
 
     for (int ix = -N; ix < N; ++ix)
     {
@@ -1369,7 +1582,7 @@ Scene* Scenes::CheckerScene(int /*seed*/, Camera*& cam)
     // ---------------- Checkerboard back wall (vertical at z = -wallZ) ----------------
     const float wallZ = 500.0f; 
     const int   Wtiles = N;   
-    const int   Htiles = 12;   
+    const int   Htiles = 4;   
 
     for (int ix = -Wtiles; ix < Wtiles; ++ix)
     {
@@ -1382,28 +1595,29 @@ Scene* Scenes::CheckerScene(int /*seed*/, Camera*& cam)
     }
 
     // ---------------- Bunny at (0, y, 0) ----------------
-    std::string objName = "buddha.obj";
-    float  scale = 250.0f;
-    float  yExtent = 1.0f;                           // normalized model height
+    std::string objName = "amyCat_high.obj";
+    float  scale = 225.0f;
+    float  yExtent = 0.75f;                           // 1
     float  y = 0.5f * yExtent * scale;         // place base on y = 0
+    float rotate = 130.0f; //180
 
     glm::mat4 M(1.0f);
     M = glm::translate(M, glm::vec3(-200.0f, y, 0.0f));
-    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f)); 
+    M = glm::rotate(M, glm::radians(rotate), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     sb.AddModel("resources/models/" + objName, M, glass2);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(0, y, 0.0f));
-    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::rotate(M, glm::radians(rotate), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     sb.AddModel("resources/models/" + objName, M, glass3);
 
     M = glm::mat4(1.0f);
     M = glm::translate(M, glm::vec3(200.0f, y, 0.0f));
-    M = glm::rotate(M, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    M = glm::rotate(M, glm::radians(rotate), glm::vec3(0.0f, 1.0f, 0.0f));
     M = glm::scale(M, glm::vec3(scale));
 
     sb.AddModel("resources/models/" + objName, M, glass4);

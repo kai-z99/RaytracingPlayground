@@ -272,6 +272,7 @@ __device__ inline BSDFSample SampleGGXConductorBRDF(const ConductorParams& param
 
 	glm::vec3 F = FresnelConductor(VdotH, params.eta, params.k);
 
+
 	s.f = (D * G) * F / (4.0f * NdotV * NdotL + 1e-6f);
 	s.wi = L;
 	s.good = true;
@@ -404,9 +405,9 @@ __device__ inline BSDFSample SampleGGXMicrofacetBRDF(const DielectricParams& par
 	float R = FrDielectricExact(VdotH, etaI, etaT); // scalar
 	glm::vec3 F = glm::vec3(R);                     // dielectrics reflect achromatically
 
-	//glm::vec3 F0 = glm::vec3(0.04f);
-	//F = FresnelSchlick(VdotH, F0);
-	//printf(" f schlick: %f, f exact: %f\n", F.r, R);
+	/*glm::vec3 F0 = glm::vec3(0.04f);
+	F = FresnelSchlick(VdotH, F0);
+	printf(" f schlick: %f, f exact: %f\n", F.r, R);*/
 
 	glm::vec3 specular = (D * G * F) / (4.0f * NdotV * NdotL + 1e-6f);
 	sample.f = specular; //just the brdf	

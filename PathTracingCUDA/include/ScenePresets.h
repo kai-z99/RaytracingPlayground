@@ -13,6 +13,8 @@ namespace Scenes
 
 	Scene* CornellBoxScene(int seed, Camera*& cam);
 
+	Scene* CatScene(int seed, Camera*& cam);
+
 	Scene* SlabScene(int seed, Camera*& cam);
 
 	Scene* SkyScene(int seed, Camera*& cam);
