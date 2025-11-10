@@ -18,8 +18,8 @@ struct Config
 Config MakeConfig()
 {
     Config c;
-    c.samplesPerPixel = 2048;
-    c.maxBounceDepth = 15;
+    c.samplesPerPixel = 10;
+    c.maxBounceDepth = 12;
     std::cout << "CUDA VERSION" << '\n';
     std::cout << "RESOLUTION: " << std::to_string(SCREEN_WIDTH) << "x" << std::to_string(SCREEN_HEIGHT) << "px\n";
     std::cout << "SAMPLES PER PIXEL: " << c.samplesPerPixel << '\n';
@@ -287,7 +287,7 @@ int main()
     BuildCamera(uCamera, dPixels, config);
 
     //init scene
-    Scene* uScene = Scenes::CheckerScene(seed, uCamera);
+    Scene* uScene = Scenes::RayTracingInOneWeekend(seed, uCamera);
 
     // launch render async and display while running
     cudaStream_t renderStream; checkCudaErrors(cudaStreamCreate(&renderStream));
